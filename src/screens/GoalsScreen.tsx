@@ -419,7 +419,7 @@ export default function GoalsScreen({ navigation, route }: any) {
               onPress={() => { setActionGoal(null); openDepositModal(actionGoal); }}
               activeOpacity={0.8}
             >
-              <Ionicons name="add-circle-outline" size={20} color={C.goals} />
+              <Ionicons name="add-outline" size={20} color={C.goals} />
               <Text style={[styles.actionBtnText, { color: C.goals }]}>Add Money</Text>
             </TouchableOpacity>
           )}

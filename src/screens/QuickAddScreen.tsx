@@ -194,7 +194,7 @@ export default function QuickAddScreen({ navigation }: any) {
               activeOpacity={0.72}
             >
               <View style={[styles.iconCircle, { backgroundColor: color, shadowColor: color }]}>
-                {customizing && <View style={[styles.editBadge, { backgroundColor: C.black + '73' }]}><Ionicons name="pencil" size={10} color={C.white} /></View>}
+                {customizing && <View style={[styles.editBadge, { backgroundColor: C.black + '73' }]}><Ionicons name="pencil-outline" size={10} color={C.white} /></View>}
                 <Ionicons name={item.icon as any} size={24} color="#fff" />
               </View>
               <Text style={[styles.label, { color: C.textPrimary }]} numberOfLines={1}>

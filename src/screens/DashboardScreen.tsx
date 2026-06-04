@@ -11,7 +11,7 @@ import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
 import { SavingsGoal, Bill } from '../types';
 import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
-import GoalProgressCard from '../components/GoalProgressCard';
+import GoalProgressWidget from '../components/GoalProgressWidget';
 
 interface MonthSummary {
   totalIncome: number;
@@ -172,42 +172,6 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         ) : null}
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Your Goals</Text>
-            <TouchableOpacity style={styles.seeAllRow} onPress={() => navigation.navigate('Goals')}>
-              <Text style={styles.seeAll}>See all</Text>
-              <Ionicons name="chevron-forward" size={14} color={C.primary} />
-            </TouchableOpacity>
-          </View>
-          {pinnedGoals.length > 0 ? (
-            pinnedGoals.map(goal => (
-              <GoalProgressCard
-                key={goal.id}
-                goal={goal}
-                onPress={() => navigation.navigate('Goals')}
-                onUnpin={async () => {
-                  const db = await getDatabase();
-                  await db.runAsync(`UPDATE savings_goals SET pinned = 0 WHERE id = ?`, [goal.id!]);
-                  loadData();
-                }}
-              />
-            ))
-          ) : (
-            <View style={styles.goalsEmpty}>
-              <Ionicons name="flag-outline" size={28} color={C.textHint} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.goalsEmptyText}>No featured goal</Text>
-                <Text style={styles.goalsEmptySub}>Pin a goal to track your progress here.</Text>
-              </View>
-              <TouchableOpacity onPress={() => navigation.navigate('Goals')} style={styles.goalsEmptyBtn}>
-                <Text style={styles.goalsEmptyBtnText}>Browse</Text>
-                <Ionicons name="chevron-forward" size={13} color={C.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
         {upcomingBills.length > 0 && (
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Bills')} activeOpacity={0.8}>
             <View style={styles.cardHeader}>
@@ -233,6 +197,42 @@ export default function DashboardScreen({ navigation }: any) {
             })}
           </TouchableOpacity>
         )}
+
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Your Goals</Text>
+            <TouchableOpacity style={styles.seeAllRow} onPress={() => navigation.navigate('Goals')}>
+              <Text style={styles.seeAll}>See all</Text>
+              <Ionicons name="chevron-forward" size={14} color={C.primary} />
+            </TouchableOpacity>
+          </View>
+          {pinnedGoals.length > 0 ? (
+            pinnedGoals.map(goal => (
+              <GoalProgressWidget
+                key={goal.id}
+                goal={goal}
+                onPress={() => navigation.navigate('Goals')}
+                onUnpin={async () => {
+                  setPinnedGoals([]);
+                  const db = await getDatabase();
+                  await db.runAsync(`UPDATE savings_goals SET pinned = 0 WHERE id = ?`, [goal.id!]);
+                }}
+              />
+            ))
+          ) : (
+            <View style={styles.goalsEmpty}>
+              <Ionicons name="flag-outline" size={28} color={C.textHint} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.goalsEmptyText}>No featured goal</Text>
+                <Text style={styles.goalsEmptySub}>Pin a goal to track your progress here.</Text>
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate('Goals')} style={styles.goalsEmptyBtn}>
+                <Text style={styles.goalsEmptyBtnText}>Browse</Text>
+                <Ionicons name="chevron-forward" size={13} color={C.primary} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         <View style={{ height: insets.bottom + 120 }} />
       </ScrollView>

@@ -73,7 +73,7 @@ export default function NavCustomizeScreen({ navigation }: any) {
                 <Ionicons name={feature?.iconActive as any ?? 'help'} size={20} color={C.textSecondary} />
                 <Text style={styles.previewLabel}>{feature?.label ?? '—'}</Text>
                 <View style={styles.editDot}>
-                  <Ionicons name="pencil" size={8} color={C.primary} />
+                  <Ionicons name="pencil-outline" size={8} color={C.primary} />
                 </View>
               </TouchableOpacity>
             );

@@ -246,7 +246,7 @@ export default function BillsScreen({ navigation, route }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerBack} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+          <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Bills & Subscriptions</Text>
