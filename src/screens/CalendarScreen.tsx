@@ -845,7 +845,7 @@ function makeStyles(C: ColorPalette) {
     eventSection:      { marginBottom: Spacing.md },
     eventSectionLabel: {
       ...Typography.label, color: C.textHint,
-      textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8,
+      textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm,
     },
     eventCard: {
       flexDirection: 'row', alignItems: 'center',

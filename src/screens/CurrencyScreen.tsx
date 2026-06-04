@@ -483,12 +483,12 @@ function makeStyles(C: ColorPalette) {
     cardTitle:       { ...Typography.bodyBold, color: C.textPrimary, marginBottom: 4 },
     cardSub:         { ...Typography.caption, color: C.textSecondary, marginBottom: Spacing.md },
 
-    historyRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border },
+    historyRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
     historyFrom:     { ...Typography.body, color: C.textSecondary },
     historyArrow:    { ...Typography.bodyBold, color: C.primary, marginHorizontal: 4 },
     historyTo:       { ...Typography.bodyBold, color: C.textPrimary },
 
-    rateRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
+    rateRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
     rateFlag:        { fontSize: 24, marginRight: 12 },
     rateMiddle:      { flex: 1 },
     rateCodeRow:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -504,7 +504,7 @@ function makeStyles(C: ColorPalette) {
     pickerOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
     pickerCard:      { backgroundColor: C.bgElevated, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: '80%', padding: Spacing.lg },
     pickerTitle:     { ...Typography.h2, color: C.textPrimary, marginBottom: Spacing.md },
-    pickerRow:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
+    pickerRow:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
     pickerRowActive: { backgroundColor: C.primary + '14' },
     pickerFlag:      { fontSize: 24, marginRight: 12 },
     pickerMiddle:    { flex: 1 },

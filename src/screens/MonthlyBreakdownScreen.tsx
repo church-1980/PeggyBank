@@ -231,7 +231,7 @@ function makeStyles(C: ColorPalette) {
       padding: Spacing.lg, marginBottom: Spacing.md,
       borderWidth: 1, borderColor: C.border,
     },
-    cardLabel:     { ...Typography.caption, color: C.textSecondary, textTransform: 'uppercase', marginBottom: Spacing.sm },
+    cardLabel:     { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
     leftover:      { ...Typography.hero, fontSize: 34 },
     leftoverSub:   { ...Typography.caption, color: C.spending, marginTop: 4 },
 
@@ -253,7 +253,7 @@ function makeStyles(C: ColorPalette) {
     empty:         { alignItems: 'center', padding: 40 },
     emptyIcon: {
       width: 64, height: 64, borderRadius: 32,
-      backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.border,
+      backgroundColor: C.bgElevated, borderWidth: 1, borderColor: C.border,
       alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md,
     },
     emptyText:     { ...Typography.small, color: C.textSecondary, textAlign: 'center' },

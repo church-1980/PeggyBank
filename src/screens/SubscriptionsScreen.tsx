@@ -411,12 +411,12 @@ function makeStyles(C: ColorPalette) {
 
     section:     { marginBottom: Spacing.lg },
     sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: Spacing.sm },
-    sectionLabel:{ ...Typography.label, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
+    sectionLabel:{ ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
     sectionSub:  { ...Typography.caption, color: C.textHint },
 
     subCard: {
       flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-      backgroundColor: C.bgCard, borderRadius: Radius.md,
+      backgroundColor: C.bgCard, borderRadius: Radius.lg,
       padding: Spacing.md, marginBottom: 8,
       borderWidth: 1, borderColor: C.border,
       borderLeftWidth: 3, borderLeftColor: C.subs,

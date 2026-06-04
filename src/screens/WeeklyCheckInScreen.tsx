@@ -395,12 +395,11 @@ function makeStyles(C: ColorPalette) {
     safeCellValue:    { ...Typography.bodyBold, color: C.textPrimary, fontSize: 17 },
 
     sectionTitle: {
-      ...Typography.smallBold,
-      color: C.textSecondary,
+      ...Typography.label,
+      color: C.textHint,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: 0.6,
       marginBottom: Spacing.sm,
-      marginTop: Spacing.xs,
     },
 
     moodRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: Spacing.lg },
@@ -427,7 +426,7 @@ function makeStyles(C: ColorPalette) {
     insightCard: {
       flexDirection: 'row', alignItems: 'center',
       backgroundColor: C.bgCard,
-      borderRadius: Radius.md, borderWidth: 1, borderColor: C.border,
+      borderRadius: Radius.lg, borderWidth: 1, borderColor: C.border,
       borderLeftWidth: 4,
       padding: Spacing.md, marginBottom: Spacing.sm, gap: Spacing.sm,
     },
@@ -437,7 +436,7 @@ function makeStyles(C: ColorPalette) {
     suggestionCard: {
       flexDirection: 'row', alignItems: 'flex-start',
       backgroundColor: C.bgCard,
-      borderRadius: Radius.md, borderWidth: 1,
+      borderRadius: Radius.lg, borderWidth: 1,
       borderColor: C.primary + '40',
       padding: Spacing.md, gap: Spacing.sm,
       marginBottom: Spacing.lg,

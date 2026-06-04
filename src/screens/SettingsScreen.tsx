@@ -222,7 +222,8 @@ function makeStyles(C: ColorPalette) {
       ...Typography.label,
       color: C.textHint,
       textTransform: 'uppercase',
-      marginBottom: Spacing.xs,
+      letterSpacing: 0.6,
+      marginBottom: Spacing.sm,
       marginLeft: 4,
     },
     section: {

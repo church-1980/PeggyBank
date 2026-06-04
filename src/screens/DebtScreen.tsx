@@ -497,7 +497,7 @@ function makeStyles(C: ColorPalette) {
     payBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: C.primary, borderRadius: Radius.md, paddingVertical: 10 },
     payBtnText:  { ...Typography.smallBold, color: C.textOnPrimary },
     empty:        { alignItems: 'center', padding: Spacing.xl, marginTop: 60 },
-    emptyIcon:    { width: 72, height: 72, borderRadius: 36, backgroundColor: C.bgCard, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg, borderWidth: 1, borderColor: C.border },
+    emptyIcon:    { width: 64, height: 64, borderRadius: 32, backgroundColor: C.bgElevated, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg, borderWidth: 1, borderColor: C.border },
     emptyText:    { ...Typography.h3, color: C.textPrimary, textAlign: 'center', marginBottom: Spacing.sm },
     emptySubText: { ...Typography.small, color: C.textSecondary, textAlign: 'center', lineHeight: 24 },
     emptyCta: {

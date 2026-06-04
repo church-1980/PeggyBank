@@ -231,7 +231,7 @@ function makeStyles(C: ColorPalette) {
 
     slotsSection: { marginBottom: Spacing.lg },
     allSection:   { marginBottom: Spacing.lg },
-    sectionLabel: { ...Typography.label, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
+    sectionLabel: { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
 
     slotCard: {
       flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
@@ -247,7 +247,7 @@ function makeStyles(C: ColorPalette) {
 
     featureRow: {
       flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-      paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border,
+      paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border,
     },
     featureRowActive: {},
     featureIcon:    { width: 40, height: 40, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
