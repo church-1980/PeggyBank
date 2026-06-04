@@ -194,7 +194,7 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
       showsVerticalScrollIndicator={false}
     >
       <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 

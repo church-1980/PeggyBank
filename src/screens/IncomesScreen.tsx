@@ -113,7 +113,7 @@ export default function IncomesScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+          <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.monthLabel}>{monthName}</Text>

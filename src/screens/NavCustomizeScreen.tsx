@@ -46,7 +46,7 @@ export default function NavCustomizeScreen({ navigation }: any) {
 
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+            <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
           </TouchableOpacity>
           <Text style={styles.title}>Customize Navigation</Text>
         </View>

@@ -80,7 +80,7 @@ export default function ExportScreen({ navigation }: any) {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
     >
       <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         <Text style={styles.backText}>Back</Text>
       </TouchableOpacity>
 
@@ -223,13 +223,13 @@ function makeStyles(C: ColorPalette) {
     },
     backupIconWrap: {
       width: 40, height: 40, borderRadius: Radius.sm,
-      backgroundColor: 'rgba(255,255,255,0.15)',
+      backgroundColor: C.white + '26',
       alignItems: 'center', justifyContent: 'center',
     },
     backupMiddle:   { flex: 1 },
     backupLabel:    { ...Typography.bodyBold, color: C.textOnPrimary },
     importLabel:    { ...Typography.bodyBold, color: C.primary },
-    backupDesc:     { ...Typography.caption, color: 'rgba(255,255,255,0.65)', marginTop: 2 },
+    backupDesc:     { ...Typography.caption, color: C.glassText, marginTop: 2 },
 
     exportRow: {
       flexDirection: 'row', alignItems: 'center',

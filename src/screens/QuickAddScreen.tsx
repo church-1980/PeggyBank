@@ -194,7 +194,7 @@ export default function QuickAddScreen({ navigation }: any) {
               activeOpacity={0.72}
             >
               <View style={[styles.iconCircle, { backgroundColor: color, shadowColor: color }]}>
-                {customizing && <View style={styles.editBadge}><Ionicons name="pencil" size={10} color="#fff" /></View>}
+                {customizing && <View style={[styles.editBadge, { backgroundColor: C.black + '73' }]}><Ionicons name="pencil" size={10} color={C.white} /></View>}
                 <Ionicons name={item.icon as any} size={24} color="#fff" />
               </View>
               <Text style={[styles.label, { color: C.textPrimary }]} numberOfLines={1}>
@@ -212,7 +212,7 @@ export default function QuickAddScreen({ navigation }: any) {
           style={[styles.customizeBar, { bottom: FAB_CENTER_FROM_BOTTOM + RADIUS + 30, opacity: backdropAnim }]}
         >
           <Text style={[styles.customizeHint, { color: C.textPrimary }]}>Tap a button to change it</Text>
-          <TouchableOpacity onPress={() => setCustomizing(false)} style={styles.doneBtn}>
+          <TouchableOpacity onPress={() => setCustomizing(false)} style={[styles.doneBtn, { backgroundColor: C.white + '26' }]}>
             <Text style={[styles.doneBtnText, { color: C.primary }]}>Done</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -285,7 +285,6 @@ const styles = StyleSheet.create({
     top: 2, right: 2,
     width: 18, height: 18,
     borderRadius: 9,
-    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
@@ -314,7 +313,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   doneBtnText: {
     ...Typography.caption,

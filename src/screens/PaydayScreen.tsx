@@ -163,7 +163,7 @@ export default function PaydayScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
 
         <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+          <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
 
