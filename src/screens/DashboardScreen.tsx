@@ -51,7 +51,7 @@ export default function DashboardScreen({ navigation }: any) {
       const totalSpending = expenseResult?.total ?? 0;
 
       const pinnedGoalsResult = await db.getAllAsync<SavingsGoal>(
-        `SELECT * FROM savings_goals WHERE pinned = 1 ORDER BY created_at DESC LIMIT 3`
+        `SELECT * FROM savings_goals WHERE pinned = 1 ORDER BY created_at DESC LIMIT 1`
       );
       setPinnedGoals(pinnedGoalsResult);
 
@@ -172,16 +172,16 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         ) : null}
 
-        {pinnedGoals.length > 0 ? (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Your Goals</Text>
-              <TouchableOpacity style={styles.seeAllRow} onPress={() => navigation.navigate('Goals')}>
-                <Text style={styles.seeAll}>See all</Text>
-                <Ionicons name="chevron-forward" size={14} color={C.primary} />
-              </TouchableOpacity>
-            </View>
-            {pinnedGoals.map(goal => (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Your Goals</Text>
+            <TouchableOpacity style={styles.seeAllRow} onPress={() => navigation.navigate('Goals')}>
+              <Text style={styles.seeAll}>See all</Text>
+              <Ionicons name="chevron-forward" size={14} color={C.primary} />
+            </TouchableOpacity>
+          </View>
+          {pinnedGoals.length > 0 ? (
+            pinnedGoals.map(goal => (
               <GoalProgressCard
                 key={goal.id}
                 goal={goal}
@@ -192,9 +192,21 @@ export default function DashboardScreen({ navigation }: any) {
                   loadData();
                 }}
               />
-            ))}
-          </View>
-        ) : null}
+            ))
+          ) : (
+            <View style={styles.goalsEmpty}>
+              <Ionicons name="flag-outline" size={28} color={C.textHint} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.goalsEmptyText}>No featured goal</Text>
+                <Text style={styles.goalsEmptySub}>Pin a goal to track your progress here.</Text>
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate('Goals')} style={styles.goalsEmptyBtn}>
+                <Text style={styles.goalsEmptyBtnText}>Browse</Text>
+                <Ionicons name="chevron-forward" size={13} color={C.primary} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         {upcomingBills.length > 0 && (
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Bills')} activeOpacity={0.8}>
@@ -298,5 +310,18 @@ function makeStyles(C: ColorPalette) {
     billName:    { ...Typography.bodyBold, color: C.textPrimary },
     billDays:    { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
     billAmount:  { ...Typography.bodyBold, color: C.bills },
+
+    goalsEmpty: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+      paddingVertical: Spacing.md,
+    },
+    goalsEmptyText: { ...Typography.smallBold, color: C.textPrimary },
+    goalsEmptySub:  { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
+    goalsEmptyBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 2,
+      paddingHorizontal: Spacing.sm, paddingVertical: 6,
+      borderRadius: Radius.full, borderWidth: 1, borderColor: C.primary + '50',
+    },
+    goalsEmptyBtnText: { ...Typography.caption, color: C.primary, fontWeight: '600' },
   });
 }

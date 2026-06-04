@@ -129,6 +129,20 @@ export default function GoalsScreen({ navigation, route }: any) {
     }
   };
 
+  const togglePin = async (goal: SavingsGoal) => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync(
+        `UPDATE savings_goals SET pinned = ? WHERE id = ?`,
+        [goal.pinned ? 0 : 1, goal.id!]
+      );
+      setActionGoal(null);
+      loadGoals();
+    } catch (e) {
+      console.error('[Goals] pin error:', e);
+    }
+  };
+
   const deleteGoal = async (id: number) => {
     const goal = goals.find(g => g.id === id) ?? null;
     try {
@@ -233,7 +247,7 @@ export default function GoalsScreen({ navigation, route }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
+          <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>Savings Goals</Text>
         <TouchableOpacity style={styles.addBtn2} onPress={openNewGoalModal}>
@@ -410,6 +424,16 @@ export default function GoalsScreen({ navigation, route }: any) {
             </TouchableOpacity>
           )}
           <TouchableOpacity
+            style={styles.actionBtnPrimary}
+            onPress={() => actionGoal && togglePin(actionGoal)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name={actionGoal?.pinned ? 'pin' : 'pin-outline'} size={20} color={C.primary} />
+            <Text style={[styles.actionBtnText, { color: C.primary }]}>
+              {actionGoal?.pinned ? 'Unpin from Dashboard' : 'Pin to Dashboard'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.actionBtnDestructive}
             onPress={() => actionGoal?.id && deleteGoal(actionGoal.id)}
             activeOpacity={0.8}
@@ -485,8 +509,8 @@ function makeStyles(C: ColorPalette) {
 
     empty: { alignItems: 'center', justifyContent: 'center', padding: Spacing.xl, marginTop: 60 },
     emptyIcon: {
-      width: 72, height: 72, borderRadius: 36,
-      backgroundColor: C.bgCard,
+      width: 64, height: 64, borderRadius: 32,
+      backgroundColor: C.bgElevated,
       alignItems: 'center', justifyContent: 'center',
       marginBottom: Spacing.lg,
       borderWidth: 1, borderColor: C.border,
@@ -508,7 +532,7 @@ function makeStyles(C: ColorPalette) {
     },
     emptyCtaText: { ...Typography.smallBold, color: C.textOnPrimary },
 
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalCard: {
       backgroundColor: C.bgElevated,
       borderTopLeftRadius: Radius.xl,
@@ -569,7 +593,7 @@ function makeStyles(C: ColorPalette) {
       width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff',
     },
 
-    actionOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+    actionOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
     actionSheet: {
       backgroundColor: C.bgElevated,
       borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
@@ -582,6 +606,13 @@ function makeStyles(C: ColorPalette) {
       backgroundColor: C.goals + '14', marginBottom: Spacing.sm,
       paddingHorizontal: Spacing.md,
       borderWidth: 1, borderColor: C.goals + '30',
+    },
+    actionBtnPrimary: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+      paddingVertical: 18, borderRadius: Radius.lg,
+      backgroundColor: C.primary + '14', marginBottom: Spacing.sm,
+      paddingHorizontal: Spacing.md,
+      borderWidth: 1, borderColor: C.primary + '30',
     },
     actionBtnDestructive: {
       flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
