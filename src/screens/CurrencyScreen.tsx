@@ -501,7 +501,7 @@ function makeStyles(C: ColorPalette) {
     customBadgeText: { color: C.primary, fontSize: 10, fontWeight: '700' },
     restoreHint:     { ...Typography.caption, color: C.primary, marginTop: 2 },
 
-    pickerOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+    pickerOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     pickerCard:      { backgroundColor: C.bgElevated, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, maxHeight: '80%', padding: Spacing.lg },
     pickerTitle:     { ...Typography.h2, color: C.textPrimary, marginBottom: Spacing.md },
     pickerRow:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border },
@@ -514,7 +514,7 @@ function makeStyles(C: ColorPalette) {
     pickerClose:     { marginTop: Spacing.md, backgroundColor: C.border, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
     pickerCloseText: { ...Typography.body, color: C.textPrimary },
 
-    modalOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+    modalOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
     modalCard:       { backgroundColor: C.bgElevated, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, paddingBottom: 50 },
     modalTitle:      { ...Typography.h2, color: C.textPrimary, marginBottom: 4 },
     modalSub:        { ...Typography.body, color: C.textSecondary, marginBottom: Spacing.lg },

@@ -266,7 +266,7 @@ function makeStyles(C: ColorPalette) {
     },
     saveBtnText: { ...Typography.bodyBold, color: C.textOnPrimary, fontSize: 17 },
 
-    pickerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+    pickerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
     pickerSheet: {
       backgroundColor: C.bgElevated,
       borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,

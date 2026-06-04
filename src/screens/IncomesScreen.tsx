@@ -306,10 +306,10 @@ function makeStyles(C: ColorPalette) {
     },
     fabText: { ...Typography.bodyBold, color: C.textOnPrimary },
 
-    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
     modalCard: {
       backgroundColor: C.bgElevated, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
-      padding: Spacing.md,
+      padding: Spacing.lg,
     },
     modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, alignSelf: 'center', marginBottom: Spacing.md },
     modalTitle: { ...Typography.h3, color: C.textPrimary, marginBottom: Spacing.lg, textAlign: 'center' },
@@ -331,7 +331,7 @@ function makeStyles(C: ColorPalette) {
     cancelBtn:     { paddingVertical: Spacing.md, alignItems: 'center' },
     cancelBtnText: { ...Typography.small, color: C.textHint },
 
-    actionOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+    actionOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
     actionSheet: {
       backgroundColor: C.bgElevated,
       borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,

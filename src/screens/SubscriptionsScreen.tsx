@@ -467,7 +467,7 @@ function makeStyles(C: ColorPalette) {
     cancelBtn:    { paddingVertical: 14, alignItems: 'center' },
     cancelBtnText:{ ...Typography.small, color: C.textHint },
 
-    confirmOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+    confirmOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
     confirmSheet: {
       backgroundColor: C.bgElevated,
       borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,

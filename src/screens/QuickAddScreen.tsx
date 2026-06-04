@@ -324,14 +324,14 @@ const styles = StyleSheet.create({
   pickerSheet: {
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
-    paddingTop: 12,
+    paddingTop: Spacing.md,
     maxHeight: '70%',
   },
   pickerHandle: {
     width: 40, height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   pickerTitle: {
     ...Typography.h3,

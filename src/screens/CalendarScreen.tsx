@@ -871,7 +871,7 @@ function makeStyles(C: ColorPalette) {
     addReminderText: { ...Typography.smallBold, color: C.primary },
 
     // ── Reminder modal ──
-    modalOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+    modalOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
     modalSheet: {
       backgroundColor: C.bgElevated,
       borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
