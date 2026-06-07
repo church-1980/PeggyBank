@@ -162,14 +162,37 @@ export interface GuideStep {
 // UI HELPER TYPES
 // ─────────────────────────────────────────────
 
-// Inspection checkpoint definition (from src/data/inspectionCheckpoints.ts)
+// Diagnosis card shown after each inspection checkpoint (Grandparent Test compliant).
+// Every status (pass/warn/fail) produces plain-language feedback.
+export type RiskLevel = 'none' | 'low' | 'medium' | 'high';
+export type RepairDifficulty = 'easy' | 'moderate' | 'advanced';
+
+export interface DiagnosisCard {
+  headline: string;           // "Your nozzle looks clean" / "Your nozzle looks dirty"
+  risk: RiskLevel;
+  whatThisMeans: string;      // plain language explanation, no jargon
+  recommendedAction: string;  // what to do next, plain language
+  estimatedTime?: string;     // "3 minutes", "20 minutes"
+  difficulty?: RepairDifficulty;
+  guideKey?: string;          // links to the step-by-step repair guide
+}
+
+// Inspection checkpoint definition (from src/data/inspectionCheckpoints.ts).
+// Every field must pass the Grandparent Test — no unexplained jargon.
 export interface CheckpointDefinition {
   key: string;
-  title: string;
-  description: string;     // plain language — what to look for
-  whatBadLooksLike: string; // beginner-friendly description of a problem
+  title: string;              // plain-language name shown to user
+  description: string;        // what to look at and how — no assumed knowledge
+  cameraTarget: string;       // "Point your camera at [X]" — specific, visual
+  whatGoodLooksLike: string;  // "The tip is shiny silver metal with no black bits"
+  whatBadLooksLike: string;   // "Black crusty buildup, cracks, or a squashed tip"
   printer_types: PrinterType[];
-  includeInQuick: boolean; // true = included in 5-minute quick check
+  includeInQuick: boolean;    // true = part of the 5-minute quick check
+  diagnosis: {
+    pass: DiagnosisCard;
+    warn: DiagnosisCard;
+    fail: DiagnosisCard;
+  };
 }
 
 // Maintenance task template (from src/data/maintenanceTasks.ts)

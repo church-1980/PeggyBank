@@ -215,42 +215,113 @@ export default function InspectionScreen({ navigation, route }: any) {
   // ─── Results screen ───────────────────────────────────────────
   if (wizardStep === 'results') {
     const score = computeScore(results);
-    const fails = results.filter(r => r.status === 'fail');
-    const warns = results.filter(r => r.status === 'warn');
+    const actionItems = results.filter(r => r.status === 'fail' || r.status === 'warn');
+    const passes = results.filter(r => r.status === 'pass');
     const healthColor = score >= 80 ? C.healthy : score >= 50 ? C.warning : C.critical;
+    const healthLabel = score >= 80 ? 'Looking good!' : score >= 50 ? 'Some things to watch' : 'Needs attention';
 
     return (
       <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + Spacing.md }]}>
         <Text style={styles.pageTitle}>Inspection Complete</Text>
+
+        {/* Health score summary */}
         <View style={[styles.scoreCard, { backgroundColor: healthColor + '18', borderColor: healthColor }]}>
           <Text style={[styles.scoreNumber, { color: healthColor }]}>{score}</Text>
-          <Text style={[styles.scoreLabel, { color: healthColor }]}>Health Score</Text>
+          <Text style={[styles.scoreLabel, { color: healthColor }]}>{healthLabel}</Text>
           <Text style={styles.scoreDesc}>{printer?.name} · {inspectionType === 'quick' ? 'Quick Check' : 'Full Inspection'}</Text>
         </View>
 
-        {fails.length > 0 && (
+        {/* Action items — Diagnosis card format per CLAUDE.md */}
+        {actionItems.length > 0 && (
           <>
-            <Text style={[styles.sectionLabel, { color: C.critical }]}>NEEDS ATTENTION</Text>
-            {fails.map(r => (
-              <View key={r.checkpoint.key} style={[styles.resultRow, { borderLeftColor: C.critical }]}>
-                <Text style={styles.resultTitle}>{r.checkpoint.title}</Text>
-                {r.notes ? <Text style={styles.resultNotes}>{r.notes}</Text> : null}
-                {r.photoUri && <Image source={{ uri: r.photoUri }} style={styles.resultPhoto} />}
+            <Text style={styles.sectionLabel}>WHAT YOU SHOULD DO</Text>
+            {actionItems.map(r => {
+              const card = r.checkpoint.diagnosis[r.status as 'warn' | 'fail'];
+              const borderColor = r.status === 'fail' ? C.critical : C.warning;
+              const riskColors: Record<string, string> = {
+                none: C.healthy, low: C.healthy, medium: C.warning, high: C.critical,
+              };
+              return (
+                <View key={r.checkpoint.key} style={[styles.diagnosisCard, { borderLeftColor: borderColor }]}>
+                  {/* Photo if taken */}
+                  {r.photoUri && <Image source={{ uri: r.photoUri }} style={styles.resultPhoto} />}
+
+                  {/* Checkpoint name */}
+                  <Text style={styles.diagnosisArea}>{r.checkpoint.title}</Text>
+
+                  {/* Diagnosis */}
+                  <Text style={[styles.diagnosisHeadline, { color: borderColor }]}>{card.headline}</Text>
+
+                  {/* Risk pill */}
+                  <View style={[styles.riskPill, { backgroundColor: riskColors[card.risk] + '22' }]}>
+                    <Text style={[styles.riskText, { color: riskColors[card.risk] }]}>
+                      Risk: {card.risk.charAt(0).toUpperCase() + card.risk.slice(1)}
+                    </Text>
+                  </View>
+
+                  {/* What this means */}
+                  <Text style={styles.diagnosisLabel}>What this means</Text>
+                  <Text style={styles.diagnosisBody}>{card.whatThisMeans}</Text>
+
+                  {/* Recommended treatment */}
+                  <Text style={styles.diagnosisLabel}>What to do</Text>
+                  <Text style={styles.diagnosisBody}>{card.recommendedAction}</Text>
+
+                  {/* Time + difficulty */}
+                  {(card.estimatedTime || card.difficulty) && (
+                    <View style={styles.diagnosisMeta}>
+                      {card.estimatedTime && (
+                        <View style={styles.diagnosisMetaChip}>
+                          <Ionicons name="time-outline" size={13} color={C.textHint} />
+                          <Text style={styles.diagnosisMetaText}>{card.estimatedTime}</Text>
+                        </View>
+                      )}
+                      {card.difficulty && (
+                        <View style={styles.diagnosisMetaChip}>
+                          <Ionicons name="build-outline" size={13} color={C.textHint} />
+                          <Text style={styles.diagnosisMetaText}>
+                            {card.difficulty.charAt(0).toUpperCase() + card.difficulty.slice(1)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* User notes */}
+                  {r.notes ? (
+                    <>
+                      <Text style={styles.diagnosisLabel}>Your notes</Text>
+                      <Text style={styles.diagnosisBody}>{r.notes}</Text>
+                    </>
+                  ) : null}
+                </View>
+              );
+            })}
+          </>
+        )}
+
+        {/* Passing items */}
+        {passes.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { marginTop: Spacing.md }]}>ALL CLEAR</Text>
+            {passes.map(r => (
+              <View key={r.checkpoint.key} style={styles.passRow}>
+                <Ionicons name="checkmark-circle" size={20} color={C.healthy} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.passTitle}>{r.checkpoint.title}</Text>
+                  <Text style={styles.passDesc}>{r.checkpoint.diagnosis.pass.headline}</Text>
+                </View>
               </View>
             ))}
           </>
         )}
 
-        {warns.length > 0 && (
-          <>
-            <Text style={[styles.sectionLabel, { color: C.warning }]}>MONITOR CLOSELY</Text>
-            {warns.map(r => (
-              <View key={r.checkpoint.key} style={[styles.resultRow, { borderLeftColor: C.warning }]}>
-                <Text style={styles.resultTitle}>{r.checkpoint.title}</Text>
-                {r.notes ? <Text style={styles.resultNotes}>{r.notes}</Text> : null}
-              </View>
-            ))}
-          </>
+        {actionItems.length === 0 && (
+          <View style={styles.allClearBanner}>
+            <Ionicons name="checkmark-circle" size={48} color={C.healthy} />
+            <Text style={[styles.allClearText, { color: C.healthy }]}>Everything looks great!</Text>
+            <Text style={styles.allClearSub}>Your printer passed all checks. Keep up the maintenance and it should keep printing reliably.</Text>
+          </View>
         )}
 
         <TouchableOpacity
@@ -281,17 +352,29 @@ export default function InspectionScreen({ navigation, route }: any) {
         <Text style={styles.checkTitle}>{currentCheckpoint.title}</Text>
         <Text style={styles.checkDesc}>{currentCheckpoint.description}</Text>
 
-        {/* What bad looks like — shown as info box */}
-        <View style={[styles.infoBox, { borderColor: C.warning + '60', backgroundColor: C.warning + '12' }]}>
-          <Ionicons name="eye-outline" size={16} color={C.warning} />
-          <Text style={[styles.infoBoxText, { color: C.textSecondary }]}>
-            <Text style={{ color: C.warning, fontWeight: '600' }}>What a problem looks like: </Text>
-            {currentCheckpoint.whatBadLooksLike}
-          </Text>
+        {/* Good vs Bad comparison — visual-first, Grandparent Test */}
+        <View style={styles.compareRow}>
+          <View style={[styles.compareBox, { borderColor: C.healthy + '60', backgroundColor: C.healthy + '12' }]}>
+            <Ionicons name="checkmark-circle" size={18} color={C.healthy} />
+            <Text style={[styles.compareTitle, { color: C.healthy }]}>Looks good if...</Text>
+            <Text style={styles.compareBody}>{currentCheckpoint.whatGoodLooksLike}</Text>
+          </View>
+          <View style={[styles.compareBox, { borderColor: C.warning + '60', backgroundColor: C.warning + '12' }]}>
+            <Ionicons name="warning" size={18} color={C.warning} />
+            <Text style={[styles.compareTitle, { color: C.warning }]}>Needs help if...</Text>
+            <Text style={styles.compareBody}>{currentCheckpoint.whatBadLooksLike}</Text>
+          </View>
         </View>
 
-        {/* Photo section — camera is a core feature */}
-        <Text style={styles.sectionLabel}>PHOTO (OPTIONAL — RECOMMENDED)</Text>
+        {/* Camera section — core feature, guided by specific camera target */}
+        <View style={[styles.cameraGuideBox, { borderColor: C.primary + '50', backgroundColor: C.primaryDim }]}>
+          <View style={styles.cameraGuideHeader}>
+            <Ionicons name="camera" size={20} color={C.primary} />
+            <Text style={[styles.cameraGuideTitle, { color: C.primary }]}>How to photograph this</Text>
+          </View>
+          <Text style={styles.cameraGuideText}>{currentCheckpoint.cameraTarget}</Text>
+        </View>
+
         {currentPhoto ? (
           <View style={styles.photoContainer}>
             <Image source={{ uri: currentPhoto }} style={styles.photo} />
@@ -302,12 +385,12 @@ export default function InspectionScreen({ navigation, route }: any) {
         ) : (
           <View style={styles.photoButtons}>
             <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
-              <Ionicons name="camera" size={22} color={C.primary} />
-              <Text style={styles.photoBtnText}>Take Photo</Text>
+              <Ionicons name="camera" size={24} color={C.primary} />
+              <Text style={styles.photoBtnText}>Open Camera</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.photoBtn, { borderColor: C.border }]} onPress={pickFromGallery}>
-              <Ionicons name="images-outline" size={22} color={C.textSecondary} />
-              <Text style={[styles.photoBtnText, { color: C.textSecondary }]}>Gallery</Text>
+              <Ionicons name="images-outline" size={24} color={C.textSecondary} />
+              <Text style={[styles.photoBtnText, { color: C.textSecondary }]}>Use Existing Photo</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -389,22 +472,37 @@ function makeStyles(C: any, insets: any) {
     progressFill: { height: 4, borderRadius: 2, transition: undefined as any },
     progressLabel:{ ...Typography.caption, color: C.textHint, textAlign: 'center', paddingVertical: Spacing.xs },
 
+    // Checkpoint wizard
     checkTitle:   { ...Typography.h3, color: C.textPrimary, marginBottom: Spacing.sm },
-    checkDesc:    { ...Typography.body, color: C.textSecondary, marginBottom: Spacing.md, lineHeight: 26 },
+    checkDesc:    { ...Typography.body, color: C.textSecondary, marginBottom: Spacing.md, lineHeight: 28 },
 
-    infoBox:      { flexDirection: 'row', gap: Spacing.sm, padding: Spacing.sm, borderRadius: Radius.md, borderWidth: 1, marginBottom: Spacing.md },
-    infoBoxText:  { ...Typography.small, flex: 1, lineHeight: 22 },
+    // Good vs Bad comparison boxes
+    compareRow:   { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
+    compareBox:   { flex: 1, borderWidth: 1, borderRadius: Radius.md, padding: Spacing.sm, gap: 4 },
+    compareTitle: { ...Typography.smallBold, marginTop: 2 },
+    compareBody:  { ...Typography.small, color: C.textSecondary, lineHeight: 20 },
+
+    // Camera guidance box
+    cameraGuideBox:    { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.sm },
+    cameraGuideHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.xs },
+    cameraGuideTitle:  { ...Typography.smallBold },
+    cameraGuideText:   { ...Typography.body, color: C.textSecondary, lineHeight: 26 },
 
     photoContainer: { position: 'relative', marginBottom: Spacing.md },
-    photo:          { width: '100%', height: 220, borderRadius: Radius.md },
+    photo:          { width: '100%', height: 240, borderRadius: Radius.md },
     removePhotoBtn: { position: 'absolute', top: Spacing.xs, right: Spacing.xs },
     photoButtons:   { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
-    photoBtn:       { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, borderWidth: 2, borderColor: C.primary, borderRadius: Radius.md, padding: Spacing.sm },
-    photoBtnText:   { ...Typography.smallBold, color: C.primary },
+    photoBtn: {
+      flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: Spacing.xs, borderWidth: 2, borderColor: C.primary,
+      borderRadius: Radius.lg, paddingVertical: Spacing.md,
+    },
+    photoBtnText: { ...Typography.smallBold, color: C.primary },
 
-    statusRow:    { flexDirection: 'row', gap: Spacing.xs, marginBottom: Spacing.md },
-    statusBtn:    { flex: 1, alignItems: 'center', paddingVertical: Spacing.sm, borderRadius: Radius.md, borderWidth: 2 },
-    statusLabel:  { ...Typography.caption, marginTop: 4, fontWeight: '600' },
+    // Status buttons — large, thumb-friendly
+    statusRow:   { flexDirection: 'row', gap: Spacing.xs, marginBottom: Spacing.md },
+    statusBtn:   { flex: 1, alignItems: 'center', paddingVertical: Spacing.md, borderRadius: Radius.md, borderWidth: 2 },
+    statusLabel: { ...Typography.small, marginTop: 4, fontWeight: '700' },
 
     notesInput: {
       backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.border,
@@ -412,24 +510,43 @@ function makeStyles(C: any, insets: any) {
       ...Typography.body, color: C.textPrimary, minHeight: 88,
     },
 
-    primaryBtn:     { backgroundColor: C.primary, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md, ...Shadow.glow },
-    primaryBtnText: { ...Typography.bodyBold, color: C.textOnPrimary },
+    primaryBtn:     { backgroundColor: C.primary, borderRadius: Radius.lg, paddingVertical: Spacing.md + 4, paddingHorizontal: Spacing.lg, alignItems: 'center', marginTop: Spacing.md, ...Shadow.glow },
+    primaryBtnText: { ...Typography.bodyBold, color: C.textOnPrimary, fontSize: 17 },
     btnDisabled:    { opacity: 0.4 },
     skipBtn:        { alignItems: 'center', padding: Spacing.md },
     skipText:       { ...Typography.small, color: C.textHint },
 
     safetyBox:    { borderWidth: 2, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center', marginBottom: Spacing.xl, width: '100%' },
     safetyTitle:  { ...Typography.h3, marginTop: Spacing.sm, marginBottom: Spacing.sm },
-    safetyBody:   { ...Typography.body, color: C.textSecondary, textAlign: 'center', lineHeight: 26 },
+    safetyBody:   { ...Typography.body, color: C.textSecondary, textAlign: 'center', lineHeight: 28 },
 
     scoreCard:    { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.lg, alignItems: 'center', marginBottom: Spacing.lg },
-    scoreNumber:  { fontSize: 60, fontWeight: '700' },
+    scoreNumber:  { fontSize: 64, fontWeight: '700' },
     scoreLabel:   { ...Typography.h3, marginBottom: Spacing.xs },
     scoreDesc:    { ...Typography.small, color: C.textSecondary },
 
-    resultRow:    { backgroundColor: C.bgCard, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.sm, borderLeftWidth: 4 },
-    resultTitle:  { ...Typography.bodyBold, color: C.textPrimary },
-    resultNotes:  { ...Typography.small, color: C.textSecondary, marginTop: 4 },
-    resultPhoto:  { width: '100%', height: 160, borderRadius: Radius.sm, marginTop: Spacing.sm },
+    // Diagnosis cards (results screen) — per CLAUDE.md Grandparent Test format
+    diagnosisCard:     { backgroundColor: C.bgCard, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.md, borderLeftWidth: 5, ...Shadow.card },
+    diagnosisArea:     { ...Typography.caption, color: C.textHint, marginBottom: 4 },
+    diagnosisHeadline: { ...Typography.h3, marginBottom: Spacing.sm },
+    riskPill:          { alignSelf: 'flex-start', borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 3, marginBottom: Spacing.sm },
+    riskText:          { ...Typography.smallBold },
+    diagnosisLabel:    { ...Typography.smallBold, color: C.textSecondary, marginTop: Spacing.sm, marginBottom: 4 },
+    diagnosisBody:     { ...Typography.body, color: C.textPrimary, lineHeight: 26 },
+    diagnosisMeta:     { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm },
+    diagnosisMetaChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    diagnosisMetaText: { ...Typography.caption, color: C.textHint },
+
+    resultPhoto:  { width: '100%', height: 180, borderRadius: Radius.md, marginBottom: Spacing.sm },
+
+    // Pass rows (results screen)
+    passRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, backgroundColor: C.bgCard, borderRadius: Radius.md, padding: Spacing.sm, marginBottom: Spacing.xs },
+    passTitle: { ...Typography.bodyBold, color: C.textPrimary },
+    passDesc:  { ...Typography.small, color: C.textSecondary, marginTop: 2 },
+
+    // All clear banner
+    allClearBanner: { alignItems: 'center', padding: Spacing.xl, gap: Spacing.md },
+    allClearText:   { ...Typography.h2, textAlign: 'center' },
+    allClearSub:    { ...Typography.body, color: C.textSecondary, textAlign: 'center', lineHeight: 26 },
   });
 }

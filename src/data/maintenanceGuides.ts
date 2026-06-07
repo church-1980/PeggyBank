@@ -42,8 +42,8 @@ export const MAINTENANCE_GUIDES: GuideSeed[] = [
     tools_needed: [],
     parts_needed: ['PLA or PETG filament (light color works best)'],
     safety_warnings: [
-      'The nozzle gets very hot — up to 220°C. Never touch it with bare hands.',
-      'Wait for the printer to fully cool before handling filament near the hotend.',
+      'The nozzle reaches 220°C — that is hotter than boiling water. It can cause serious burns instantly. Never touch the metal tip or the block it sits in with bare hands.',
+      'Wait for the printer to cool before handling anything near the hot tip. The temperature display on your printer will show when it is safe.',
     ],
     is_premium: false,
   },
@@ -90,8 +90,8 @@ export const MAINTENANCE_GUIDES: GuideSeed[] = [
     tools_needed: ['Small brush or cotton swab'],
     parts_needed: ['PTFE-based lubricant (SuperLube or similar)'],
     safety_warnings: [
-      'Power off the printer before touching the lead screw.',
-      'Use only a small amount of lubricant — too much collects dust.',
+      'Power off the printer before touching the threaded rod. Moving parts can pinch fingers.',
+      'Use only a small amount of lubricant — a little goes a long way. Too much attracts dust and grit, which causes grinding instead of smooth movement.',
     ],
     is_premium: false,
   },
@@ -433,7 +433,7 @@ export const GUIDE_STEPS: Record<string, StepSeed[]> = {
       title: 'Apply fresh lubricant',
       instruction:
         'Put a small pea-sized amount of PTFE-based grease (SuperLube works great) on your fingertip and spread it thinly along the threads of the lead screw. A thin coat is better than a thick one.',
-      tip: 'Avoid petroleum-based oils like WD-40 — they attract dust and can degrade rubber parts nearby.',
+      tip: 'Do not use WD-40 or cooking oil. They attract dust and make things worse over time. SuperLube (a white greasy paste, available online for a few dollars) is what most 3D printer owners use.',
       requires_camera: false,
     },
     {
