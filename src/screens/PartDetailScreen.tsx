@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getAnatomyPartByKey, ANATOMY_CATEGORIES } from '../data/printerAnatomy';
 import { AnatomyPart } from '../types/anatomy';
+import { speakText } from '../lib/tts';
 import { Spacing, Radius, Typography, Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
 
@@ -66,6 +67,12 @@ export default function PartDetailScreen({ navigation, route }: any) {
     );
   }
 
+  function readPartAloud() {
+    speakText(
+      `${part.displayName}. ${part.what_it_is}. ${part.what_it_does}. ${part.why_it_matters}. Where to find it: ${part.location_tip}`
+    );
+  }
+
   const hasRelatedCheckpoints = part.related_checkpoint_keys.length > 0;
   const hasRelatedGuides      = part.related_guide_keys.length > 0;
 
@@ -98,6 +105,15 @@ export default function PartDetailScreen({ navigation, route }: any) {
 
           <Text style={styles.partName}>{part.displayName}</Text>
           <Text style={styles.partSimpleName}>{part.simpleName}</Text>
+
+          {/* Read Aloud — stub per CLAUDE.md */}
+          <TouchableOpacity
+            style={[styles.readAloudBtn, { borderColor: C.primary + '44' }]}
+            onPress={readPartAloud}
+          >
+            <Ionicons name="volume-medium-outline" size={16} color={C.primary} />
+            <Text style={[styles.readAloudBtnText, { color: C.primary }]}>Read Aloud</Text>
+          </TouchableOpacity>
 
           {/* Reference image — arrow and highlight slot in when assets are ready */}
           <AssetImage imageKey={part.asset.referenceImageKey} height={220} />
@@ -336,7 +352,15 @@ function makeStyles(C: any, insets: any) {
 
     // Part identity
     partName:       { ...Typography.h2, color: C.textPrimary, marginBottom: 4 },
-    partSimpleName: { ...Typography.body, color: C.textSecondary, marginBottom: Spacing.md, lineHeight: 26 },
+    partSimpleName: { ...Typography.body, color: C.textSecondary, marginBottom: Spacing.sm, lineHeight: 26 },
+
+    readAloudBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
+      borderWidth: 1, borderRadius: Radius.full,
+      paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+      marginBottom: Spacing.md,
+    },
+    readAloudBtnText: { ...Typography.smallBold },
 
     // Image placeholder (Phase 1 — replaced by real images when assets are available)
     assetPlaceholder: {

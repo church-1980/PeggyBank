@@ -22,6 +22,8 @@ import LogMaintenanceScreen      from '../screens/LogMaintenanceScreen';
 import MaintenanceHistoryScreen  from '../screens/MaintenanceHistoryScreen';
 import GuideDetailScreen         from '../screens/GuideDetailScreen';
 import PartDetailScreen          from '../screens/PartDetailScreen';
+import LessonPlayerScreen        from '../screens/LessonPlayerScreen';
+import LearningCompleteScreen    from '../screens/LearningCompleteScreen';
 import AboutScreen               from '../screens/AboutScreen';
 
 // Placeholder for screens we'll add in the next sprint
@@ -100,6 +102,8 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="InspectionWizard"   component={InspectionScreen}         options={{ presentation: 'modal' }} />
         <Stack.Screen name="GuideDetail"        component={GuideDetailScreen}        options={{ presentation: 'modal' }} />
         <Stack.Screen name="PartDetail"         component={PartDetailScreen}         options={{ presentation: 'modal' }} />
+        <Stack.Screen name="LessonPlayer"       component={LessonPlayerScreen}       options={{ presentation: 'card', gestureEnabled: false }} />
+        <Stack.Screen name="LessonComplete"     component={LearningCompleteScreen}   options={{ presentation: 'card', gestureEnabled: false }} />
         <Stack.Screen name="Settings"           component={SettingsScreen}           options={{ presentation: 'modal' }} />
         <Stack.Screen name="About"              component={AboutScreen}              options={{ presentation: 'modal' }} />
       </Stack.Navigator>
