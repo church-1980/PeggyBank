@@ -1,0 +1,40 @@
+appId: com.peggybank.app
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Open Settings from dashboard
+- tapOn:
+    id: "icon-settings-outline"
+- waitForAnimationToEnd
+
+# Navigate to Appearance
+- tapOn:
+    text: "Appearance"
+- waitForAnimationToEnd
+
+# Switch to Dark mode
+- tapOn:
+    text: "Dark"
+- waitForAnimationToEnd
+- assertVisible:
+    text: "Dark"
+
+# Switch to Light mode
+- tapOn:
+    text: "Light"
+- waitForAnimationToEnd
+- assertVisible:
+    text: "Light"
+
+# Switch back to System
+- tapOn:
+    text: "System"
+- waitForAnimationToEnd
+- assertVisible:
+    text: "System"
+
+# Close appearance screen
+- tapOn:
+    id: "icon-chevron-down"
+- waitForAnimationToEnd

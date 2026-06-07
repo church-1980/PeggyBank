@@ -1,0 +1,37 @@
+appId: com.peggybank.app
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Go to Goals screen
+- tapOn:
+    text: "Goals"
+- waitForAnimationToEnd
+
+# Long-press the first goal card to open action sheet
+- longPressOn:
+    text: "Maestro Test Goal"
+- waitForAnimationToEnd
+
+# Pin it
+- tapOn:
+    text: "Pin to Dashboard"
+- waitForAnimationToEnd
+
+# Navigate back to Dashboard (Home tab)
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+
+# Verify the goal widget is on the dashboard
+- assertVisible:
+    text: "Maestro Test Goal"
+
+# Unpin by tapping the X button on the widget
+- tapOn:
+    id: "icon-close-outline"
+- waitForAnimationToEnd
+
+# Verify empty state is shown
+- assertVisible:
+    text: "No featured goal"

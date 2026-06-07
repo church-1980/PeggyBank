@@ -1,0 +1,37 @@
+appId: com.peggybank.app
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Open the QuickAdd arc menu (center FAB)
+- tapOn:
+    id: "tab-quickadd"
+- waitForAnimationToEnd
+
+# Tap Expense in the arc
+- tapOn:
+    text: "Expense"
+- waitForAnimationToEnd
+
+# Enter amount
+- tapOn:
+    text: "0.00"
+- inputText: "25.50"
+
+# Enter a note
+- tapOn:
+    hint: "Note (optional)"
+- inputText: "Test coffee"
+
+# Select a category (tap the first category chip)
+- tapOn:
+    text: "Food"
+
+# Submit
+- tapOn:
+    text: "Add Expense"
+- waitForAnimationToEnd
+
+# Verify the expense appears in the spending history
+- assertVisible:
+    text: "Test coffee"

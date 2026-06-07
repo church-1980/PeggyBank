@@ -1,0 +1,33 @@
+appId: com.peggybank.app
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Goals
+- tapOn:
+    text: "Goals"
+- waitForAnimationToEnd
+
+# Tap add goal
+- tapOn:
+    text: "Add Goal"
+- waitForAnimationToEnd
+
+# Enter goal name
+- tapOn:
+    hint: "e.g. Holiday Fund"
+- inputText: "Maestro Test Goal"
+
+# Enter target amount
+- tapOn:
+    hint: "0.00"
+- inputText: "2000"
+
+# Save
+- tapOn:
+    text: "Create Goal"
+- waitForAnimationToEnd
+
+# Verify goal appears
+- assertVisible:
+    text: "Maestro Test Goal"

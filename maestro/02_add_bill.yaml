@@ -1,0 +1,33 @@
+appId: com.peggybank.app
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Bills via bottom nav or More
+- tapOn:
+    text: "Bills"
+- waitForAnimationToEnd
+
+# Tap the add button (+)
+- tapOn:
+    id: "header-add"
+- waitForAnimationToEnd
+
+# Fill in bill name
+- tapOn:
+    hint: "e.g. Netflix"
+- inputText: "Netflix Test"
+
+# Fill in amount
+- tapOn:
+    hint: "0.00"
+- inputText: "15.99"
+
+# Save
+- tapOn:
+    text: "Save Bill"
+- waitForAnimationToEnd
+
+# Verify the bill appears
+- assertVisible:
+    text: "Netflix Test"

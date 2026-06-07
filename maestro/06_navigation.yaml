@@ -1,0 +1,38 @@
+appId: com.peggybank.app
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Verify dashboard loads
+- assertVisible:
+    text: "PeggyBank"
+
+# Open QuickAdd arc
+- tapOn:
+    id: "tab-quickadd"
+- waitForAnimationToEnd
+
+# Close it by tapping the backdrop
+- tapOn:
+    point: "50%,20%"
+- waitForAnimationToEnd
+
+# Verify we are back on the dashboard
+- assertVisible:
+    text: "PeggyBank"
+
+# Navigate to Bills via tab or More
+- tapOn:
+    text: "Bills"
+- waitForAnimationToEnd
+- assertVisible:
+    text: "Bills & Subscriptions"
+
+# Dismiss Bills screen with chevron-down
+- tapOn:
+    id: "icon-chevron-down"
+- waitForAnimationToEnd
+
+# Verify back on dashboard
+- assertVisible:
+    text: "Safe to spend"

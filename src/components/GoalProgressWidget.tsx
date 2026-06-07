@@ -105,6 +105,7 @@ export default function GoalProgressWidget({ goal, onPress, onUnpin }: Props) {
               onPress={onUnpin}
               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
               style={styles.unpinBtn}
+              testID="unpin-button"
             >
               <Ionicons name="close-outline" size={18} color={C.textHint} />
             </TouchableOpacity>
