@@ -9,63 +9,36 @@ import { Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
 
 // Tab screens
-import DashboardScreen        from '../screens/DashboardScreen';
-import ExpensesScreen         from '../screens/ExpensesScreen';
+import HomeScreen        from '../screens/HomeScreen';
+import InspectionScreen  from '../screens/InspectionScreen';
+import GuideBrowserScreen from '../screens/GuideBrowserScreen';
+import MoreScreen        from '../screens/MoreScreen';
 
-// Modal / stack screens
-import QuickAddScreen         from '../screens/QuickAddScreen';
-import MoreScreen             from '../screens/MoreScreen';
-import GoalsScreen            from '../screens/GoalsScreen';
-import WeeklyCheckInScreen    from '../screens/WeeklyCheckInScreen';
-import AddExpenseScreen       from '../screens/AddExpenseScreen';
-import AddIncomeScreen        from '../screens/AddIncomeScreen';
-import PaydayScreen           from '../screens/PaydayScreen';
-import CurrencyScreen         from '../screens/CurrencyScreen';
-import ExportScreen           from '../screens/ExportScreen';
-import SettingsScreen         from '../screens/SettingsScreen';
-import OnboardingScreen       from '../screens/OnboardingScreen';
-import NavCustomizeScreen     from '../screens/NavCustomizeScreen';
-import AppearanceScreen       from '../screens/AppearanceScreen';
-import ShareScreen            from '../screens/ShareScreen';
-import IncomesScreen          from '../screens/IncomesScreen';
-import BillsScreen            from '../screens/BillsScreen';
-import CalendarScreen         from '../screens/CalendarScreen';
-import DebtScreen             from '../screens/DebtScreen';
-import MonthlyBreakdownScreen from '../screens/MonthlyBreakdownScreen';
+// Stack / modal screens
+import OnboardingScreen          from '../screens/OnboardingScreen';
+import PrinterDetailScreen       from '../screens/PrinterDetailScreen';
+import LogMaintenanceScreen      from '../screens/LogMaintenanceScreen';
+import MaintenanceHistoryScreen  from '../screens/MaintenanceHistoryScreen';
+import GuideDetailScreen         from '../screens/GuideDetailScreen';
+import AboutScreen               from '../screens/AboutScreen';
 
-const Tab   = createBottomTabNavigator();
-const Stack = createStackNavigator();
-
-function CenterFabButton({ onPress }: { onPress?: () => void }) {
+// Placeholder for screens we'll add in the next sprint
+function AddPrinterScreen({ navigation }: any) {
   const C = useColors();
-  const fabStyles = useMemo(() => StyleSheet.create({
-    wrap: {
-      top: -16,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    btn: {
-      width: 62, height: 62, borderRadius: 31,
-      backgroundColor: C.primary,
-      alignItems: 'center', justifyContent: 'center',
-      ...Shadow.glow,
-    },
-  }), [C]);
-
   return (
-    <View style={fabStyles.wrap} pointerEvents="box-none">
-      <TouchableOpacity
-        style={fabStyles.btn}
-        onPress={onPress}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="add" size={30} color={C.textOnPrimary} />
-      </TouchableOpacity>
-    </View>
+    <View style={{ flex: 1, backgroundColor: C.bg }} />
   );
 }
 
-function EmptyScreen() { return null; }
+function SettingsScreen({ navigation }: any) {
+  const C = useColors();
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }} />
+  );
+}
+
+const Tab   = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 function HomeTabs() {
   const insets = useSafeAreaInsets();
@@ -88,51 +61,22 @@ function HomeTabs() {
         tabBarLabelStyle:        { fontSize: 11, fontWeight: '600', marginTop: 2 },
         tabBarActiveTintColor:   C.primary,
         tabBarInactiveTintColor: C.textHint,
-        tabBarIcon: ({ focused, color }) => {
-          if (route.name === 'Dashboard') {
-            return <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />;
-          }
-          if (route.name === 'Spending') {
-            return <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} />;
-          }
-          return null;
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons: Record<string, [string, string]> = {
+            HomeTab:     ['home',   'home-outline'],
+            InspectTab:  ['camera', 'camera-outline'],
+            GuidesTab:   ['book',   'book-outline'],
+            MoreTab:     ['ellipsis-horizontal', 'ellipsis-horizontal-outline'],
+          };
+          const [active, inactive] = icons[route.name] ?? ['help', 'help-outline'];
+          return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
         },
       })}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{ tabBarLabel: 'Home' }}
-      />
-
-      <Tab.Screen
-        name="QuickAddTab"
-        component={EmptyScreen}
-        options={{
-          tabBarLabel: () => null,
-          tabBarButton: (props) => (
-            <CenterFabButton onPress={props.onPress as () => void} />
-          ),
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('QuickAdd');
-          },
-        })}
-      />
-
-      <Tab.Screen
-        name="Spending"
-        component={ExpensesScreen}
-        options={{ tabBarLabel: 'Spending' }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('AddExpense', { returnTo: 'Spending' });
-          },
-        })}
-      />
+      <Tab.Screen name="HomeTab"    component={HomeScreen}        options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="InspectTab" component={InspectionScreen}  options={{ tabBarLabel: 'Inspect' }} />
+      <Tab.Screen name="GuidesTab"  component={GuideBrowserScreen} options={{ tabBarLabel: 'Guides' }} />
+      <Tab.Screen name="MoreTab"    component={MoreScreen}        options={{ tabBarLabel: 'More' }} />
     </Tab.Navigator>
   );
 }
@@ -144,30 +88,15 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Home"       component={HomeTabs} />
 
-        <Stack.Screen
-          name="QuickAdd"
-          component={QuickAddScreen}
-          options={{ presentation: 'transparentModal', animation: 'fade_from_bottom' }}
-        />
-
-        <Stack.Screen name="AddExpense"  component={AddExpenseScreen}  options={{ presentation: 'modal' }} />
-        <Stack.Screen name="AddIncome"   component={AddIncomeScreen}   options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Payday"      component={PaydayScreen}      options={{ presentation: 'modal' }} />
-
-        <Stack.Screen name="More"             component={MoreScreen}            options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Goals"            component={GoalsScreen}           options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Bills"            component={BillsScreen}           options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Calendar"         component={CalendarScreen}        options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Debt"             component={DebtScreen}            options={{ presentation: 'modal' }} />
-        <Stack.Screen name="MonthlyBreakdown" component={MonthlyBreakdownScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="WeeklyCheckIn"    component={WeeklyCheckInScreen}   options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Currency"         component={CurrencyScreen}        options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Export"           component={ExportScreen}          options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Settings"         component={SettingsScreen}        options={{ presentation: 'modal' }} />
-        <Stack.Screen name="NavCustomize"     component={NavCustomizeScreen}    options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Appearance"       component={AppearanceScreen}       options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Share"            component={ShareScreen}           options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Incomes"          component={IncomesScreen}         options={{ presentation: 'modal' }} />
+        {/* Modals */}
+        <Stack.Screen name="PrinterDetail"      component={PrinterDetailScreen}      options={{ presentation: 'modal' }} />
+        <Stack.Screen name="AddPrinter"         component={AddPrinterScreen}         options={{ presentation: 'modal' }} />
+        <Stack.Screen name="LogMaintenance"     component={LogMaintenanceScreen}     options={{ presentation: 'modal' }} />
+        <Stack.Screen name="MaintenanceHistory" component={MaintenanceHistoryScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="InspectionWizard"   component={InspectionScreen}         options={{ presentation: 'modal' }} />
+        <Stack.Screen name="GuideDetail"        component={GuideDetailScreen}        options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Settings"           component={SettingsScreen}           options={{ presentation: 'modal' }} />
+        <Stack.Screen name="About"              component={AboutScreen}              options={{ presentation: 'modal' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
