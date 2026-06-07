@@ -9,10 +9,11 @@ import { Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
 
 // Tab screens
-import HomeScreen        from '../screens/HomeScreen';
-import InspectionScreen  from '../screens/InspectionScreen';
-import GuideBrowserScreen from '../screens/GuideBrowserScreen';
-import MoreScreen        from '../screens/MoreScreen';
+import HomeScreen           from '../screens/HomeScreen';
+import InspectionScreen     from '../screens/InspectionScreen';
+import GuideBrowserScreen   from '../screens/GuideBrowserScreen';
+import PrinterAnatomyScreen from '../screens/PrinterAnatomyScreen';
+import MoreScreen           from '../screens/MoreScreen';
 
 // Stack / modal screens
 import OnboardingScreen          from '../screens/OnboardingScreen';
@@ -20,6 +21,7 @@ import PrinterDetailScreen       from '../screens/PrinterDetailScreen';
 import LogMaintenanceScreen      from '../screens/LogMaintenanceScreen';
 import MaintenanceHistoryScreen  from '../screens/MaintenanceHistoryScreen';
 import GuideDetailScreen         from '../screens/GuideDetailScreen';
+import PartDetailScreen          from '../screens/PartDetailScreen';
 import AboutScreen               from '../screens/AboutScreen';
 
 // Placeholder for screens we'll add in the next sprint
@@ -63,20 +65,22 @@ function HomeTabs() {
         tabBarInactiveTintColor: C.textHint,
         tabBarIcon: ({ focused, color, size }) => {
           const icons: Record<string, [string, string]> = {
-            HomeTab:     ['home',   'home-outline'],
-            InspectTab:  ['camera', 'camera-outline'],
-            GuidesTab:   ['book',   'book-outline'],
-            MoreTab:     ['ellipsis-horizontal', 'ellipsis-horizontal-outline'],
+            HomeTab:    ['home',       'home-outline'],
+            InspectTab: ['camera',     'camera-outline'],
+            LearnTab:   ['school',     'school-outline'],
+            GuidesTab:  ['book',       'book-outline'],
+            MoreTab:    ['ellipsis-horizontal', 'ellipsis-horizontal-outline'],
           };
           const [active, inactive] = icons[route.name] ?? ['help', 'help-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="HomeTab"    component={HomeScreen}        options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="InspectTab" component={InspectionScreen}  options={{ tabBarLabel: 'Inspect' }} />
-      <Tab.Screen name="GuidesTab"  component={GuideBrowserScreen} options={{ tabBarLabel: 'Guides' }} />
-      <Tab.Screen name="MoreTab"    component={MoreScreen}        options={{ tabBarLabel: 'More' }} />
+      <Tab.Screen name="HomeTab"    component={HomeScreen}           options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="InspectTab" component={InspectionScreen}     options={{ tabBarLabel: 'Inspect' }} />
+      <Tab.Screen name="LearnTab"   component={PrinterAnatomyScreen} options={{ tabBarLabel: 'Learn' }} />
+      <Tab.Screen name="GuidesTab"  component={GuideBrowserScreen}   options={{ tabBarLabel: 'Guides' }} />
+      <Tab.Screen name="MoreTab"    component={MoreScreen}           options={{ tabBarLabel: 'More' }} />
     </Tab.Navigator>
   );
 }
@@ -95,6 +99,7 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="MaintenanceHistory" component={MaintenanceHistoryScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="InspectionWizard"   component={InspectionScreen}         options={{ presentation: 'modal' }} />
         <Stack.Screen name="GuideDetail"        component={GuideDetailScreen}        options={{ presentation: 'modal' }} />
+        <Stack.Screen name="PartDetail"         component={PartDetailScreen}         options={{ presentation: 'modal' }} />
         <Stack.Screen name="Settings"           component={SettingsScreen}           options={{ presentation: 'modal' }} />
         <Stack.Screen name="About"              component={AboutScreen}              options={{ presentation: 'modal' }} />
       </Stack.Navigator>

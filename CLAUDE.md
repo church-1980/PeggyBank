@@ -272,6 +272,50 @@ Everything must be understandable directly from the app.
 
 ---
 
+## INTERACTIVE PRINTER ANATOMY SYSTEM
+
+The anatomy system is a core educational feature. Build only what is practical today. Maintain clean architecture for future phases.
+
+### Phase Rules
+
+**Phase 1 (CURRENT):** Static images + educational content
+- `src/types/anatomy.ts` — `AnatomyPart`, `PartAsset`, `AnimationStep`
+- `src/data/printerAnatomy.ts` — all 17 parts with full Phase 1 data
+- `src/screens/PrinterAnatomyScreen.tsx` — "Learn My Printer" browser
+- `src/screens/PartDetailScreen.tsx` — 6-section part detail
+- Image keys are placeholders — real images slot in by mapping `imageKey` strings to bundled assets. No other code changes required when images are added.
+
+**Phase 2 (future):** Animated education — pan/zoom/highlight/pulse animations
+**Phase 3 (future):** Interactive 3D printer model explorer
+**Phase 4 (future):** Guided maintenance animations
+**Phase 5 (future):** X-Ray filament path mode
+**Phase 6 (future):** AI visual inspection markup on photos
+**Phase 7 (future):** Augmented reality overlay on live camera
+
+### Architecture Rules for Future Phases
+
+- NEVER delete Phase 1 fields. They are fallbacks when Phase 2+ assets are loading.
+- `PartAsset` has optional fields for all future phases — add data, do not change types.
+- `AssetImage` in `PartDetailScreen` is the ONLY component to replace when images arrive. It is a self-contained placeholder.
+- `education_animation?: AnimationStep[]` is defined on every part. Phase 2 populates it. Phase 1 leaves it empty — do not render it.
+- The 6-section structure on `PartDetailScreen` (Part ID → Healthy → Problem → Camera → Maintenance → Related) is permanent. Future phases enhance the asset sections without changing section order.
+
+### Part Data Rules
+
+- Every part must pass the Grandparent Test: a person who has never touched a 3D printer must understand every field.
+- `what_it_is` — one sentence, plain language
+- `what_it_does` — what happens during a print
+- `why_it_matters` — what breaks if neglected
+- `location_tip` — where to physically find it, plain language
+- `common_problems` — 3–5 bulleted plain-language problems
+- `maintenance_interval` — plain English schedule
+
+### Supported Parts (Phase 1)
+
+Nozzle, Hotend, Extruder, PTFE Tube, Carbon Rods, Lead Screws, Build Plate, AMS, AMS Rollers, AMS PTFE Tubes, Filament Cutter, Wiper, Cooling Fans, Chamber Fan, Printer Camera, LiDAR, Filament Path
+
+---
+
 ## MISSION STATEMENT
 
 > The Plastic Surgeon exists to reduce fear, confusion, failed prints, and expensive mistakes. The app should teach, guide, diagnose, and build confidence. Every feature should help ordinary people take care of their printers.
