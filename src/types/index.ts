@@ -162,8 +162,8 @@ export interface GuideStep {
 // UI HELPER TYPES
 // ─────────────────────────────────────────────
 
-// Diagnosis card shown after each inspection checkpoint (Grandparent Test compliant).
-// Every status (pass/warn/fail) produces plain-language feedback.
+// Diagnosis card shown after each inspection checkpoint — Grandparent Test compliant.
+// Every status (pass/warn/fail) produces plain-language feedback in the standard format.
 export type RiskLevel = 'none' | 'low' | 'medium' | 'high';
 export type RepairDifficulty = 'easy' | 'moderate' | 'advanced';
 
@@ -177,17 +177,42 @@ export interface DiagnosisCard {
   guideKey?: string;          // links to the step-by-step repair guide
 }
 
-// Inspection checkpoint definition (from src/data/inspectionCheckpoints.ts).
+// Part identification data — required on every checkpoint and guide.
+// Answers "What am I looking at?" before asking "What should I do?"
+// No jargon. No assumed knowledge.
+export interface PartIdentification {
+  partName: string;           // "Nozzle" — the common name
+  simpleName: string;         // "The small metal tip at the bottom of the printer"
+  purpose: string;            // "It melts your plastic and places it on the print."
+  whyItMatters: string;       // "A dirty nozzle causes failed prints and poor quality."
+  commonProblems: string[];   // plain-language list: ["Burnt plastic buildup", "Damage"]
+  maintenanceInterval: string; // "Check monthly. Clean every 100 print hours."
+  imageKey?: string;          // bundled asset key for the part photo (for future images)
+}
+
+// 5-step camera guidance — required for every checkpoint camera prompt.
+// Replaces all "Take Photo" buttons with guided positioning instructions.
+export interface CameraGuidance {
+  step1_find: string;         // "Find the small metal tip at the very bottom of the printer"
+  step2_match: string;        // "It should look like the picture above — small and metallic"
+  step3_distance: string;     // "Move your camera about 10 cm (4 inches) away from the tip"
+  step4_center: string;       // "Center the tip of the nozzle in the middle of the frame"
+  step5_action: string;       // "Tap 'Inspect' below when the tip is clearly visible"
+}
+
+// Inspection checkpoint definition — Visual Structure compliant.
+// Required 6-section format: Part ID → Good → Bad → Camera → Diagnosis → Repair
 // Every field must pass the Grandparent Test — no unexplained jargon.
 export interface CheckpointDefinition {
   key: string;
-  title: string;              // plain-language name shown to user
-  description: string;        // what to look at and how — no assumed knowledge
-  cameraTarget: string;       // "Point your camera at [X]" — specific, visual
-  whatGoodLooksLike: string;  // "The tip is shiny silver metal with no black bits"
-  whatBadLooksLike: string;   // "Black crusty buildup, cracks, or a squashed tip"
+  title: string;                   // plain-language name shown to user
+  partIdentification: PartIdentification;
+  description: string;             // brief "what to do" — no assumed knowledge
+  whatGoodLooksLike: string;       // good example caption
+  whatBadLooksLike: string;        // bad example caption
+  cameraGuidance: CameraGuidance;  // 5-step camera positioning
   printer_types: PrinterType[];
-  includeInQuick: boolean;    // true = part of the 5-minute quick check
+  includeInQuick: boolean;         // true = part of the 5-minute quick check
   diagnosis: {
     pass: DiagnosisCard;
     warn: DiagnosisCard;

@@ -1,249 +1,280 @@
-# THE PLASTIC SURGEON — CORE DEVELOPMENT RULES
+# THE PLASTIC SURGEON — VISUAL LEARNING & BEGINNER-FIRST DEVELOPMENT DIRECTIVE
 
-STOP.
-
-Before writing a single line of code, designing a screen, creating a guide, writing a maintenance procedure, building a camera inspection system, or adding a feature, follow this rule:
-
-**The Plastic Surgeon is designed for people who have NEVER worked on a 3D printer before.**
-
-Assume the user:
-
-- Has never owned a printer.
-- Has never changed a nozzle.
-- Has never lubricated a machine.
-- Has never cleaned an AMS.
-- Has never seen a lead screw.
-- Does not know what a PTFE tube is.
-- Does not know printer terminology.
-- May be nervous about damaging their printer.
-- May be dyslexic.
-- May be using only a phone.
-- May not be technically inclined.
-
-The app should feel like a **friendly mechanic standing beside the user.**
-
-If a feature, screen, guide, warning, workflow, or design would confuse a complete beginner, redesign it until it becomes simple.
+Created by Jester's Workshop
 
 ---
 
-## USER EXPERIENCE PHILOSOPHY
+## THIS OVERRIDES ALL PREVIOUS ASSUMPTIONS
 
-The user should never ask: **"What do I do next?"**
+The Plastic Surgeon is NOT a maintenance tracker.
+The Plastic Surgeon is NOT a technical manual.
+The Plastic Surgeon is NOT built for experienced makers.
 
-The app should always tell them.
+**The Plastic Surgeon is a visual teaching system** that helps complete beginners safely inspect, clean, maintain, diagnose, repair, and understand their 3D printers.
 
-Every screen should have a clear next step.
-
-**Avoid:**
-- Technical jargon
-- Long paragraphs
-- Complex menus
-- Hidden actions
-- Assumed knowledge
-
-**Prefer:**
-- Large buttons
-- Large photos
-- Large diagrams
-- One task at a time
-- Plain language
-- Simple explanations
-- Voice read-aloud support
+The user should feel like an experienced technician is standing beside them, guiding them one step at a time.
 
 ---
 
 ## THE GRANDPARENT TEST
 
-Every feature must pass this test:
+Every feature must pass the Grandparent Test.
 
-> If a grandparent who has never used a 3D printer can successfully complete the task using only The Plastic Surgeon, the feature passes.
+> If a grandparent who has never touched a 3D printer can successfully complete the task using only The Plastic Surgeon, the feature passes.
 
-If they would become confused, frustrated, or afraid of breaking something, the feature fails and must be redesigned.
+If they become confused, scared, overwhelmed, or unsure what to do next — the feature fails. Redesign it.
+
+---
+
+## THE VISUAL FIRST RULE
+
+**Pictures teach. Text supports. Never rely on text alone.**
+
+Every inspection point, every guide, every repair, every maintenance task must include visual learning.
+
+The app must answer **"What am I looking at?"** before asking **"What should I do?"**
+
+---
+
+## REQUIRED VISUAL STRUCTURE
+
+Every maintenance guide, repair guide, inspection checkpoint, and educational screen must contain these six sections — **always in this order:**
+
+1. **Part Identification** — Show the part, name it, explain what it does and why it matters
+2. **Good Example** — Photo + "This part is clean and working normally"
+3. **Bad Example** — Photo + "This part needs maintenance"
+4. **Camera Inspection** — 5-step guided camera positioning
+5. **Diagnosis** — Headline / Risk / What This Means / Recommended Action / Time / Difficulty
+6. **Repair Procedure** — Step-by-step guide link
+
+---
+
+## PART IDENTIFICATION SECTION
+
+Before asking the user to inspect anything, show:
+
+- Large photo
+- Arrow pointing to the part
+- Highlighted area
+- Part name (plain language)
+- What it does
+- Why it matters
+
+**Example:**
+
+```
+PART NAME:
+Nozzle
+
+WHAT IT DOES:
+The nozzle melts plastic and places it onto the print.
+
+WHY IT MATTERS:
+A dirty nozzle can cause failed prints.
+```
+
+Never assume the user knows where the nozzle is.
+Never assume they know what it does.
+
+---
+
+## GOOD VS BAD EXAMPLES
+
+Every inspection point must include:
+
+**GOOD EXAMPLE**
+- Photo
+- Caption: "This part is clean and working normally."
+
+**BAD EXAMPLE**
+- Photo
+- Caption: "This part needs maintenance."
+
+Users should be able to learn from pictures before touching the machine.
+
+---
+
+## CAMERA INSPECTION SYSTEM
+
+The camera should behave like a mechanic guiding the user.
+
+**Never display:** "Take Photo"
+
+**Instead display:**
+
+```
+Step 1: Find the part shown below.
+Step 2: Match your printer to the picture.
+Step 3: Move your camera 10–15 cm (4–6 inches) away.
+Step 4: Center the highlighted area in the frame.
+Step 5: Tap Inspect.
+```
+
+The user should always know exactly where to point the camera.
+
+---
+
+## FUTURE AI INSPECTION SYSTEM
+
+Architecture must support future AI image analysis. When AI ships:
+
+- User takes photo
+- AI draws circles, arrows, and highlights directly onto the image
+- Red Circle: damaged component
+- Yellow Arrow: buildup or residue
+- Blue Highlight: area requiring lubrication
+
+The user should never have to guess what the AI found.
+The app should literally point at the problem.
+
+**All photo storage must preserve originals at full resolution for future AI processing.**
+
+---
+
+## DIAGNOSIS SCREEN STANDARD
+
+Every inspection result must contain:
+
+```
+DIAGNOSIS:     Dirty Nozzle
+RISK:          Low
+WHAT THIS MEANS: Melted plastic has built up around the nozzle.
+RECOMMENDED ACTION: Clean the nozzle using the guided cleaning procedure.
+ESTIMATED TIME: 3 Minutes
+DIFFICULTY:    🟢 Beginner
+```
+
+---
+
+## WHAT IS THIS PART BUTTON
+
+Every major component must have a **"What Is This?"** button.
+
+Pressing it opens:
+- Part photo
+- Part name (plain language)
+- Purpose (one sentence, plain language)
+- Common problems (bulleted list, plain language)
+- Maintenance interval
+
+**No engineering terminology. No technical jargon. Plain language only.**
+
+---
+
+## DIFFICULTY SYSTEM
+
+Every task and guide must be labeled:
+
+| Badge | Level | Meaning |
+|-------|-------|---------|
+| 🟢 Beginner | No experience needed | Example: Clean the print surface |
+| 🟡 Intermediate | Careful attention required | Example: Replace the white plastic tube |
+| 🔴 Advanced | Partial disassembly required | Example: Extruder teardown |
+
+Users must know what they are getting into before starting.
 
 ---
 
 ## GUIDE WRITING RULES
 
-**Never write:**
-> "Inspect the PTFE tube for excessive wear."
+**Never write:** "Inspect the PTFE tube."
+**Write:** "Look at the white plastic tube shown by the red arrow."
 
-**Instead write:**
-> "Look at the white tube shown in the picture below."
+**Never write:** "Verify extruder operation."
+**Write:** "Make sure the printer pulls filament smoothly without clicking noises."
 
-**Good example:**
+Use normal human language. Avoid technical terms whenever possible.
+
+When technical terms are required, **explain them immediately:**
 
 ```
-Step 1:
-Open the printer door.
-[Large Photo]
+Lead Screw
+(The tall threaded rod that moves the printer up and down)
 
-Step 2:
-Find the white tube shown by the red arrow.
-[Large Photo]
+PTFE Tube
+(The white plastic tube that guides filament)
 
-Step 3:
-Look for scratches, grooves, or flattened areas.
-
-Good Tube: [Photo]
-Bad Tube:  [Photo]
+Nozzle
+(The small metal tip that melts plastic)
 ```
 
 ---
 
-## VISUAL FIRST DESIGN
+## SAFETY SYSTEM
 
-Every maintenance procedure should include:
-- Real photos
-- Diagrams
-- Arrows
-- Highlights
-- Before and after examples
+Assume the user has no technical experience.
 
-Whenever possible: **show instead of explain.**
-
-The user should be able to understand the task from pictures alone.
-
----
-
-## CAMERA INSPECTION RULES
-
-The camera system should guide the user like a mechanic.
-
-**Never say:**
-> "Take a picture of the extruder."
-
-**Instead say:**
-> "Point your camera at the part shown in the picture."
-
-Display:
-- Reference image
-- Arrow
-- Highlighted target area
-
-Then perform inspection.
-
-**Results must use plain language:**
-
-```
-Diagnosis:
-Your nozzle looks dirty.
-
-Risk:
-Low
-
-What this means:
-Small amounts of melted plastic are stuck to the nozzle.
-This is normal and won't stop you from printing right now,
-but should be cleaned soon.
-
-Recommended treatment:
-Clean the nozzle using the steps below.
-
-Estimated repair time:
-3 minutes
-
-Difficulty:
-Easy
-```
-
----
-
-## JARGON RULE
-
-Every technical term used anywhere in the app must either:
-
-1. Be replaced with plain language, OR
-2. Be immediately followed by a simple explanation in plain language
-
-**Examples:**
-
-| ❌ Don't use bare jargon | ✅ Use this instead |
-|--------------------------|---------------------|
-| PTFE tube | white plastic tube |
-| Lead screw | the threaded metal rod that moves the printer up and down |
-| Extruder | the part that grips and pushes your filament |
-| FEP film | the clear film at the bottom of the resin tank |
-| Hotend | the part that melts your filament |
-| Bowden tube | the hollow tube that guides filament to the hot part |
-| AMS | the automatic filament changer (the box on the side) |
-
----
-
-## SAFETY RULES
-
-Assume the user does not know:
-- What gets hot
-- What moves
-- What can pinch fingers
-- What can damage the printer
-
-**Always provide warnings before relevant steps.**
+Before every potentially dangerous step, explain:
+1. What is dangerous
+2. Why it is dangerous
+3. How to avoid injury
 
 **Example:**
 ```
-⚠️ Warning
-The nozzle may be over 200°C (392°F) — that's hotter than boiling water.
-
-Do not touch the metal tip.
-
-Allow it to cool before continuing unless the guide tells you otherwise.
+⚠️ WARNING
+The nozzle may be hotter than boiling water.
+Touching it can cause serious burns instantly.
+Allow it to cool before continuing.
 ```
 
 ---
 
 ## SCREEN DESIGN RULES
 
-- Large touch targets (minimum 48×48dp, prefer 56×56dp for primary actions)
-- Large text (body minimum 16pt, instructions minimum 18pt)
+- Mobile first — phone-first, one-handed use
+- Large buttons — minimum 48×48dp, prefer 56×56dp for primary actions
+- Large touch targets
+- Large images — never small thumbnails for inspection photos
+- Large text — body minimum 16pt, instructions minimum 18pt
 - High contrast
-- Minimal clutter
 - **One primary action per screen**
 - No information overload
-- No tiny buttons
-- No nested menus unless absolutely necessary
+- No hidden actions
 
-The app should feel **calm and welcoming.**
-
----
-
-## CAMERA MODE IS A CORE FEATURE
-
-The camera is not a bonus feature.
-
-The camera should eventually inspect:
-- Nozzles
-- Build plates
-- AMS systems
-- Belts
-- Lead screws
-- Carbon rods
-- PTFE tubes
-- Fans
-- Extruders
-- Wipers
-- Cutter blades
-
-Every inspection should produce:
-- Diagnosis
-- Explanation
-- Risk level
-- Repair recommendation
-- Step-by-step repair guide
+The user should never wonder what button to press next.
 
 ---
 
-## THE PLASTIC SURGEON MISSION
+## VOICE ASSISTANT RULE
 
-> The Plastic Surgeon exists to help ordinary people maintain, repair, inspect, and understand their 3D printers with confidence.
+Every guide step must eventually support **"Read Step Aloud"**.
 
-The app should reduce fear.
-The app should reduce confusion.
-The app should reduce failed prints.
-The app should help users learn while protecting their equipment.
+This enables:
+- Hands-free maintenance (dirty hands can't touch the phone)
+- Accessibility support
+- Dyslexia support
 
-Every decision should support that mission.
+Architecture: use `expo-speech` for TTS. The "Read Step" button should be present in the UI now, even if wired to a stub. When TTS ships, remove the stub.
 
 ---
+
+## CAMERA IS A CORE FEATURE
+
+The camera system is not optional.
+It is one of the primary reasons this application exists.
+All architecture decisions must support future AI image analysis.
+
+Target inspection components:
+- Nozzle, Build Plate, Carbon Rods, Lead Screws, Belts
+- AMS, PTFE Tubes, Fans, Extruder, Wiper, Cutter Blade
+
+---
+
+## ULTIMATE GOAL
+
+A person who has never touched a 3D printer should be able to:
+
+Identify parts → Understand parts → Inspect parts → Maintain parts → Repair parts → Replace parts → Diagnose problems → Complete maintenance safely.
+
+**Using only The Plastic Surgeon. No YouTube. No forums. No Discord. No outside help.**
+
+Everything must be understandable directly from the app.
+
+---
+
+## MISSION STATEMENT
+
+> The Plastic Surgeon exists to reduce fear, confusion, failed prints, and expensive mistakes. The app should teach, guide, diagnose, and build confidence. Every feature should help ordinary people take care of their printers.
 
 **Created by Jester's Workshop.**
 *Saving printers one layer at a time.*
