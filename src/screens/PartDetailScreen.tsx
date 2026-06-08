@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getAnatomyPartByKey, ANATOMY_CATEGORIES } from '../data/printerAnatomy';
 import { AnatomyPart } from '../types/anatomy';
+import AssetImage from '../components/AssetImage';
 import { speakText } from '../lib/tts';
 import { Spacing, Radius, Typography, Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
@@ -33,24 +34,6 @@ export default function PartDetailScreen({ navigation, route }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={[styles.linkText, { color: C.primary }]}>Go back</Text>
         </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // ─── Image Placeholder — Phase 1 ───────────────────────────────────────────
-  // Real images slot in by replacing this component and mapping asset keys to
-  // bundled or remote image URIs. No other code changes required.
-  function AssetImage({ imageKey, height = 200, tint }: { imageKey: string; height?: number; tint?: string }) {
-    return (
-      <View style={[
-        styles.assetPlaceholder,
-        { height, backgroundColor: (tint ?? C.primary) + '10', borderColor: (tint ?? C.primary) + '33' },
-      ]}>
-        <Ionicons name="image-outline" size={36} color={(tint ?? C.primary) + '70'} />
-        <Text style={[styles.assetPlaceholderLabel, { color: (tint ?? C.primary) + '99' }]}>
-          Photo coming soon
-        </Text>
-        <Text style={[styles.assetPlaceholderKey, { color: C.textHint }]}>{imageKey}</Text>
       </View>
     );
   }
@@ -361,15 +344,6 @@ function makeStyles(C: any, insets: any) {
       marginBottom: Spacing.md,
     },
     readAloudBtnText: { ...Typography.smallBold },
-
-    // Image placeholder (Phase 1 — replaced by real images when assets are available)
-    assetPlaceholder: {
-      borderRadius: Radius.lg, borderWidth: 1, borderStyle: 'dashed',
-      alignItems: 'center', justifyContent: 'center', gap: 6,
-      marginBottom: Spacing.md,
-    },
-    assetPlaceholderLabel: { ...Typography.smallBold },
-    assetPlaceholderKey:   { ...Typography.caption, fontStyle: 'italic' },
 
     // Education cards
     eduCard:  {
