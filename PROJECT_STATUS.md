@@ -1,5 +1,5 @@
 # PeggyBank — Project Status
-**Last updated:** 2026-06-05
+**Last updated:** 2026-06-05 (safety system added)
 **GitHub:** https://github.com/church-1980/PeggyBank
 **Local path:** C:\Users\spall\Documents\PeggyBank
 **Stack:** React Native 0.83.6 · Expo SDK 55 · TypeScript · expo-sqlite · New Architecture
@@ -113,10 +113,79 @@ These are approved or likely next items — **do not build until user explicitly
 
 ---
 
+## 🔐 Project Safety System
+
+### Backup Strategy
+Before every task Claude will:
+1. Create a `backup/pre-task-YYYY-MM-DD` branch from current main
+2. Commit any uncommitted state to that branch
+3. Return to main and proceed with the task
+
+### Rollback Strategy
+To undo any task and return to a known-good state:
+
+**Roll back to a stable tag:**
+```bash
+git checkout stable/v1-audit        # last audit state (current)
+git checkout stable/v1-testing      # after test suite added
+git checkout stable/v1-dashboard    # after dashboard fixes
+git checkout stable/v1-foundation   # after Steps 1-5 cleanup
+```
+
+**Roll back to a backup branch:**
+```bash
+git branch                          # list backup branches
+git checkout backup/pre-task-YYYY-MM-DD
+```
+
+**Hard reset main to a tag (destructive — only if needed):**
+```bash
+git checkout main
+git reset --hard stable/v1-audit
+git push --force
+```
+
+### Stable Tags
+| Tag | Commit | What it represents |
+|-----|--------|--------------------|
+| `stable/v1-foundation` | 05a37a2 | After Steps 1–5: theme + nav + card + overlay cleanup |
+| `stable/v1-dashboard` | d53fc32 | After dashboard fixes: section order, compact widget, unpin |
+| `stable/v1-testing` | e39abf0 | After 72-test Jest suite + Maestro flows added |
+| `stable/v1-audit` | 2a585e0 | After full functionality audit |
+
+### Session Cache Files
+| File | Purpose |
+|------|---------|
+| `PROJECT_STATUS.md` | Overall project state — read first every session |
+| `CURRENT_TASK.md` | What is being worked on right now |
+| `DECISIONS.md` | Approved design decisions + things NOT changing |
+| `KNOWN_ISSUES.md` | All bugs, test findings, future improvements |
+| `UI_AUDIT.md` | Per-screen status, visual issues, approval state |
+| `AUDIT_REPORT.md` | Full functionality audit from 2026-06-05 |
+
+### Visual Review Workflow
+When any screen changes, Claude will:
+1. State the screen name and what changed
+2. Explain how to open it in the app
+3. List exactly what to look for
+4. Wait for approval before continuing
+
+### App Preview
+To see changes on your phone:
+```bash
+cd C:\Users\spall\Documents\PeggyBank
+npx expo start
+```
+Scan the QR code with Expo Go app. Navigate to the changed screen.
+
+---
+
 ## 📦 Recent Commits
 
 | Hash | Date | What |
 |------|------|------|
+| `2a585e0` | 2026-06-05 | Add full functionality audit report and CURRENT_TASK.md |
+| `33ec79c` | 2026-06-05 | Add PROJECT_STATUS.md |
 | `e39abf0` | 2026-06-05 | Add automated test suite: Jest, RNTL, Maestro E2E flows |
 | `d53fc32` | 2026-06-05 | Fix dashboard order, unpin ghost, compact goal widget, icon consistency |
 | `acd745d` | 2026-06-04 | Step 5: connect Goals to Dashboard (pin/unpin, empty state) |
