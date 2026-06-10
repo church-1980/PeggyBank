@@ -9,14 +9,8 @@
 
 ## 🔴 CONFIRMED BUGS (fix required, awaiting approval)
 
-### BUG-001 — Alert not imported in ExpensesScreen
-**File:** `src/screens/ExpensesScreen.tsx` line 3 and line 52
-**Severity:** Medium
-**Impact:** If a DELETE operation fails (DB error), the app crashes instead of showing an error message. Happy-path delete (no DB error) works correctly.
-**Root cause:** `Alert` is called on line 52 inside `deleteExpense()` error handler, but `Alert` is not in the React Native import list on line 3.
-**Fix:** Add `Alert` to the import on line 3. One-word change.
-**Status:** Awaiting approval
-**Found:** 2026-06-05 (audit)
+~~### BUG-001 — Alert not imported in ExpensesScreen~~
+**Status:** ✅ Fixed 2026-06-05 (commit — added `Alert` to import in ExpensesScreen.tsx line 3)
 
 ---
 

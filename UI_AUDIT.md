@@ -32,8 +32,8 @@
 **Status:** 🔍 Needs Review
 **Last device review:** Never
 **Visual issues:** None identified in code review
-**Known bugs:** BUG-001 — Alert not imported (crash on delete failure)
-**Approval status:** ❌ Not approved — BUG-001 must be fixed first
+**Known bugs:** BUG-001 — ✅ Fixed 2026-06-05
+**Approval status:** 🔍 Needs Review — needs device test
 
 ---
 
