@@ -9,5 +9,13 @@
         "buildType": "apk"
       }
     }
+  },
+  "update": {
+    "production": {
+      "channel": "main"
+    },
+    "preview": {
+      "channel": "preview"
+    }
   }
 }

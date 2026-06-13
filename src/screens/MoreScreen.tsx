@@ -1,86 +1,48 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, Radius, Typography, ColorPalette } from '../theme';
+import { Spacing, Radius, Typography, Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
 
-interface ToolItem {
-  label: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  colorKey: 'goals' | 'primary' | 'subs' | 'debt' | 'income' | 'bills' | 'primaryLight' | 'textSecondary';
-  screen: string;
-}
-
-const TOOLS: ToolItem[] = [
-  { label: 'Savings Goals',       description: "Track what you're saving for",     icon: 'flag-outline',             colorKey: 'goals',         screen: 'Goals' },
-  { label: 'Calendar',            description: 'See your month at a glance',         icon: 'calendar-outline',         colorKey: 'primary',       screen: 'Calendar' },
-  { label: 'Bills & Subscriptions', description: "Recurring bills and charges",       icon: 'receipt-outline',          colorKey: 'bills',         screen: 'Bills' },
-  { label: 'Debt Tracker',        description: 'Pay it down, one step at a time',    icon: 'trending-down-outline',    colorKey: 'debt',          screen: 'Debt' },
-  { label: 'Weekly Check-In',     description: 'How did this week go?',              icon: 'checkmark-circle-outline', colorKey: 'income',        screen: 'WeeklyCheckIn' },
-  { label: 'Monthly Breakdown',   description: 'See your spending by category',      icon: 'bar-chart-outline',        colorKey: 'bills',         screen: 'MonthlyBreakdown' },
-  { label: 'Currency Calculator', description: 'Convert money, works offline',       icon: 'swap-horizontal-outline',  colorKey: 'primaryLight',  screen: 'Currency' },
-  { label: 'Export & Backup',     description: 'Save or share your data',            icon: 'cloud-download-outline',   colorKey: 'textSecondary', screen: 'Export' },
-  { label: 'Share PeggyBank',     description: 'Tell a friend about the app',        icon: 'share-social-outline',     colorKey: 'income',        screen: 'Share' },
-  { label: 'Settings',            description: 'Preferences, backup, and about',     icon: 'settings-outline',         colorKey: 'textSecondary', screen: 'Settings' },
-];
-
 export default function MoreScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const C = useColors();
-  const styles = useMemo(() => makeStyles(C), [C]);
+  const styles = useMemo(() => makeStyles(C, insets), [C, insets]);
+
+  const items = [
+    { label: 'Settings', icon: 'settings-outline',          route: 'Settings' },
+    { label: 'About',    icon: 'information-circle-outline', route: 'About' },
+  ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>More</Text>
-      <Text style={styles.subtitle}>All your tools, in one calm place.</Text>
-
-      <View style={styles.grid}>
-        {TOOLS.map((item) => {
-          const color = C[item.colorKey];
-          return (
-            <TouchableOpacity
-              key={item.label}
-              style={styles.card}
-              onPress={() => navigation.navigate(item.screen)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconWrap, { backgroundColor: color + '18' }]}>
-                <Ionicons name={item.icon} size={24} color={color} />
-              </View>
-              <Text style={styles.cardLabel}>{item.label}</Text>
-              <Text style={styles.cardDesc}>{item.description}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.md }]}>
+      <Text style={styles.pageTitle}>More</Text>
+      {items.map(item => (
+        <TouchableOpacity
+          key={item.label}
+          style={styles.row}
+          onPress={() => navigation.navigate(item.route)}
+        >
+          <Ionicons name={item.icon as any} size={22} color={C.primary} />
+          <Text style={styles.rowLabel}>{item.label}</Text>
+          <Ionicons name="chevron-forward" size={18} color={C.textHint} />
+        </TouchableOpacity>
+      ))}
     </ScrollView>
   );
 }
 
-function makeStyles(C: ColorPalette) {
+function makeStyles(C: any, insets: any) {
   return StyleSheet.create({
-    container:  { flex: 1, backgroundColor: C.bg },
-    content:    { padding: Spacing.md, paddingTop: 56, paddingBottom: 60 },
-    title:      { ...Typography.h1, color: C.textPrimary, marginBottom: Spacing.xs },
-    subtitle:   { ...Typography.small, color: C.textSecondary, marginBottom: Spacing.lg },
-    grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-    card: {
-      width: '47%',
-      backgroundColor: C.bgCard,
-      borderRadius: Radius.lg,
-      padding: Spacing.md,
-      borderWidth: 1,
-      borderColor: C.border,
+    container: { flex: 1, backgroundColor: C.bg },
+    content:   { padding: Spacing.md, paddingBottom: insets.bottom + 80 },
+    pageTitle: { ...Typography.h2, color: C.textPrimary, marginBottom: Spacing.lg },
+    row: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+      backgroundColor: C.bgCard, borderRadius: Radius.md,
+      padding: Spacing.md, marginBottom: Spacing.sm, ...Shadow.card,
     },
-    iconWrap: {
-      width: 48,
-      height: 48,
-      borderRadius: Radius.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: Spacing.sm,
-    },
-    cardLabel: { ...Typography.bodyBold, color: C.textPrimary, marginBottom: 4 },
-    cardDesc:  { ...Typography.caption, color: C.textSecondary, lineHeight: 16 },
+    rowLabel: { ...Typography.body, color: C.textPrimary, flex: 1 },
   });
 }
