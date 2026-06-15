@@ -302,7 +302,7 @@ function makeStyles(C: ColorPalette) {
       padding: Spacing.md, borderWidth: 1, borderColor: C.border,
     },
     cardHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-    cardTitle:   { ...Typography.smallBold, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+    cardTitle:   { ...Typography.label, color: C.textHint, letterSpacing: 0.6 },
     seeAllRow:   { flexDirection: 'row', alignItems: 'center', gap: 2 },
     seeAll:      { ...Typography.caption, color: C.primary, fontWeight: '600' },
 

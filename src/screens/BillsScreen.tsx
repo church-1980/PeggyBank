@@ -609,7 +609,7 @@ function makeStyles(C: ColorPalette) {
       flexDirection: 'row', alignItems: 'center',
       backgroundColor: C.bgCard, borderRadius: Radius.lg,
       padding: Spacing.md, marginBottom: 10,
-      borderLeftWidth: 4, borderWidth: 1, borderColor: C.border,
+      borderWidth: 1, borderColor: C.border,
     },
     checkbox: {
       width: 28, height: 28, borderRadius: 14,
