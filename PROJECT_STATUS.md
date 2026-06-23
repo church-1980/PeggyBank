@@ -1,5 +1,5 @@
 # PeggyBank — Project Status
-**Last updated:** 2026-06-22 (Icon System v1.0 foundation added)
+**Last updated:** 2026-06-23 (autonomous work session — audit, +18 tests, export bug fix)
 **GitHub:** https://github.com/church-1980/PeggyBank
 **Local path:** C:\Users\spall\Documents\PeggyBank
 **Stack:** React Native 0.83.6 · Expo SDK 55 · TypeScript · expo-sqlite · New Architecture
@@ -72,7 +72,7 @@
 - Columns added via migration: `goal_type`, `pinned`, `custom_image_uri` on savings_goals
 
 ### Testing
-- 72 Jest tests — all passing
+- 100 Jest tests — all passing
 - 5 test suites: helpers, theme, database, GoalProgressWidget, DashboardOrder
 - Full mock setup in `jest.setup.js` (sqlite, SVG, navigation, safe area, theme, AsyncStorage)
 - 6 Maestro E2E YAML flows written (ready to run, need device)
@@ -225,7 +225,9 @@ npm run test:coverage ← coverage report
 | database.test.ts | 6 | ✅ 6/6 |
 | GoalProgressWidget.test.tsx | 10 | ✅ 10/10 |
 | DashboardOrder.test.tsx | 13 | ✅ 13/13 |
-| **Total** | **72** | ✅ **72/72** |
+| ExpensesScreen.test.tsx | 10 | ✅ 10/10 |
+| financial.test.tsx | 18 | ✅ 18/18 |
+| **Total** | **100** | ✅ **100/100** |
 
 ### Maestro E2E (requires device — not yet run)
 ```

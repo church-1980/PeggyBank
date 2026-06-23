@@ -15,6 +15,7 @@
     "test:ci": "jest --ci --json --outputFile=test-results.json",
     "test:report": "node scripts/generate-report.js",
     "test:all": "npm run test:ci && npm run test:report",
+    "validate:icons": "node scripts/validate-icons.js",
     "maestro:expense": "maestro test maestro/01_add_expense.yaml",
     "maestro:bill": "maestro test maestro/02_add_bill.yaml",
     "maestro:goal": "maestro test maestro/03_add_goal.yaml",

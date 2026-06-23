@@ -3,6 +3,12 @@
 **Audited by:** Claude (code review — no device run)
 **Method:** Source code review of all relevant screens + PROJECT_STATUS.md
 
+> **⚠ STALE NOTICE (2026-06-23):** This report is from 2026-06-05 and is partly out of date.
+> Corrections from the 2026-06-23 work session:
+> - **Delete Expense — "✗ BROKEN" (Alert not imported) is RESOLVED.** `Alert` is now in the import (ExpensesScreen.tsx:3). Treat as ✓ COMPLETE.
+> - **New HIGH-severity bug found & fixed:** CSV export / backup crashed on Expo SDK 55 because `expo-file-system`'s `documentDirectory`/`EncodingType` moved to `expo-file-system/legacy`. Fixed this session (BUG-002 in KNOWN_ISSUES.md).
+> See WORK_SESSION_REPORT.md for the full current picture.
+
 > STATUS KEY
 > ✓ COMPLETE — code is correct and complete, logic verified in source
 > ⚠ NEEDS TESTING — code exists and looks correct but has NOT been run on a device

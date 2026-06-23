@@ -11,6 +11,13 @@
 
 ~~### BUG-001 — Alert not imported in ExpensesScreen~~
 **Status:** ✅ Fixed 2026-06-05 (commit — added `Alert` to import in ExpensesScreen.tsx line 3)
+**Note (2026-06-23):** Verified still fixed — `Alert` is present in the import (ExpensesScreen.tsx:3). AUDIT_REPORT.md still lists this as ✗ BROKEN and is stale on this point.
+
+~~### BUG-002 — CSV export & backup crash on Expo SDK 55 (file-system API moved)~~
+**Status:** ✅ Fixed 2026-06-23 (autonomous session)
+**Risk:** HIGH — CSV export is the app's only backup mechanism
+**Cause:** `src/lib/csvExport.ts` and `src/lib/backup.ts` imported `expo-file-system` and used `FileSystem.documentDirectory` / `FileSystem.EncodingType`. In expo-file-system 55 those moved to the `expo-file-system/legacy` entry; on the new default API they are `undefined`, so any export/backup would throw at runtime.
+**Fix:** Changed both imports to `import * as FileSystem from 'expo-file-system/legacy'`. Confirmed by `tsc` (the `documentDirectory`/`EncodingType` errors cleared) and the full Jest suite (100/100). Still needs a device run to confirm a real file is written and the share sheet opens (was TEST-005).
 
 ---
 
