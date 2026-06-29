@@ -1,90 +1,84 @@
-# PeggyBank Icon System v1.0 — Ready-to-Paste Generation Prompts
+# PeggyBank Icon System v1.0 — Copy-Paste Prompts (ChatGPT image)
 
-25 prompts, one per icon. Paste each into an image generator (DALL·E / Midjourney /
-Ideogram / Google Imagen). Output 1024×1024 PNG, transparent background.
-Save each result into `assets/peggy-icons/` with the filename in the heading.
+25 prompts. In ChatGPT, generate **one icon per message** — paste a prompt, let it
+make the image, download the PNG. Order doesn't matter and naming doesn't matter:
+Claude will look at each file and rename it correctly.
 
-Shared style block (already baked into every prompt below):
-premium finance app icon · soft 3D depth · subtle gradients · polished highlights ·
-rounded geometry · clean readable silhouette · consistent top-left lighting ·
-soft shadow under icon · modern trustworthy adult professional design ·
-not cartoonish/childish/emoji/flat/clipart/photo · transparent background ·
-centered object · square 1024×1024 · no text/logo/border. Color: vibrant but
-slightly desaturated — navy, blue, teal, green, purple, amber accents.
+Target: 1024×1024, **transparent background**, single centered object.
 
 ---
 
-## vacation.png
-Create one premium 3D app icon for PeggyBank. Icon: an airplane. Premium finance app icon, soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under icon, modern trustworthy adult professional design, not cartoonish/childish/emoji/flat/clipart/photo, transparent background, centered, 1024×1024, no text/logo/border. Color: vibrant slightly desaturated navy/blue/teal/green/purple/amber.
+### vacation
+Create one premium 3D app icon: a commercial passenger airplane. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## cruise.png
-Create one premium 3D app icon for PeggyBank. Icon: a cruise ship. [same style + color block as above]
+### cruise
+Create one premium 3D app icon: a modern cruise ship. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## flight.png
-Create one premium 3D app icon for PeggyBank. Icon: a front-facing airplane. [same style + color block]
+### flight
+Create one premium 3D app icon: a front-facing airplane flying toward the viewer. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## wedding.png
-Create one premium 3D app icon for PeggyBank. Icon: a pair of wedding rings. [same style + color block]
+### wedding
+Create one premium 3D app icon: a pair of interlocking wedding rings. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## new-car.png
-Create one premium 3D app icon for PeggyBank. Icon: a modern car. [same style + color block]
+### new-car
+Create one premium 3D app icon: a modern automobile (3/4 front view). Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## new-home.png
-Create one premium 3D app icon for PeggyBank. Icon: a house. [same style + color block]
+### new-home
+Create one premium 3D app icon: a modern residential house. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## down-payment.png
-Create one premium 3D app icon for PeggyBank. Icon: a golden key. [same style + color block]
+### down-payment
+Create one premium 3D app icon: a single premium golden key. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## emergency-fund.png
-Create one premium 3D app icon for PeggyBank. Icon: a shield with a check mark. [same style + color block]
+### emergency-fund
+Create one premium 3D app icon: a shield with a checkmark on it. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## education.png
-Create one premium 3D app icon for PeggyBank. Icon: a graduation cap. [same style + color block]
+### education
+Create one premium 3D app icon: a graduation cap (mortarboard). Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## baby.png
-Create one premium 3D app icon for PeggyBank. Icon: a baby stroller. [same style + color block]
+### baby
+Create one premium 3D app icon: a baby stroller. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## renovation.png
-Create one premium 3D app icon for PeggyBank. Icon: a paint roller. [same style + color block]
+### renovation
+Create one premium 3D app icon: a paint roller. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## medical.png
-Create one premium 3D app icon for PeggyBank. Icon: a medical cross. [same style + color block]
+### medical
+Create one premium 3D app icon: a medical cross. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## retirement.png
-Create one premium 3D app icon for PeggyBank. Icon: a beach chair with an umbrella. [same style + color block]
+### retirement
+Create one premium 3D app icon: a beach chair with a sun umbrella. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## investing.png
-Create one premium 3D app icon for PeggyBank. Icon: a money plant (coins sprouting a plant). [same style + color block]
+### investing
+Create one premium 3D app icon: a money plant — coins with a small plant sprouting from them. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## business.png
-Create one premium 3D app icon for PeggyBank. Icon: a briefcase. [same style + color block]
+### business
+Create one premium 3D app icon: a professional briefcase. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## pay-off-debt.png
-Create one premium 3D app icon for PeggyBank. Icon: a broken chain. [same style + color block]
+### pay-off-debt
+Create one premium 3D app icon: a broken chain (a chain link snapping apart). Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## gifts.png
-Create one premium 3D app icon for PeggyBank. Icon: a gift box. [same style + color block]
+### gifts
+Create one premium 3D app icon: a wrapped gift box with a bow. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## pet.png
-Create one premium 3D app icon for PeggyBank. Icon: a paw print. [same style + color block]
+### pet
+Create one premium 3D app icon: a single paw print. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## technology.png
-Create one premium 3D app icon for PeggyBank. Icon: a smartphone. [same style + color block]
+### technology
+Create one premium 3D app icon: a modern smartphone. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## christmas.png
-Create one premium 3D app icon for PeggyBank. Icon: a Christmas tree. [same style + color block]
+### christmas
+Create one premium 3D app icon: a decorated Christmas tree. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## disney-trip.png
-Create one premium 3D app icon for PeggyBank. Icon: a fantasy castle. [same style + color block]
+### disney-trip
+Create one premium 3D app icon: a magical fantasy fairytale castle. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## motorcycle.png
-Create one premium 3D app icon for PeggyBank. Icon: a motorcycle. [same style + color block]
+### motorcycle
+Create one premium 3D app icon: a modern motorcycle (3/4 view). Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## gaming.png
-Create one premium 3D app icon for PeggyBank. Icon: a game controller. [same style + color block]
+### gaming
+Create one premium 3D app icon: a video game controller (gamepad). Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## memories.png
-Create one premium 3D app icon for PeggyBank. Icon: a camera. [same style + color block]
+### memories
+Create one premium 3D app icon: a classic photo camera. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
 
-## other.png
-Create one premium 3D app icon for PeggyBank. Icon: a plus sign inside a dotted circle. [same style + color block]
+### other
+Create one premium 3D app icon: a plus sign (+) inside a dotted circle. Soft 3D depth, subtle gradients, polished highlights, rounded geometry, clean readable silhouette, consistent top-left lighting, soft shadow under the object. Modern, trustworthy, adult, professional finance-app style — not cartoonish, not childish, not flat, not clipart, not a photo. Vibrant but slightly desaturated colors (navy, blue, teal, green, purple, amber accents). Single centered object, transparent background, no text, no border, square 1024x1024 PNG.
