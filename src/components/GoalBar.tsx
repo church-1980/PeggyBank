@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import Svg, { Defs, LinearGradient, Stop, Rect, ClipPath } from 'react-native-svg';
 import { useColors } from '../context/ThemeContext';
 
 /**
- * GoalBar — a motivational progress bar whose color climbs a spectrum as the
- * goal fills: red → orange → green → teal → blue. The gradient is anchored to
- * the full track width, and only the portion up to `pct` is revealed, so the
- * leading edge color always reflects how far along you are. The closer to the
+ * GoalBar — a motivational progress bar whose fill color climbs a spectrum as
+ * the goal fills: red → orange → green → teal → blue. The fill width tracks
+ * progress, and its color reflects how far along you are. The closer to the
  * goal, the "cooler"/more rewarding the color — a small dopamine cue that
  * research on progress feedback (goal-gradient effect) shows keeps people
  * motivated as completion nears.
+ *
+ * Implemented with plain Views (no SVG) for reliable rendering on-device.
  */
 
-// Spectrum stops (position 0→1 across the full bar).
+// Spectrum stops (progress 0→1).
 const STOPS: { o: number; c: string }[] = [
   { o: 0,    c: '#FF3B30' }, // red    — just starting
   { o: 0.25, c: '#FF9500' }, // orange
@@ -31,8 +31,8 @@ function hexToRgb(hex: string) {
   };
 }
 
-// Color at a given progress point — used for the % text and marker so they
-// match the bar's leading edge.
+// Color at a given progress point — used for the fill, the % text, and the
+// encouragement so they all match.
 export function goalBarColor(pct: number): string {
   const p = Math.max(0, Math.min(1, pct));
   for (let i = 1; i < STOPS.length; i++) {
@@ -64,65 +64,57 @@ export function goalMilestone(pct: number): string {
 
 interface Props {
   pct: number;          // 0..1
-  id: string | number;  // unique per goal (avoids gradient id collisions)
+  id?: string | number; // kept for call-site compatibility
   height?: number;
   ticks?: boolean;      // show 25/50/75 milestone marks
 }
 
-export default function GoalBar({ pct, id, height = 14, ticks = true }: Props) {
+export default function GoalBar({ pct, height = 14, ticks = true }: Props) {
   const C = useColors();
   const [w, setW] = useState(0);
 
   const p = Math.max(0, Math.min(1, pct));
   const r = height / 2;
-  const gid = `goalgrad-${id}`;
-  const cid = `goalclip-${id}`;
-  // Reveal up to pct; guarantee a rounded nub is visible for tiny (>0) progress.
+  const color = goalBarColor(p);
+  // Guarantee a rounded nub is visible for tiny (>0) progress.
   const fillW = p <= 0 ? 0 : Math.max(height, w * p);
 
   return (
-    <View style={{ height }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-      {w > 0 && (
-        <Svg width={w} height={height}>
-          <Defs>
-            <LinearGradient id={gid} x1="0" y1="0" x2={w} y2="0" gradientUnits="userSpaceOnUse">
-              {STOPS.map((s) => (
-                <Stop key={s.o} offset={s.o} stopColor={s.c} />
-              ))}
-            </LinearGradient>
-            <ClipPath id={cid}>
-              <Rect x={0} y={0} width={fillW} height={height} rx={r} ry={r} />
-            </ClipPath>
-          </Defs>
-
-          {/* Track */}
-          <Rect x={0} y={0} width={w} height={height} rx={r} ry={r} fill={C.bgElevated} />
-
-          {/* Milestone ticks (hidden once the fill passes them) */}
-          {ticks &&
-            [0.25, 0.5, 0.75].map((t) => (
-              <Rect
-                key={t}
-                x={w * t - 1}
-                y={height * 0.3}
-                width={2}
-                height={height * 0.4}
-                rx={1}
-                fill={C.border}
-                opacity={0.8}
-              />
-            ))}
-
-          {/* Spectrum fill, revealed up to pct */}
-          <Rect
-            x={0}
-            y={0}
-            width={w}
-            height={height}
-            fill={`url(#${gid})`}
-            clipPath={`url(#${cid})`}
+    <View
+      style={{ height, borderRadius: r, backgroundColor: C.bgElevated, overflow: 'hidden' }}
+      onLayout={(e) => setW(e.nativeEvent.layout.width)}
+    >
+      {/* Milestone ticks (covered once the fill passes them) */}
+      {ticks && w > 0 &&
+        [0.25, 0.5, 0.75].map((t) => (
+          <View
+            key={t}
+            style={{
+              position: 'absolute',
+              left: w * t - 1,
+              top: height * 0.3,
+              width: 2,
+              height: height * 0.4,
+              borderRadius: 1,
+              backgroundColor: C.border,
+              opacity: 0.8,
+            }}
           />
-        </Svg>
+        ))}
+
+      {/* Fill */}
+      {w > 0 && fillW > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: fillW,
+            borderRadius: r,
+            backgroundColor: color,
+          }}
+        />
       )}
     </View>
   );

@@ -51,7 +51,7 @@ export default function DashboardScreen({ navigation }: any) {
       const totalSpending = expenseResult?.total ?? 0;
 
       const pinnedGoalsResult = await db.getAllAsync<SavingsGoal>(
-        `SELECT * FROM savings_goals WHERE pinned = 1 ORDER BY created_at DESC LIMIT 1`
+        `SELECT * FROM savings_goals WHERE pinned = 1 ORDER BY created_at ASC`
       );
       setPinnedGoals(pinnedGoalsResult);
 
@@ -207,17 +207,18 @@ export default function DashboardScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           {pinnedGoals.length > 0 ? (
-            pinnedGoals.map(goal => (
-              <GoalProgressWidget
-                key={goal.id}
-                goal={goal}
-                onPress={() => navigation.navigate('Goals')}
-                onUnpin={async () => {
-                  setPinnedGoals([]);
-                  const db = await getDatabase();
-                  await db.runAsync(`UPDATE savings_goals SET pinned = 0 WHERE id = ?`, [goal.id!]);
-                }}
-              />
+            pinnedGoals.map((goal, i) => (
+              <View key={goal.id} style={i > 0 ? { marginTop: Spacing.sm } : undefined}>
+                <GoalProgressWidget
+                  goal={goal}
+                  onPress={() => navigation.navigate('Goals')}
+                  onUnpin={async () => {
+                    setPinnedGoals(prev => prev.filter(g => g.id !== goal.id));
+                    const db = await getDatabase();
+                    await db.runAsync(`UPDATE savings_goals SET pinned = 0 WHERE id = ?`, [goal.id!]);
+                  }}
+                />
+              </View>
             ))
           ) : (
             <View style={styles.goalsEmpty}>
