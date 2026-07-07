@@ -1,5 +1,6 @@
 import { Category } from '../types';
 import { Ionicons } from '@expo/vector-icons';
+import { categoryIonicon } from './iconRegistry';
 
 export interface CategoryInfo {
   label: string;
@@ -7,17 +8,27 @@ export interface CategoryInfo {
   color: string;
 }
 
-export const CATEGORIES: Record<Category, CategoryInfo> = {
-  groceries:  { label: 'Groceries',  icon: 'basket-outline',              color: '#52C9B8' },
-  gas:        { label: 'Gas',        icon: 'car-outline',                 color: '#F5A662' },
-  restaurant: { label: 'Restaurant', icon: 'restaurant-outline',          color: '#E87070' },
-  shopping:   { label: 'Shopping',   icon: 'bag-handle-outline',          color: '#F57FA0' },
-  health:     { label: 'Health',     icon: 'medkit-outline',              color: '#98D8C8' },
-  kids:       { label: 'Kids',       icon: 'happy-outline',               color: '#A8D8EA' },
-  fun:        { label: 'Fun',        icon: 'game-controller-outline',     color: '#FFD166' },
-  gifts:      { label: 'Gifts',      icon: 'gift-outline',                color: '#C084FC' },
-  pets:       { label: 'Pets',       icon: 'paw-outline',                 color: '#F5A662' },
-  home:       { label: 'Home',       icon: 'home-outline',                color: '#7CBFCF' },
-  travel:     { label: 'Travel',     icon: 'airplane-outline',            color: '#7C6EFA' },
-  other:      { label: 'Other',      icon: 'ellipsis-horizontal-outline', color: '#8B8FA8' },
+// label/color are per-category; `icon` is NOT chosen here — it is derived from
+// the single icon registry so the same concept always renders the same icon.
+type CategoryMeta = Omit<CategoryInfo, 'icon'>;
+
+const CATEGORY_META: Record<Category, CategoryMeta> = {
+  groceries:  { label: 'Groceries',  color: '#52C9B8' },
+  gas:        { label: 'Gas',        color: '#F5A662' },
+  restaurant: { label: 'Restaurant', color: '#E87070' },
+  shopping:   { label: 'Shopping',   color: '#F57FA0' },
+  health:     { label: 'Health',     color: '#98D8C8' },
+  kids:       { label: 'Kids',       color: '#A8D8EA' },
+  fun:        { label: 'Fun',        color: '#FFD166' },
+  gifts:      { label: 'Gifts',      color: '#C084FC' },
+  pets:       { label: 'Pets',       color: '#F5A662' },
+  home:       { label: 'Home',       color: '#7CBFCF' },
+  travel:     { label: 'Travel',     color: '#7C6EFA' },
+  other:      { label: 'Other',      color: '#8B8FA8' },
 };
+
+export const CATEGORIES: Record<Category, CategoryInfo> = Object.fromEntries(
+  (Object.entries(CATEGORY_META) as [Category, CategoryMeta][]).map(
+    ([key, meta]) => [key, { ...meta, icon: categoryIonicon(key) }]
+  )
+) as Record<Category, CategoryInfo>;

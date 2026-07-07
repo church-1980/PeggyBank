@@ -307,7 +307,7 @@ export default function GoalsScreen({ navigation, route }: any) {
                         onPress={() => setGoalType(key)}
                         activeOpacity={0.75}
                       >
-                        <Text style={styles.goalTypeEmoji}>{info.emoji}</Text>
+                        <Ionicons name={info.icon} size={22} color={info.color} style={styles.goalTypeIcon} />
                         <Text style={[styles.goalTypeLabel, active && { color: C.textPrimary, fontWeight: '700' }]}
                           numberOfLines={1}>
                           {info.label}
@@ -571,7 +571,7 @@ function makeStyles(C: ColorPalette) {
       width: '22%', borderRadius: Radius.md, borderWidth: 1.5,
       paddingVertical: 8, paddingHorizontal: 4, alignItems: 'center', gap: 2,
     },
-    goalTypeEmoji: { fontSize: 20, lineHeight: 26 },
+    goalTypeIcon: { marginBottom: 3 },
     goalTypeLabel: { fontSize: 10, fontWeight: '600', color: C.textSecondary, textAlign: 'center' },
 
     pinRow: {
