@@ -9,6 +9,7 @@ import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import IconBadge from '../components/IconBadge';
 
 interface CategoryTotal {
   category: string;
@@ -167,9 +168,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
             const barWidth = maxCategory > 0 ? (cat.total / maxCategory) * 100 : 0;
             return (
               <View key={cat.category} style={styles.catRow}>
-                <View style={[styles.catIcon, { backgroundColor: info.color + '20' }]}>
-                  <Ionicons name={info.icon} size={18} color={info.color} />
-                </View>
+                <IconBadge iconKey={info.iconKey} color={info.color} />
                 <View style={styles.catMiddle}>
                   <View style={styles.catLabelRow}>
                     <Text style={styles.catName}>{info.label}</Text>

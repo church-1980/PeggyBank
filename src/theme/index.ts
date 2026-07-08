@@ -101,6 +101,24 @@ export const Radius = {
 };
 
 // ─────────────────────────────────────────────
+// ICON SIZES — the ONLY allowed icon glyph sizes.
+// Never use raw numbers (15/16/18/22/27…) for icons; pick one of these so the
+// same concept has the same visual weight on every screen.
+// ─────────────────────────────────────────────
+
+export const IconSize = {
+  sm: 20, // list rows, category chips, pickers — the default
+  md: 24, // secondary emphasis
+  lg: 28, // detail sheets / focused single icon
+  xl: 36, // hero / onboarding
+};
+
+// Standard container for a category/concept icon (one shape everywhere):
+// a soft rounded square, tinted with the concept color.
+export const IconBadgeSize = 36;
+
+
+// ─────────────────────────────────────────────
 // TYPOGRAPHY — readable, calm hierarchy
 // Line heights are intentionally generous for dyslexia-friendly reading.
 // Font weights use contrast for hierarchy rather than size overload.

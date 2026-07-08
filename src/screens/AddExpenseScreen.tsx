@@ -12,6 +12,7 @@ import { getTodayString } from '../utils/helpers';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import IconBadge from '../components/IconBadge';
 
 const VALID_CATEGORIES = Object.keys(CATEGORIES) as Category[];
 
@@ -187,12 +188,13 @@ export default function AddExpenseScreen({ navigation, route }: any) {
                   reads as one unified color — no inner rectangle artifact.
                   When inactive, the wrap provides the soft pastel circle.
                 */}
-                <View style={[
-                  styles.catIconWrap,
-                  { backgroundColor: active ? 'transparent' : info.color + '20' },
-                ]}>
-                  <Ionicons name={info.icon} size={16} color={info.color} />
-                </View>
+                <IconBadge
+                  iconKey={info.iconKey}
+                  color={info.color}
+                  size={30}
+                  tinted={!active}
+                  style={{ marginBottom: 4 }}
+                />
                 <Text style={[
                   styles.catLabel,
                   { color: active ? C.textPrimary : C.textSecondary },

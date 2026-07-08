@@ -11,8 +11,9 @@ import { getDatabase } from '../database/database';
 import { formatCurrency } from '../utils/helpers';
 import { SavingsGoal } from '../types';
 import { GOAL_TYPES, GoalType } from '../data/goalTypes';
-import { Spacing, Radius, Typography, ColorPalette } from '../theme';
+import { Spacing, Radius, Typography, IconSize, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import IconBadge from '../components/IconBadge';
 
 function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; borderColor: string }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -192,13 +193,13 @@ export default function GoalsScreen({ navigation, route }: any) {
       >
         <View style={styles.cardTop}>
           {/* Goal type icon — specific to type, not generic flag */}
-          <View style={[styles.iconWrap, { backgroundColor: accent + '18' }]}>
-            <Ionicons
-              name={done ? 'checkmark-circle' : typeInfo.icon}
-              size={20}
-              color={accent}
-            />
-          </View>
+          {done ? (
+            <View style={[styles.iconWrap, { backgroundColor: accent + '18' }]}>
+              <Ionicons name="checkmark-circle" size={IconSize.sm} color={accent} />
+            </View>
+          ) : (
+            <IconBadge iconKey={typeInfo.iconKey} color={accent} size={40} />
+          )}
 
           <View style={{ flex: 1 }}>
             <View style={styles.nameRow}>
@@ -307,7 +308,7 @@ export default function GoalsScreen({ navigation, route }: any) {
                         onPress={() => setGoalType(key)}
                         activeOpacity={0.75}
                       >
-                        <Ionicons name={info.icon} size={22} color={info.color} style={styles.goalTypeIcon} />
+                        <IconBadge iconKey={info.iconKey} color={info.color} size={30} tinted={!active} style={styles.goalTypeIcon} />
                         <Text style={[styles.goalTypeLabel, active && { color: C.textPrimary, fontWeight: '700' }]}
                           numberOfLines={1}>
                           {info.label}

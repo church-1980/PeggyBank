@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { goalTypeIonicon } from './iconRegistry';
+import { goalTypeIonicon, goalTypeIconKey, IconKey } from './iconRegistry';
 
 export type GoalType =
   | 'vacation' | 'cruise' | 'flight' | 'wedding' | 'car'
@@ -12,11 +12,12 @@ export interface GoalTypeInfo {
   emoji: string;
   color: string;
   icon: keyof typeof Ionicons.glyphMap;
+  iconKey: IconKey;
 }
 
 // label/emoji/color are per-type; `icon` is NOT chosen here — it is derived from
 // the single icon registry so the same concept always renders the same icon.
-type GoalTypeMeta = Omit<GoalTypeInfo, 'icon'>;
+type GoalTypeMeta = Omit<GoalTypeInfo, 'icon' | 'iconKey'>;
 
 const GOAL_TYPE_META: Record<GoalType, GoalTypeMeta> = {
   vacation:     { label: 'Vacation',     emoji: '🌴', color: '#52C9B8' },
@@ -43,6 +44,6 @@ const GOAL_TYPE_META: Record<GoalType, GoalTypeMeta> = {
 
 export const GOAL_TYPES: Record<GoalType, GoalTypeInfo> = Object.fromEntries(
   (Object.entries(GOAL_TYPE_META) as [GoalType, GoalTypeMeta][]).map(
-    ([key, meta]) => [key, { ...meta, icon: goalTypeIonicon(key) }]
+    ([key, meta]) => [key, { ...meta, icon: goalTypeIonicon(key), iconKey: goalTypeIconKey(key) }]
   )
 ) as Record<GoalType, GoalTypeInfo>;

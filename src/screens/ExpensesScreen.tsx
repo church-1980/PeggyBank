@@ -9,9 +9,10 @@ import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
 import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Expense, Category } from '../types';
-import { Spacing, Radius, Typography, ColorPalette } from '../theme';
+import { Spacing, Radius, Typography, IconSize, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import UndoToast from '../components/UndoToast';
+import IconBadge from '../components/IconBadge';
 
 export default function ExpensesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -75,9 +76,7 @@ export default function ExpensesScreen({ navigation }: any) {
         onPress={() => setSelectedExpense(item)}
         activeOpacity={0.75}
       >
-        <View style={[styles.iconCircle, { backgroundColor: catInfo.color + '18' }]}>
-          <Ionicons name={catInfo.icon} size={20} color={catInfo.color} />
-        </View>
+        <IconBadge iconKey={catInfo.iconKey} color={catInfo.color} />
         <View style={styles.itemMiddle}>
           <Text style={styles.itemCategory}>{catInfo.label}</Text>
           {item.note ? <Text style={styles.itemNote}>{item.note}</Text> : null}
@@ -156,9 +155,7 @@ export default function ExpensesScreen({ navigation }: any) {
 
             {/* Expense summary */}
             <View style={styles.sheetSummary}>
-              <View style={[styles.sheetIconWrap, { backgroundColor: selCatInfo.color + '18' }]}>
-                <Ionicons name={selCatInfo.icon} size={28} color={selCatInfo.color} />
-              </View>
+              <IconBadge iconKey={selCatInfo.iconKey} color={selCatInfo.color} size={52} iconSize={IconSize.lg} />
               <View style={styles.sheetSummaryText}>
                 <Text style={styles.sheetCategory}>{selCatInfo.label}</Text>
                 {selectedExpense.note ? (

@@ -35,9 +35,16 @@ export type IconKey =
 
 export interface IconEntry {
   label: string;
-  ionicon: keyof typeof Ionicons.glyphMap; // fallback until PNG assets exist
-  // image?: number;  // require('../../assets/peggy-icons/<key>.png') — added in the PNG phase
+  ionicon: keyof typeof Ionicons.glyphMap; // fallback, used until a premium PNG exists
+  image?: any;                             // require('../../assets/peggy-icons/<key>.png')
 }
+
+// ── PNG PHASE: THE ONLY EDIT NEEDED ──────────────────────────────────────────
+// When the 15 premium PNGs land in assets/peggy-icons/, add one line per bucket
+// here (e.g. `image: require('../../assets/peggy-icons/travel.png')`) and every
+// screen upgrades automatically — no screen edits, no duplicated mappings.
+// Leave a key's `image` unset to keep falling back to its Ionicon.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   travel:           { label: 'Travel',         ionicon: 'airplane-outline' },
@@ -97,14 +104,22 @@ export const CATEGORY_ICON: Record<string, IconKey> = {
   other: 'other',
 };
 
+/** Registry bucket key for a goal type. */
+export function goalTypeIconKey(goalType?: string): IconKey {
+  return GOAL_TYPE_ICON[goalType ?? 'other'] ?? 'other';
+}
+
+/** Registry bucket key for an expense category. */
+export function categoryIconKey(category?: string): IconKey {
+  return CATEGORY_ICON[category ?? 'other'] ?? 'other';
+}
+
 /** Ionicon for a goal type — the one true icon for that concept. */
 export function goalTypeIonicon(goalType?: string): keyof typeof Ionicons.glyphMap {
-  const key = GOAL_TYPE_ICON[goalType ?? 'other'] ?? 'other';
-  return ICON_REGISTRY[key].ionicon;
+  return ICON_REGISTRY[goalTypeIconKey(goalType)].ionicon;
 }
 
 /** Ionicon for an expense category — the one true icon for that concept. */
 export function categoryIonicon(category?: string): keyof typeof Ionicons.glyphMap {
-  const key = CATEGORY_ICON[category ?? 'other'] ?? 'other';
-  return ICON_REGISTRY[key].ionicon;
+  return ICON_REGISTRY[categoryIconKey(category)].ionicon;
 }

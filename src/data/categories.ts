@@ -1,16 +1,17 @@
 import { Category } from '../types';
 import { Ionicons } from '@expo/vector-icons';
-import { categoryIonicon } from './iconRegistry';
+import { categoryIonicon, categoryIconKey, IconKey } from './iconRegistry';
 
 export interface CategoryInfo {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
+  iconKey: IconKey;
 }
 
 // label/color are per-category; `icon` is NOT chosen here — it is derived from
 // the single icon registry so the same concept always renders the same icon.
-type CategoryMeta = Omit<CategoryInfo, 'icon'>;
+type CategoryMeta = Omit<CategoryInfo, 'icon' | 'iconKey'>;
 
 const CATEGORY_META: Record<Category, CategoryMeta> = {
   groceries:  { label: 'Groceries',  color: '#52C9B8' },
@@ -29,6 +30,6 @@ const CATEGORY_META: Record<Category, CategoryMeta> = {
 
 export const CATEGORIES: Record<Category, CategoryInfo> = Object.fromEntries(
   (Object.entries(CATEGORY_META) as [Category, CategoryMeta][]).map(
-    ([key, meta]) => [key, { ...meta, icon: categoryIonicon(key) }]
+    ([key, meta]) => [key, { ...meta, icon: categoryIonicon(key), iconKey: categoryIconKey(key) }]
   )
 ) as Record<Category, CategoryInfo>;
