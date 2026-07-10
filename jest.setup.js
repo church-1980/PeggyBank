@@ -131,3 +131,10 @@ jest.mock('./src/context/ThemeContext', () => {
 
 // ── Silence noisy act() warnings ─────────────────────────────────────────────
 global.IS_REACT_ACT_ENVIRONMENT = true;
+
+// expo-linear-gradient — used by PeggyHeroCard. Render as a plain View in tests.
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { LinearGradient: (props) => React.createElement(View, props, props.children) };
+});

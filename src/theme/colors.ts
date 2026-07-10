@@ -1,105 +1,130 @@
 // PeggyBank Color Palettes
-// Both modes share the same emotional goal: calm, warm, readable, safe.
 //
-// DARK  — "Evening Journal": warm slate, muted navy, restrained glow
-// LIGHT — "Morning Pages":  warm off-white, soft cream surfaces, gentle contrast
+// LIGHT = the approved PeggyBank Design Bible (design/PeggyBank-Design-Bible.png).
+//         Every value here is extracted from that image. Do not "improve" them.
+//
+// DARK  = TEMPORARILY MAPPED TO LIGHT (see below).
+//         Dark mode is intentionally NOT designed yet. The architecture stays
+//         theme-aware so a future Dark Mode Design Bible can be dropped in
+//         without touching a single component. Do not invent a dark palette.
 
 export interface ColorPalette {
-  bg:           string;
-  bgCard:       string;
+  // Surfaces
+  bg:           string;  // warm off-white app background — never pure white
+  bgCard:       string;  // white elevated surface
   bgElevated:   string;
   bgInput:      string;
+  surfaceMuted: string;  // progress track / input well
   border:       string;
   borderLight:  string;
+
+  // Brand
   primary:      string;
   primaryDim:   string;
   primaryGlow:  string;
   primaryLight: string;
+  heroFrom:     string;  // hero gradient start (top-left)
+  heroTo:       string;  // hero gradient end (bottom-right)
+
+  // Semantic
+  success:      string;
+  warning:      string;
+  danger:       string;
+  amount:       string;  // bill amounts (purple-blue)
+
+  // Pastel accents (Quick Action tiles: soft bg + stronger icon tint)
+  pastelGreenBg:  string; pastelGreen:  string;
+  pastelBlueBg:   string; pastelBlue:   string;
+  pastelPeachBg:  string; pastelPeach:  string;
+  pastelPurpleBg: string; pastelPurple: string;
+
+  // Legacy semantic (kept so existing screens keep working)
   income:       string;
   spending:     string;
   bills:        string;
   goals:        string;
   debt:         string;
   subs:         string;
-  textPrimary:  string;
+
+  // Text
+  textPrimary:  string;  // soft near-black — never #000
   textSecondary:string;
   textHint:     string;
   textOnPrimary:string;
+
+  // Glass / hero legacy
   glassBase:    string;
   glassDark:    string;
   glassHighlight:string;
   glassText:    string;
   glassBright:  string;
+
+  // Shadow (soft, purple-tinted, never black)
+  shadow:       string;
+
   white:        string;
   black:        string;
 }
 
-export const DarkColors: ColorPalette = {
-  bg:           '#15161E',
-  bgCard:       '#1C1D2B',
-  bgElevated:   '#22243A',
-  bgInput:      '#1C1D2B',
-  border:       '#282B40',
-  borderLight:  '#323554',
-  primary:      '#738AF4',
-  primaryDim:   '#738AF414',
-  primaryGlow:  '#738AF424',
-  primaryLight: '#94A8FF',
-  income:       '#4FC4BA',
-  spending:     '#DF7D70',
-  bills:        '#DC80A4',
-  goals:        '#72C28A',
-  debt:         '#DF7D70',
-  subs:         '#DC80A4',
-  textPrimary:  '#E5E6EE',
-  textSecondary:'#8A8CA6',
-  textHint:     '#54566E',
-  textOnPrimary:'#FFFFFF',
-  glassBase:    '#5460D4',
-  glassDark:    '#3C48B8',
-  glassHighlight:'rgba(255,255,255,0.06)',
-  glassText:    'rgba(255,255,255,0.68)',
-  glassBright:  '#FFFFFF',
-  white:        '#FFFFFF',
-  black:        '#000000',
-};
-
 export const LightColors: ColorPalette = {
-  // Warm off-white base — like cream paper, not sterile white
-  bg:           '#F6F4F0',
+  // ── Surfaces ──────────────────────────────────────────────
+  bg:           '#F7F6F2',  // warm off-white (Rule 1: never pure white)
   bgCard:       '#FFFFFF',
-  bgElevated:   '#FDFCFA',
-  bgInput:      '#FFFFFF',
-  border:       '#E6E1D8',
-  borderLight:  '#EDE9E2',
+  bgElevated:   '#FFFFFF',
+  bgInput:      '#F3F1FB',
+  surfaceMuted: '#F3F1FB',
+  border:       '#EFEDE7',  // Rule 9: borders are avoided; kept faint
+  borderLight:  '#F3F1EC',
 
-  // Primary slightly deeper for light bg contrast (WCAG AA)
-  primary:      '#5B6ED8',
-  primaryDim:   '#5B6ED814',
-  primaryGlow:  '#5B6ED824',
-  primaryLight: '#7080E8',
+  // ── Brand ─────────────────────────────────────────────────
+  primary:      '#7B61FF',
+  primaryDim:   '#7B61FF14',
+  primaryGlow:  '#7B61FF24',
+  primaryLight: '#8B5CF6',
+  heroFrom:     '#8A6BF0',
+  heroTo:       '#A55EE6',
 
-  // Semantic — same hue family, slightly deeper for light bg readability
-  income:       '#3AA89F',
-  spending:     '#C96059',
-  bills:        '#B55C84',
-  goals:        '#4E9E65',
-  debt:         '#C96059',
-  subs:         '#B55C84',
+  // ── Semantic ──────────────────────────────────────────────
+  success:      '#34C77B',
+  warning:      '#FF9F5A',
+  danger:       '#FF6B6B',
+  amount:       '#6C63FF',
 
-  // Warm dark text on light bg
-  textPrimary:  '#1C1D2B',
-  textSecondary:'#6B6C82',
-  textHint:     '#A8AABF',
+  // ── Pastels ───────────────────────────────────────────────
+  pastelGreenBg:  '#E7F5EC', pastelGreen:  '#3FBF7F',
+  pastelBlueBg:   '#E7F0FE', pastelBlue:   '#4B9BFF',
+  pastelPeachBg:  '#FDEEE1', pastelPeach:  '#FF9F5A',
+  pastelPurpleBg: '#EFE9FE', pastelPurple: '#8B5CF6',
+
+  // ── Legacy semantic ───────────────────────────────────────
+  income:       '#34C77B',
+  spending:     '#FF6B6B',
+  bills:        '#FF9F5A',
+  goals:        '#34C77B',
+  debt:         '#FF6B6B',
+  subs:         '#8B5CF6',
+
+  // ── Text ──────────────────────────────────────────────────
+  textPrimary:  '#2B2A3A',  // soft near-black (Rule 11: #000 forbidden)
+  textSecondary:'#8E8CA3',
+  textHint:     '#B4B2C4',
   textOnPrimary:'#FFFFFF',
 
-  // Glass card — keep same warm indigo, it reads well on both modes
-  glassBase:    '#5460D4',
-  glassDark:    '#3C48B8',
-  glassHighlight:'rgba(255,255,255,0.12)',
-  glassText:    'rgba(255,255,255,0.78)',
+  // ── Hero / glass ──────────────────────────────────────────
+  glassBase:    '#8A6BF0',
+  glassDark:    '#A55EE6',
+  glassHighlight:'rgba(255,255,255,0.18)',
+  glassText:    'rgba(255,255,255,0.80)',
   glassBright:  '#FFFFFF',
+
+  // Rule 8: shadows are purple-tinted, never black
+  shadow:       'rgba(60,50,120,0.08)',
 
   white:        '#FFFFFF',
   black:        '#000000',
 };
+
+// TEMPORARY (approved decision): dark mode maps to the light Design Bible.
+// The dark theme is a separate project with its own Design Bible, to be done
+// only after the entire app matches the light Bible. Do not design it here.
+export const DarkColors: ColorPalette = { ...LightColors };

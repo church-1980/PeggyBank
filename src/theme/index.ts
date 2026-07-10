@@ -92,12 +92,16 @@ export const Spacing = {
 // Rounded corners feel safe, modern, approachable.
 // ─────────────────────────────────────────────
 
+// Design Bible §10 — radius is proportional to element size.
+// Never introduce a value outside this scale.
 export const Radius = {
-  sm:   10,
-  md:   16,
-  lg:   22,
+  sm:   12,   // square icon badge
+  md:   16,   // buttons, inputs
+  lg:   20,   // standard card
+  tile: 18,   // quick-action tile
+  hero: 26,   // hero card
   xl:   30,
-  full: 999,
+  full: 999,  // pills, circles, progress bars
 };
 
 // ─────────────────────────────────────────────
@@ -146,6 +150,18 @@ export const Typography = {
 
   // Label — uppercase section titles, tab labels
   label:     { fontSize: 11, fontWeight: '600' as const, letterSpacing: 0.6 },
+
+  // ── Design Bible §12 scale. Money is always the boldest thing in its
+  // container; supporting text is always muted. Use only these.
+  heroAmount:    { fontSize: 40, fontWeight: '800' as const, letterSpacing: -1 },
+  greeting:      { fontSize: 21, fontWeight: '700' as const, lineHeight: 28 },
+  sectionHeader: { fontSize: 17, fontWeight: '700' as const, lineHeight: 24 },
+  cardTitle:     { fontSize: 16, fontWeight: '700' as const, lineHeight: 22 },
+  amountRow:     { fontSize: 15, fontWeight: '700' as const, lineHeight: 20 },
+  helper:        { fontSize: 13, fontWeight: '500' as const, lineHeight: 18 },
+  seeAll:        { fontSize: 13, fontWeight: '600' as const, lineHeight: 18 },
+  percent:       { fontSize: 14, fontWeight: '700' as const, lineHeight: 18 },
+  navLabel:      { fontSize: 11, fontWeight: '600' as const, lineHeight: 14 },
 };
 
 // ─────────────────────────────────────────────
@@ -155,13 +171,22 @@ export const Typography = {
 // ─────────────────────────────────────────────
 
 export const Shadow = {
-  // Subtle card lift — used on most cards
+  // Design Bible §8 — soft, low-opacity, purple-tinted. Never black, never harsh.
   card: {
-    shadowColor: '#0A0B14',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#3C3278',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+
+  // Hero card — slightly deeper, same purple tint
+  hero: {
+    shadowColor: '#5B3FBF',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 8,
   },
 
   // Medium depth — modals, elevated sheets
