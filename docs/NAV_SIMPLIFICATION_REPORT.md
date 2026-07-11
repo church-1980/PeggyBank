@@ -60,3 +60,16 @@ Everything else already lives in More (Goals, Calendar, Debt, Monthly Breakdown,
 4. **Camera tab emphasis:** slightly larger/filled center icon *within* the bar (no floating button) — confirm.
 
 No code until you approve this. Then I implement, run TS + tests + Metro, build, and report.
+
+---
+
+## APPROVED DECISIONS (2026-07-11) — supersede the open questions above
+
+1. **Camera is a smart Quick Capture (OCR) system, not a manual selector.** Full plan in `docs/QUICK_CAPTURE_TECHNICAL_PLAN.md`. Photograph receipt/bill → store image → read it → suggest Expense/Bill + fields + category → user reviews & confirms. Nothing saved silently. No faked OCR.
+2. **Camera → Bill photo storage: APPROVED.** Add nullable `photo_uri` to `bills` via safe migration; old rows → `NULL`; image stays attached after save; backup/restore round-trips the reference; deletes remove only that row's image; image lifecycle documented in the tech plan §10.
+3. **Profile scope (local-only): APPROVED.** Profile = photo + display name + supported preferences + appearance/settings access + **"Delete all PeggyBank data from this device."** NO Sign Out / account email / password / subscription / billing / cloud sections (none exist). Avatar opens Profile. Deletion requires: explain exactly what's removed → type `DELETE` → final destructive confirm → delete only then → clear success/failure → reset to valid first-use state without crashing.
+4. **QuickAddScreen: KEEP DORMANT.** Do not delete yet. Nothing links to it in the new nav. Remove only in a separate cleanup audit **after** the new nav + Camera pass real-device verification.
+5. **Bottom nav: Home · Camera · More.** Camera centered and slightly emphasized but **inside** the bar — no floating button, no oversized center gap, no Action Hub, no label wrap, correct Android safe-area, clear selected/unselected states, same Peggy visual language.
+6. **Reachability:** More gains Spending, Income, Profile (plus everything already there); Scan → Camera; all add-actions keep entry points. Nothing becomes unreachable.
+
+**Implementation is phased (A→E).** Phase A (this plan + tech plan) is done and awaiting approval. **No feature code written yet.** Not authorized to choose a paid service, add a backend, or fake recognition.
