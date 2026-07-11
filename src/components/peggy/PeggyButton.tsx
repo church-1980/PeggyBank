@@ -22,6 +22,7 @@ interface Props {
   onPress: () => void;
   variant?: Variant;
   icon?: React.ReactNode;         // leading element (or the fab's glyph)
+  iconRight?: React.ReactNode;    // trailing element
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -32,6 +33,7 @@ export default function PeggyButton({
   onPress,
   variant = 'primary',
   icon,
+  iconRight,
   disabled = false,
   style,
   testID,
@@ -103,6 +105,7 @@ export default function PeggyButton({
           {label}
         </Text>
       ) : null}
+      {iconRight}
     </TouchableOpacity>
   );
 }

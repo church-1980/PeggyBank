@@ -135,7 +135,7 @@ export default function DashboardScreen({ navigation }: any) {
 
       {/* ── Hero: Safe to Spend (§3) ───────────────────────────── */}
       <PeggyHeroCard>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Text style={[Typography.helper, { color: C.glassText, fontWeight: '600' }]}>Safe to Spend</Text>
@@ -144,31 +144,32 @@ export default function DashboardScreen({ navigation }: any) {
             <Text style={[Typography.heroAmount, { color: C.glassBright, marginTop: 6 }]}>
               {formatCurrency(summary.safeToSpend)}
             </Text>
-            <Text style={[Typography.helper, { color: C.glassText, marginTop: 2 }]}>
-              of {formatCurrency(summary.totalIncome)} this month
-            </Text>
           </View>
           {/* Reserved slot for the PeggyBank piggy illustration (Bible §3).
               Placeholder now; real art drops into `source` later with no layout shift. */}
           <PeggyIllustration size={76} circle tint={C.glassBright} />
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm + 2 }}>
-          <PeggyProgressBar
-            pct={spentPct}
-            color={C.glassBright}
-            trackColor="rgba(255,255,255,0.22)"
-            height={7}
-            style={{ flex: 1 }}
-          />
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4 }}>
+          <Text style={[Typography.helper, { color: C.glassText }]}>
+            of {formatCurrency(summary.totalIncome)} this month
+          </Text>
           <Text style={[Typography.percent, { color: C.glassBright }]}>{spentPctInt}%</Text>
         </View>
+
+        <PeggyProgressBar
+          pct={spentPct}
+          color={C.glassBright}
+          trackColor="rgba(255,255,255,0.22)"
+          height={7}
+          style={{ marginTop: Spacing.sm }}
+        />
 
         <PeggyButton
           variant="pill"
           label="View full breakdown"
           onPress={() => navigation.navigate('MonthlyBreakdown')}
-          icon={<Ionicons name="chevron-down" size={14} color={C.glassBright} />}
+          iconRight={<Ionicons name="chevron-down" size={14} color={C.glassBright} />}
           style={{ marginTop: Spacing.md }}
         />
       </PeggyHeroCard>

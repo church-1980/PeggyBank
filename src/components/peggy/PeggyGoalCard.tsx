@@ -104,10 +104,17 @@ export default function PeggyGoalCard({
           {/* Bar: percentage lives OUTSIDE the bar (Bible §5) */}
           <PeggyProgressBar pct={pct} color={barColor} height={7} style={{ marginTop: 8 }} />
 
-          {/* Encouragement — required field */}
-          <Text style={[Typography.helper, { color: encColor, fontWeight: '700', marginTop: 7 }]} numberOfLines={1}>
-            {goalEncouragement(pct)}
-          </Text>
+          {/* Encouragement — required field, with a small leading icon (Bible §4) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 7 }}>
+            <Ionicons
+              name={done ? 'trophy' : 'sparkles'}
+              size={12}
+              color={encColor}
+            />
+            <Text style={[Typography.helper, { color: encColor, fontWeight: '700' }]} numberOfLines={1}>
+              {goalEncouragement(pct)}
+            </Text>
+          </View>
           {secondary ? (
             <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 2 }]} numberOfLines={1}>
               {secondary}
