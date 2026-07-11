@@ -30,6 +30,7 @@ export interface ColorPalette {
   success:      string;
   warning:      string;
   danger:       string;
+  gold:         string;  // goal-complete milestone (Design System §5)
   amount:       string;  // bill amounts (purple-blue)
 
   // Pastel accents (Quick Action tiles: soft bg + stronger icon tint)
@@ -88,6 +89,7 @@ export const LightColors: ColorPalette = {
   success:      '#34C77B',
   warning:      '#FF9F5A',
   danger:       '#FF6B6B',
+  gold:         '#F4B740',
   amount:       '#6C63FF',
 
   // ── Pastels ───────────────────────────────────────────────

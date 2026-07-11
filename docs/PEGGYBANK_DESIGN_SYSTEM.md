@@ -69,7 +69,9 @@ This is the single answer to the only question the user actually opens the app t
 - Left: ~52 circular thumbnail image.
 - Bold goal title (~16); muted "of $3,000" amount line (~13).
 - Colored progress bar; bold percentage (~14) at the right.
-- An encouraging line with a small icon: *"You're doing great!"*, *"Every dollar gets you closer!"*, *"Almost there!"*
+- An encouraging line that changes with progress. Approved copy:
+  - in progress: *"Every dollar gets you closer!"* / *"You're doing great!"* / *"Almost there!"* (verbatim from the Bible)
+  - **completed:** primary *"You did it!"* + secondary *"Goal complete — amazing work! 🎉"*
 - Chevron on the right edge.
 
 **Design Intent**
@@ -84,17 +86,24 @@ Saving is emotional, not arithmetic. The photograph/illustration makes the goal 
 
 **Specification**
 - Full-radius track in a light neutral (`surfaceMuted`).
-- Fill is full-radius and **colored per goal** (teal/green ~`#34C77B`, coral ~`#FF6B6B`, teal ~`#2FB5A8`).
+- Fill is full-radius and colored by **discrete milestone band** (never a continuous blend):
+  | Band | Color | Token |
+  |------|-------|-------|
+  | 0–24% | coral | `danger` `#FF6B6B` |
+  | 25–49% | orange | `warning` `#FF9F5A` |
+  | 50–74% | PeggyBank purple | `primary` `#7B61FF` |
+  | 75–99% | teal/green | `success` `#34C77B` |
+  | 100% | gold + green success accent | `gold` `#F4B740` (bar) + `success` (text) |
 - Fill animates on load.
 - Percentage lives outside the bar, bold.
 - Hero uses a thinner light-on-purple variant.
 - No illustrations, journeys, airplanes, or SVG scenes inside a bar.
 
 **Design Intent**
-Color carries meaning faster than digits: a warm/red bar reads "early, keep going," a cool/green bar reads "you're winning." Animating the fill exploits the goal-gradient effect — motion toward a finish line is motivating in a way a static bar is not. The rounded track makes progress feel gentle rather than like a deadline.
+Color carries meaning faster than digits. Bands (not a continuous blend) let the user recognize their *stage* at a glance — moving from coral → orange → purple → green → gold is a visible sense of progression through milestones, each a small reward. Animating the fill exploits the goal-gradient effect. The rounded track makes progress feel gentle rather than like a deadline.
 
 **Reusable Rule**
-> All progress in PeggyBank is shown with the same rounded, animated, color-carrying bar component. The bar's color must encode progress. Percentage always sits outside the bar. No bar may contain artwork.
+> All progress in PeggyBank uses the same rounded, animated bar, colored by the fixed milestone bands above. The color changes by band, never continuously. Percentage always sits outside the bar. No bar may contain artwork.
 
 ---
 

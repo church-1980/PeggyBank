@@ -17,7 +17,7 @@ export { default as PeggySectionHeader } from './PeggySectionHeader';
 export { default as PeggyButton } from './PeggyButton';
 export { default as PeggyInput } from './PeggyInput';
 export { default as PeggyProgressBar } from './PeggyProgressBar';
-export { default as PeggyGoalCard, goalProgressColor, goalEncouragement } from './PeggyGoalCard';
+export { default as PeggyGoalCard, goalProgressColor, goalEncouragement, goalEncouragementSecondary } from './PeggyGoalCard';
 export { default as PeggyQuickActionCard } from './PeggyQuickActionCard';
 export { default as PeggyListRow } from './PeggyListRow';
 export { default as PeggyIconBadge } from './PeggyIconBadge';

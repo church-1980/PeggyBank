@@ -19,25 +19,35 @@ import PeggyProgressBar from './PeggyProgressBar';
  * they are.
  */
 
-/** Bar color encodes progress (Bible §5). Low = coral, high = green/teal. */
+/**
+ * Bar color encodes progress by MILESTONE BAND (Design System §5) — discrete,
+ * never a continuous blend, so the user instantly understands their stage:
+ *   0–24% coral · 25–49% orange · 50–74% purple · 75–99% teal/green · 100% gold
+ */
 export function goalProgressColor(pct: number, C: ColorPalette): string {
   const p = Math.max(0, Math.min(1, pct));
-  if (p < 0.4) return C.danger;   // Bible: 28% renders coral
-  if (p < 0.7) return C.warning;  // inferred (no mid-range sample in the Bible)
-  return C.success;               // Bible: 72% / 74% render green-teal
+  if (p >= 1)    return C.gold;     // complete (paired with a green success accent)
+  if (p >= 0.75) return C.success;  // teal/green
+  if (p >= 0.5)  return C.primary;  // PeggyBank purple
+  if (p >= 0.25) return C.warning;  // orange
+  return C.danger;                  // coral
 }
 
 /**
- * Encouraging line. The three phrases below are taken verbatim from the Design
- * Bible. The completed-state phrase is an addition (the Bible shows no
- * completed goal) — flagged in docs.
+ * Primary encouraging line. The three in-progress phrases are verbatim from the
+ * Design Bible; the completed phrase is the approved completed state.
  */
 export function goalEncouragement(pct: number): string {
   const p = Math.max(0, Math.min(1, pct));
-  if (p >= 1)   return 'Goal reached!';
+  if (p >= 1)   return 'You did it!';
   if (p >= 0.7) return 'Almost there!';
   if (p >= 0.4) return "You're doing great!";
   return 'Every dollar gets you closer!';
+}
+
+/** Secondary line — only the approved completed state has one. */
+export function goalEncouragementSecondary(pct: number): string | null {
+  return pct >= 1 ? 'Goal complete — amazing work! 🎉' : null;
 }
 
 interface Props {
@@ -67,6 +77,10 @@ export default function PeggyGoalCard({
   const pct = target > 0 ? Math.min(1, current / target) : 0;
   const pctInt = Math.round(pct * 100);
   const barColor = goalProgressColor(pct, C);
+  const done = pct >= 1;
+  // Completed = gold bar with a subtle green success accent on the text (§5).
+  const encColor = done ? C.success : barColor;
+  const secondary = goalEncouragementSecondary(pct);
 
   return (
     <PeggyCard onPress={onPress} style={style} testID={testID}>
@@ -91,9 +105,14 @@ export default function PeggyGoalCard({
           <PeggyProgressBar pct={pct} color={barColor} height={7} style={{ marginTop: 8 }} />
 
           {/* Encouragement — required field */}
-          <Text style={[Typography.helper, { color: barColor, fontWeight: '600', marginTop: 7 }]} numberOfLines={1}>
+          <Text style={[Typography.helper, { color: encColor, fontWeight: '700', marginTop: 7 }]} numberOfLines={1}>
             {goalEncouragement(pct)}
           </Text>
+          {secondary ? (
+            <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 2 }]} numberOfLines={1}>
+              {secondary}
+            </Text>
+          ) : null}
         </View>
 
         <Ionicons name="chevron-forward" size={IconSize.sm} color={C.textHint} />
