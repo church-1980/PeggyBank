@@ -18,7 +18,8 @@ const ITEM_H    = 90;
 const ICON_SIZE = 52;
 const ARC_ANGLES = [-70, -35, 0, 35, 70];
 const STORAGE_KEY = '@peggybank_arc_items';
-const DEFAULT_KEYS = ['checkin', 'income', 'bill', 'goal', 'more'];
+// Action Hub is ACTIONS ONLY (no navigation destinations).
+const DEFAULT_KEYS = ['expense', 'income', 'bill', 'goal', 'checkin'];
 
 type ColorKey = 'spending' | 'income' | 'bills' | 'goals' | 'primary' | 'debt' | 'subs';
 
@@ -31,19 +32,15 @@ interface ArcOption {
   params?:  object;
 }
 
-// ─── Full pool of available actions ──────────────────────────────────────────
+// ─── Action Hub pool — ACTIONS ONLY. No navigation destinations belong here.
+// (Currency, Calendar, Breakdown, Payday, Debt, More live on the More screen.)
 export const ARC_POOL: ArcOption[] = [
-  { key: 'checkin',   label: 'Check-In',  icon: 'checkmark-circle-outline', colorKey: 'income',   screen: 'WeeklyCheckIn' },
-  { key: 'income',    label: 'Income',    icon: 'arrow-down-circle-outline', colorKey: 'income',   screen: 'AddIncome' },
-  { key: 'expense',   label: 'Expense',   icon: 'arrow-up-circle-outline',   colorKey: 'spending', screen: 'AddExpense' },
-  { key: 'bill',      label: 'Add Bill',  icon: 'receipt-outline',           colorKey: 'bills',    screen: 'Bills',    params: { autoOpen: true } },
-  { key: 'goal',      label: 'Add Goal',  icon: 'flag-outline',              colorKey: 'goals',    screen: 'Goals',    params: { autoOpen: true } },
-  { key: 'debt',      label: 'Debt',      icon: 'trending-down-outline',     colorKey: 'debt',     screen: 'Debt' },
-  { key: 'currency',  label: 'Currency',  icon: 'swap-horizontal-outline',   colorKey: 'primary',  screen: 'Currency' },
-  { key: 'calendar',  label: 'Calendar',  icon: 'calendar-outline',          colorKey: 'bills',    screen: 'Calendar' },
-  { key: 'breakdown', label: 'Breakdown', icon: 'bar-chart-outline',         colorKey: 'goals',    screen: 'MonthlyBreakdown' },
-  { key: 'payday',    label: 'Payday',    icon: 'cash-outline',              colorKey: 'income',   screen: 'Payday' },
-  { key: 'more',      label: 'More',      icon: 'grid-outline',              colorKey: 'primary',  screen: 'More' },
+  { key: 'expense',   label: 'Add Expense',  icon: 'arrow-up-circle-outline',   colorKey: 'spending', screen: 'AddExpense' },
+  { key: 'income',    label: 'Add Income',   icon: 'arrow-down-circle-outline', colorKey: 'income',   screen: 'AddIncome' },
+  { key: 'bill',      label: 'Add Bill',     icon: 'receipt-outline',           colorKey: 'bills',    screen: 'Bills',      params: { autoOpen: true } },
+  { key: 'goal',      label: 'Add Goal',     icon: 'flag-outline',              colorKey: 'goals',    screen: 'Goals',      params: { autoOpen: true } },
+  { key: 'scan',      label: 'Scan Receipt', icon: 'camera-outline',            colorKey: 'spending', screen: 'AddExpense', params: { openCamera: true } },
+  { key: 'checkin',   label: 'Weekly Check-In', icon: 'checkmark-circle-outline', colorKey: 'income', screen: 'WeeklyCheckIn' },
 ];
 
 function toRad(deg: number) { return (deg * Math.PI) / 180; }
@@ -69,7 +66,12 @@ export default function QuickAddScreen({ navigation }: any) {
       if (raw) {
         try {
           const keys = JSON.parse(raw) as string[];
-          if (Array.isArray(keys) && keys.length === 5) setActiveKeys(keys);
+          // Only accept saved keys that still exist in the actions-only pool,
+          // so previously-saved navigation shortcuts (more/currency/…) drop out.
+          const valid = Array.isArray(keys)
+            && keys.length === 5
+            && keys.every(k => ARC_POOL.some(o => o.key === k));
+          if (valid) setActiveKeys(keys);
         } catch {}
       }
     });

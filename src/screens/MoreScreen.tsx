@@ -19,6 +19,7 @@ const TOOLS: ToolItem[] = [
   { label: 'Debt Tracker',        description: 'Pay it down, one step at a time',    icon: 'trending-down-outline',    colorKey: 'debt',          screen: 'Debt' },
   { label: 'Weekly Check-In',     description: 'How did this week go?',              icon: 'checkmark-circle-outline', colorKey: 'income',        screen: 'WeeklyCheckIn' },
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      icon: 'bar-chart-outline',        colorKey: 'bills',         screen: 'MonthlyBreakdown' },
+  { label: 'Payday',              description: 'Plan around your next paycheck',     icon: 'cash-outline',             colorKey: 'income',        screen: 'Payday' },
   { label: 'Currency Calculator', description: 'Convert money, works offline',       icon: 'swap-horizontal-outline',  colorKey: 'primaryLight',  screen: 'Currency' },
   { label: 'Export & Backup',     description: 'Save or share your data',            icon: 'cloud-download-outline',   colorKey: 'textSecondary', screen: 'Export' },
   { label: 'Share PeggyBank',     description: 'Tell a friend about the app',        icon: 'share-social-outline',     colorKey: 'income',        screen: 'Share' },

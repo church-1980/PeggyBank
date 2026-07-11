@@ -95,14 +95,28 @@ function HomeTabs() {
           if (route.name === 'Spending') {
             return <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} />;
           }
+          if (route.name === 'BillsTab') {
+            return <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={22} color={color} />;
+          }
+          if (route.name === 'MoreTab') {
+            return <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />;
+          }
           return null;
         },
       })}
     >
+      {/* Bible bottom bar: Home · Spending · + · Bills · More.
+          Nav tabs navigate only. The center + opens the Action Hub only. */}
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
         options={{ tabBarLabel: 'Home' }}
+      />
+
+      <Tab.Screen
+        name="Spending"
+        component={ExpensesScreen}
+        options={{ tabBarLabel: 'Spending' }}
       />
 
       <Tab.Screen
@@ -123,13 +137,25 @@ function HomeTabs() {
       />
 
       <Tab.Screen
-        name="Spending"
-        component={ExpensesScreen}
-        options={{ tabBarLabel: 'Spending' }}
+        name="BillsTab"
+        component={EmptyScreen}
+        options={{ tabBarLabel: 'Bills' }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('AddExpense', { returnTo: 'Spending' });
+            navigation.navigate('Bills');
+          },
+        })}
+      />
+
+      <Tab.Screen
+        name="MoreTab"
+        component={EmptyScreen}
+        options={{ tabBarLabel: 'More' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('More');
           },
         })}
       />
