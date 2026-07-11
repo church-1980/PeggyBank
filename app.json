@@ -55,7 +55,10 @@
           "photosPermission": "PeggyBank uses your photos to attach receipts to expenses.",
           "cameraPermission": "PeggyBank uses your camera to photograph receipts."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "reactCompiler": true

@@ -32,6 +32,7 @@ import BillsScreen            from '../screens/BillsScreen';
 import CalendarScreen         from '../screens/CalendarScreen';
 import DebtScreen             from '../screens/DebtScreen';
 import MonthlyBreakdownScreen from '../screens/MonthlyBreakdownScreen';
+import OcrSpikeScreen         from '../screens/OcrSpikeScreen'; // SPIKE — throwaway
 
 const Tab   = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -194,6 +195,7 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="Appearance"       component={AppearanceScreen}       options={{ presentation: 'modal' }} />
         <Stack.Screen name="Share"            component={ShareScreen}           options={{ presentation: 'modal' }} />
         <Stack.Screen name="Incomes"          component={IncomesScreen}         options={{ presentation: 'modal' }} />
+        <Stack.Screen name="OcrSpike"         component={OcrSpikeScreen}        options={{ presentation: 'modal' }} />{/* SPIKE — throwaway */}
       </Stack.Navigator>
     </NavigationContainer>
   );

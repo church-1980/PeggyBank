@@ -13,6 +13,7 @@ interface ToolItem {
 }
 
 const TOOLS: ToolItem[] = [
+  { label: 'OCR Spike Test',      description: 'TEMP — verify ML Kit text reading', icon: 'scan-outline',             colorKey: 'primary',       screen: 'OcrSpike' }, // SPIKE — throwaway
   { label: 'Savings Goals',       description: "Track what you're saving for",     icon: 'flag-outline',             colorKey: 'goals',         screen: 'Goals' },
   { label: 'Calendar',            description: 'See your month at a glance',         icon: 'calendar-outline',         colorKey: 'primary',       screen: 'Calendar' },
   { label: 'Bills & Subscriptions', description: "Recurring bills and charges",       icon: 'receipt-outline',          colorKey: 'bills',         screen: 'Bills' },
