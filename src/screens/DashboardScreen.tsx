@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, RefreshControl } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
@@ -13,7 +13,7 @@ import { GOAL_TYPES, GoalType } from '../data/goalTypes';
 import {
   PeggyScreen, PeggyHeroCard, PeggySectionHeader, PeggyCard,
   PeggyQuickActionCard, PeggyGoalCard, PeggyListRow, PeggyEmptyState,
-  PeggyAvatar, PeggyButton, PeggyProgressBar,
+  PeggyAvatar, PeggyButton, PeggyProgressBar, PeggyIllustration,
 } from '../components/peggy';
 
 interface MonthSummary {
@@ -125,17 +125,17 @@ export default function DashboardScreen({ navigation }: any) {
             You're doing amazing today! 💜
           </Text>
         </View>
-        <PeggyButton
-          variant="pill"
+        <TouchableOpacity
           onPress={() => navigation.navigate('Settings')}
-          icon={<Ionicons name="notifications-outline" size={IconSize.sm} color={C.primary} />}
-          style={{ backgroundColor: C.primary + '14', height: 44, width: 44, paddingHorizontal: 0, borderRadius: 22 }}
-        />
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="notifications-outline" size={24} color={C.textSecondary} />
+        </TouchableOpacity>
       </View>
 
       {/* ── Hero: Safe to Spend (§3) ───────────────────────────── */}
       <PeggyHeroCard>
-        <View style={{ flexDirection: 'row' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               <Text style={[Typography.helper, { color: C.glassText, fontWeight: '600' }]}>Safe to Spend</Text>
@@ -148,16 +148,21 @@ export default function DashboardScreen({ navigation }: any) {
               of {formatCurrency(summary.totalIncome)} this month
             </Text>
           </View>
-          <Text style={[Typography.percent, { color: C.glassBright }]}>{spentPctInt}%</Text>
+          {/* Reserved slot for the PeggyBank piggy illustration (Bible §3).
+              Placeholder now; real art drops into `source` later with no layout shift. */}
+          <PeggyIllustration size={76} circle tint={C.glassBright} />
         </View>
 
-        <PeggyProgressBar
-          pct={spentPct}
-          color={C.glassBright}
-          trackColor="rgba(255,255,255,0.22)"
-          height={7}
-          style={{ marginTop: Spacing.sm + 2 }}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm + 2 }}>
+          <PeggyProgressBar
+            pct={spentPct}
+            color={C.glassBright}
+            trackColor="rgba(255,255,255,0.22)"
+            height={7}
+            style={{ flex: 1 }}
+          />
+          <Text style={[Typography.percent, { color: C.glassBright }]}>{spentPctInt}%</Text>
+        </View>
 
         <PeggyButton
           variant="pill"
