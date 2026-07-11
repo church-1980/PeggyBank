@@ -12,14 +12,16 @@ import { useColors } from '../context/ThemeContext';
 
 // ─── Arc geometry ────────────────────────────────────────────────────────────
 const { width: SCREEN_W } = Dimensions.get('window');
-const RADIUS    = 155;
-const ITEM_W    = 74;
+const RADIUS    = 158;
+const ITEM_W    = 62;   // label-box width; icon circle size unchanged (visual style preserved)
 const ITEM_H    = 90;
 const ICON_SIZE = 52;
-const ARC_ANGLES = [-70, -35, 0, 35, 70];
+// Six evenly-spaced slots (span ~118°). Icon circles stay clear of each other
+// and on-screen down to 360px-wide phones; see NAVIGATION notes.
+const ARC_ANGLES = [-59, -35.4, -11.8, 11.8, 35.4, 59];
 const STORAGE_KEY = '@peggybank_arc_items';
-// Action Hub is ACTIONS ONLY (no navigation destinations).
-const DEFAULT_KEYS = ['expense', 'income', 'bill', 'goal', 'checkin'];
+// Action Hub is ACTIONS ONLY (no navigation destinations). All six always show.
+const DEFAULT_KEYS = ['expense', 'income', 'bill', 'goal', 'scan', 'checkin'];
 
 type ColorKey = 'spending' | 'income' | 'bills' | 'goals' | 'primary' | 'debt' | 'subs';
 
@@ -35,12 +37,12 @@ interface ArcOption {
 // ─── Action Hub pool — ACTIONS ONLY. No navigation destinations belong here.
 // (Currency, Calendar, Breakdown, Payday, Debt, More live on the More screen.)
 export const ARC_POOL: ArcOption[] = [
-  { key: 'expense',   label: 'Add Expense',  icon: 'arrow-up-circle-outline',   colorKey: 'spending', screen: 'AddExpense' },
-  { key: 'income',    label: 'Add Income',   icon: 'arrow-down-circle-outline', colorKey: 'income',   screen: 'AddIncome' },
-  { key: 'bill',      label: 'Add Bill',     icon: 'receipt-outline',           colorKey: 'bills',    screen: 'Bills',      params: { autoOpen: true } },
-  { key: 'goal',      label: 'Add Goal',     icon: 'flag-outline',              colorKey: 'goals',    screen: 'Goals',      params: { autoOpen: true } },
-  { key: 'scan',      label: 'Scan Receipt', icon: 'camera-outline',            colorKey: 'spending', screen: 'AddExpense', params: { openCamera: true } },
-  { key: 'checkin',   label: 'Weekly Check-In', icon: 'checkmark-circle-outline', colorKey: 'income', screen: 'WeeklyCheckIn' },
+  { key: 'expense',   label: 'Expense',   icon: 'arrow-up-circle-outline',   colorKey: 'spending', screen: 'AddExpense' },
+  { key: 'income',    label: 'Income',    icon: 'arrow-down-circle-outline', colorKey: 'income',   screen: 'AddIncome' },
+  { key: 'bill',      label: 'Bill',      icon: 'receipt-outline',           colorKey: 'bills',    screen: 'Bills',      params: { autoOpen: true } },
+  { key: 'goal',      label: 'Goal',      icon: 'flag-outline',              colorKey: 'goals',    screen: 'Goals',      params: { autoOpen: true } },
+  { key: 'scan',      label: 'Scan',      icon: 'camera-outline',            colorKey: 'spending', screen: 'AddExpense', params: { openCamera: true } },
+  { key: 'checkin',   label: 'Check-In',  icon: 'checkmark-circle-outline',  colorKey: 'income',   screen: 'WeeklyCheckIn' },
 ];
 
 function toRad(deg: number) { return (deg * Math.PI) / 180; }
@@ -69,7 +71,7 @@ export default function QuickAddScreen({ navigation }: any) {
           // Only accept saved keys that still exist in the actions-only pool,
           // so previously-saved navigation shortcuts (more/currency/…) drop out.
           const valid = Array.isArray(keys)
-            && keys.length === 5
+            && keys.length === 6
             && keys.every(k => ARC_POOL.some(o => o.key === k));
           if (valid) setActiveKeys(keys);
         } catch {}
