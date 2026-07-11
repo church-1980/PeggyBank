@@ -6,10 +6,10 @@ jest.mock('../database/database', () => ({
   getDatabase: jest.fn(),
 }));
 
-jest.mock('../components/GoalProgressWidget', () => {
+jest.mock('expo-linear-gradient', () => {
   const React = require('react');
-  const { Text } = require('react-native');
-  return ({ goal }: any) => React.createElement(Text, { testID: 'goal-widget' }, goal.name);
+  const { View } = require('react-native');
+  return { LinearGradient: (props: any) => React.createElement(View, props, props.children) };
 });
 
 const mockDb = {
@@ -77,10 +77,10 @@ describe('DashboardScreen section order', () => {
     expect(await findByText('Your Goals')).toBeTruthy();
   });
 
-  it('renders the pinned goal widget', async () => {
+  it('renders the pinned goal card', async () => {
     const DashboardScreen = require('../screens/DashboardScreen').default;
-    const { findByTestId } = render(withProviders(<DashboardScreen navigation={mockNav} />));
-    expect(await findByTestId('goal-widget')).toBeTruthy();
+    const { findByText } = render(withProviders(<DashboardScreen navigation={mockNav} />));
+    expect(await findByText('Hawaii Trip')).toBeTruthy();
   });
 });
 

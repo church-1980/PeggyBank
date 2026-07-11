@@ -17,6 +17,7 @@ interface Props {
   scroll?: boolean;             // default true
   padded?: boolean;             // horizontal screen padding (default true)
   contentStyle?: StyleProp<ViewStyle>;
+  refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']; // pull-to-refresh (scroll mode only)
   testID?: string;
 }
 
@@ -25,6 +26,7 @@ export default function PeggyScreen({
   scroll = true,
   padded = true,
   contentStyle,
+  refreshControl,
   testID,
 }: Props) {
   const C = useColors();
@@ -50,6 +52,7 @@ export default function PeggyScreen({
       style={[styles.fill, { backgroundColor: C.bg }]}
       contentContainerStyle={[{ paddingTop: insets.top }, inner]}
       showsVerticalScrollIndicator={false}
+      refreshControl={refreshControl}
     >
       {children}
     </ScrollView>

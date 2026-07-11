@@ -1,17 +1,20 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
 import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
-import { SavingsGoal, Bill } from '../types';
-import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
+import { SavingsGoal, Bill, Category } from '../types';
+import { Spacing, Typography, IconSize } from '../theme';
 import { useColors } from '../context/ThemeContext';
-import GoalProgressWidget from '../components/GoalProgressWidget';
+import { CATEGORIES } from '../data/categories';
+import { categoryIconKey } from '../data/iconRegistry';
+import { GOAL_TYPES, GoalType } from '../data/goalTypes';
+import {
+  PeggyScreen, PeggyHeroCard, PeggySectionHeader, PeggyCard,
+  PeggyQuickActionCard, PeggyGoalCard, PeggyListRow, PeggyEmptyState,
+  PeggyAvatar, PeggyButton, PeggyProgressBar,
+} from '../components/peggy';
 
 interface MonthSummary {
   totalIncome: number;
@@ -20,10 +23,15 @@ interface MonthSummary {
   safeToSpend: number;
 }
 
+function greetingForNow(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning!';
+  if (h < 18) return 'Good afternoon!';
+  return 'Good evening!';
+}
+
 export default function DashboardScreen({ navigation }: any) {
-  const insets = useSafeAreaInsets();
   const C = useColors();
-  const styles = useMemo(() => makeStyles(C), [C]);
   const [summary, setSummary] = useState<MonthSummary>({
     totalIncome: 0, totalSpending: 0, moneyLeft: 0, safeToSpend: 0,
   });
@@ -31,7 +39,6 @@ export default function DashboardScreen({ navigation }: any) {
   const [pinnedGoals, setPinnedGoals] = useState<SavingsGoal[]>([]);
   const [suggestion, setSuggestion] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [nextPayday, setNextPayday] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -74,18 +81,7 @@ export default function DashboardScreen({ navigation }: any) {
       const sortedBills = [...unpaidBills].sort(
         (a, b) => getDaysUntil(a.due_day ?? 1) - getDaysUntil(b.due_day ?? 1)
       );
-      setUpcomingBills(sortedBills.slice(0, 2));
-
-      const paydaySetting = await db.getFirstAsync<{ value: string }>(
-        `SELECT value FROM settings WHERE key = 'payday'`
-      );
-      if (paydaySetting) {
-        const pd = parseInt(paydaySetting.value, 10);
-        const days = getDaysUntil(pd);
-        if (days === 0) setNextPayday('Today is payday');
-        else if (days === 1) setNextPayday('Payday is tomorrow');
-        else setNextPayday(`Payday in ${days} days`);
-      }
+      setUpcomingBills(sortedBills.slice(0, 3));
 
       if (safeToSpend > 50 && totalIncome > 0) {
         const extra = Math.round(safeToSpend * 0.2);
@@ -108,221 +104,143 @@ export default function DashboardScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  // Hero "spent of income" progress (Bible shows spent-of-budget %). App has no
+  // budget concept, so monthly income is the reference. [Flagged in report.]
+  const spentPct = summary.totalIncome > 0 ? summary.totalSpending / summary.totalIncome : 0;
+  const spentPctInt = Math.round(spentPct * 100);
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
-        }
-      >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>PeggyBank</Text>
-            <Text style={styles.date}>{today}</Text>
+    <PeggyScreen
+      contentStyle={{ paddingBottom: 140 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
+    >
+      {/* ── Header (§2) ────────────────────────────────────────── */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.sm, marginBottom: Spacing.md }}>
+        <PeggyAvatar size={44} name="P" />
+        <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
+          <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
+            {greetingForNow()} 👋
+          </Text>
+          <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 1 }]} numberOfLines={1}>
+            You're doing amazing today! 💜
+          </Text>
+        </View>
+        <PeggyButton
+          variant="pill"
+          onPress={() => navigation.navigate('Settings')}
+          icon={<Ionicons name="notifications-outline" size={IconSize.sm} color={C.primary} />}
+          style={{ backgroundColor: C.primary + '14', height: 44, width: 44, paddingHorizontal: 0, borderRadius: 22 }}
+        />
+      </View>
+
+      {/* ── Hero: Safe to Spend (§3) ───────────────────────────── */}
+      <PeggyHeroCard>
+        <View style={{ flexDirection: 'row' }}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Text style={[Typography.helper, { color: C.glassText, fontWeight: '600' }]}>Safe to Spend</Text>
+              <Ionicons name="information-circle-outline" size={14} color={C.glassText} />
+            </View>
+            <Text style={[Typography.heroAmount, { color: C.glassBright, marginTop: 6 }]}>
+              {formatCurrency(summary.safeToSpend)}
+            </Text>
+            <Text style={[Typography.helper, { color: C.glassText, marginTop: 2 }]}>
+              of {formatCurrency(summary.totalIncome)} this month
+            </Text>
           </View>
-          <TouchableOpacity
-            style={styles.settingsBtn}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Ionicons name="settings-outline" size={20} color={C.textSecondary} />
-          </TouchableOpacity>
+          <Text style={[Typography.percent, { color: C.glassBright }]}>{spentPctInt}%</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.safeCard}
-          onPress={() => navigation.navigate('Payday')}
-          activeOpacity={0.9}
-        >
-          <View style={styles.safeGlassHighlight} />
-          <Text style={styles.safeLabel}>Safe to spend right now</Text>
-          <Text style={styles.safeAmount}>{formatCurrency(summary.safeToSpend)}</Text>
-          <Text style={styles.safeNote}>After bills, savings, and spending so far</Text>
-          {nextPayday ? (
-            <View style={styles.safePaydayRow}>
-              <Ionicons name="calendar-outline" size={12} color={C.glassText} />
-              <Text style={styles.safePaydayText}>{nextPayday}</Text>
-            </View>
-          ) : null}
-          <View style={styles.safeMiniRow}>
-            <TouchableOpacity style={styles.safeMiniCell} onPress={() => navigation.navigate('Incomes')} activeOpacity={0.7}>
-              <Text style={styles.safeMiniLabel}>Income</Text>
-              <Text style={styles.safeMiniVal}>{formatCurrency(summary.totalIncome)}</Text>
-            </TouchableOpacity>
-            <View style={styles.safeMiniDiv} />
-            <View style={styles.safeMiniCell}>
-              <Text style={styles.safeMiniLabel}>Spent</Text>
-              <Text style={styles.safeMiniVal}>{formatCurrency(summary.totalSpending)}</Text>
-            </View>
-            <View style={styles.safeMiniDiv} />
-            <View style={styles.safeMiniCell}>
-              <Text style={styles.safeMiniLabel}>Available</Text>
-              <Text style={styles.safeMiniVal}>{formatCurrency(summary.moneyLeft)}</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
+        <PeggyProgressBar
+          pct={spentPct}
+          color={C.glassBright}
+          trackColor="rgba(255,255,255,0.22)"
+          height={7}
+          style={{ marginTop: Spacing.sm + 2 }}
+        />
 
-        {suggestion ? (
-          <View style={styles.suggestionCard}>
-            <Ionicons name="bulb-outline" size={18} color={C.bills} style={{ marginTop: 1 }} />
-            <Text style={styles.suggestionText}>{suggestion}</Text>
-          </View>
-        ) : null}
+        <PeggyButton
+          variant="pill"
+          label="View full breakdown"
+          onPress={() => navigation.navigate('MonthlyBreakdown')}
+          icon={<Ionicons name="chevron-down" size={14} color={C.glassBright} />}
+          style={{ marginTop: Spacing.md }}
+        />
+      </PeggyHeroCard>
 
-        {upcomingBills.length > 0 && (
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Bills')} activeOpacity={0.8}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Coming Up</Text>
-              <View style={styles.seeAllRow}>
-                <Text style={styles.seeAll}>See all</Text>
-                <Ionicons name="chevron-forward" size={14} color={C.primary} />
-              </View>
-            </View>
-            {upcomingBills.map((bill) => {
+      {/* Suggestion — NOT in the Bible; kept as a soft nudge. [Flagged.] */}
+      {suggestion ? (
+        <PeggyCard style={{ marginTop: Spacing.md, flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start' }}>
+          <Ionicons name="bulb-outline" size={IconSize.sm} color={C.warning} style={{ marginTop: 1 }} />
+          <Text style={[Typography.helper, { color: C.textSecondary, flex: 1, lineHeight: 19 }]}>{suggestion}</Text>
+        </PeggyCard>
+      ) : null}
+
+      {/* ── Quick Add (§6) ─────────────────────────────────────── */}
+      <PeggySectionHeader title="Quick Add" onAction={() => navigation.navigate('QuickAdd')} />
+      <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
+        <PeggyQuickActionCard tone="green"  ionicon="receipt"     label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
+        <PeggyQuickActionCard tone="blue"   ionicon="cash"        label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
+        <PeggyQuickActionCard tone="peach"  ionicon="camera"      label="Scan Receipt" onPress={() => navigation.navigate('AddExpense', { openCamera: true })} />
+        <PeggyQuickActionCard tone="purple" ionicon="add-circle"  label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
+      </View>
+
+      {/* ── Your Goals (§4) ────────────────────────────────────── */}
+      <PeggySectionHeader title="Your Goals" onAction={() => navigation.navigate('Goals')} />
+      {pinnedGoals.length > 0 ? (
+        pinnedGoals.map((goal, i) => {
+          const typeInfo = GOAL_TYPES[(goal.goal_type ?? 'other') as GoalType] ?? GOAL_TYPES.other;
+          return (
+            <PeggyGoalCard
+              key={goal.id}
+              name={goal.name}
+              current={goal.current_amount}
+              target={goal.target_amount}
+              formatAmount={formatCurrency}
+              artworkTint={typeInfo.color}
+              onPress={() => navigation.navigate('Goals')}
+              style={i > 0 ? { marginTop: Spacing.sm + 2 } : undefined}
+            />
+          );
+        })
+      ) : (
+        <PeggyCard>
+          <PeggyEmptyState
+            title="No featured goal"
+            message="Pin a goal to track your progress here."
+            actionLabel="Browse"
+            onAction={() => navigation.navigate('Goals')}
+          />
+        </PeggyCard>
+      )}
+
+      {/* ── Coming Up (§14) ────────────────────────────────────── */}
+      {upcomingBills.length > 0 && (
+        <>
+          <PeggySectionHeader title="Coming Up" onAction={() => navigation.navigate('Bills')} />
+          <PeggyCard>
+            {upcomingBills.map((bill, i) => {
               const days = getDaysUntil(bill.due_day ?? 1);
+              const cat = (bill.category as Category) ?? 'other';
+              const catInfo = CATEGORIES[cat] ?? CATEGORIES.other;
               return (
-                <View key={bill.id} style={styles.billRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.billName}>{bill.name}</Text>
-                    <Text style={styles.billDays}>
-                      {days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `In ${days} days`}
-                    </Text>
-                  </View>
-                  <Text style={styles.billAmount}>{formatCurrency(bill.amount)}</Text>
+                <View key={bill.id}>
+                  {i > 0 ? <View style={{ height: 1, backgroundColor: C.borderLight }} /> : null}
+                  <PeggyListRow
+                    iconKey={categoryIconKey(cat)}
+                    iconColor={catInfo.color}
+                    title={bill.name}
+                    subtitle={days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `Due in ${days} days`}
+                    amount={formatCurrency(bill.amount)}
+                    amountColor={C.amount}
+                    onPress={() => navigation.navigate('Bills')}
+                  />
                 </View>
               );
             })}
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Your Goals</Text>
-            <TouchableOpacity style={styles.seeAllRow} onPress={() => navigation.navigate('Goals')}>
-              <Text style={styles.seeAll}>See all</Text>
-              <Ionicons name="chevron-forward" size={14} color={C.primary} />
-            </TouchableOpacity>
-          </View>
-          {pinnedGoals.length > 0 ? (
-            pinnedGoals.map((goal, i) => (
-              <View key={goal.id} style={i > 0 ? { marginTop: Spacing.sm } : undefined}>
-                <GoalProgressWidget
-                  goal={goal}
-                  onPress={() => navigation.navigate('Goals')}
-                  onUnpin={async () => {
-                    setPinnedGoals(prev => prev.filter(g => g.id !== goal.id));
-                    const db = await getDatabase();
-                    await db.runAsync(`UPDATE savings_goals SET pinned = 0 WHERE id = ?`, [goal.id!]);
-                  }}
-                />
-              </View>
-            ))
-          ) : (
-            <View style={styles.goalsEmpty}>
-              <Ionicons name="flag-outline" size={28} color={C.textHint} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.goalsEmptyText}>No featured goal</Text>
-                <Text style={styles.goalsEmptySub}>Pin a goal to track your progress here.</Text>
-              </View>
-              <TouchableOpacity onPress={() => navigation.navigate('Goals')} style={styles.goalsEmptyBtn}>
-                <Text style={styles.goalsEmptyBtnText}>Browse</Text>
-                <Ionicons name="chevron-forward" size={13} color={C.primary} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        <View style={{ height: insets.bottom + 120 }} />
-      </ScrollView>
-    </View>
+          </PeggyCard>
+        </>
+      )}
+    </PeggyScreen>
   );
-}
-
-function makeStyles(C: ColorPalette) {
-  return StyleSheet.create({
-    root:       { flex: 1, backgroundColor: C.bg },
-    container:  { flex: 1 },
-    content:    { paddingBottom: 20 },
-
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      paddingHorizontal: Spacing.md,
-      paddingTop: Spacing.md,
-      paddingBottom: Spacing.md,
-    },
-    greeting:    { ...Typography.h1, color: C.textPrimary },
-    date:        { ...Typography.small, color: C.textSecondary, marginTop: 4 },
-    safePaydayRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, marginBottom: Spacing.sm },
-    safePaydayText: { ...Typography.caption, color: C.glassText, fontWeight: '600' },
-    settingsBtn: {
-      width: 40, height: 40, borderRadius: 20,
-      backgroundColor: C.bgCard,
-      alignItems: 'center', justifyContent: 'center',
-      borderWidth: 1, borderColor: C.border,
-    },
-
-    safeCard: {
-      marginHorizontal: Spacing.md, marginBottom: Spacing.md,
-      backgroundColor: C.glassBase, borderRadius: Radius.xl,
-      padding: Spacing.lg, overflow: 'hidden',
-      ...Shadow.glow,
-    },
-    safeGlassHighlight: {
-      position: 'absolute', top: 0, left: 0, right: 0, height: 60,
-      backgroundColor: C.glassHighlight, borderRadius: Radius.xl,
-    },
-    safeLabel:   { ...Typography.small, color: C.glassText, marginBottom: Spacing.xs },
-    safeAmount:  { ...Typography.hero, color: C.glassBright, marginBottom: Spacing.xs },
-    safeNote:    { ...Typography.caption, color: C.glassText, marginBottom: Spacing.md },
-
-    safeMiniRow: {
-      flexDirection: 'row', marginTop: Spacing.md,
-      borderTopWidth: 1, borderTopColor: C.glassHighlight, paddingTop: Spacing.sm,
-    },
-    safeMiniCell:  { flex: 1, alignItems: 'center', gap: 3 },
-    safeMiniDiv:   { width: 1, backgroundColor: C.glassHighlight, marginVertical: 2 },
-    safeMiniLabel: { ...Typography.caption, color: C.glassText },
-    safeMiniVal:   { ...Typography.smallBold, color: C.glassBright, fontSize: 14 },
-
-    suggestionCard: {
-      marginHorizontal: Spacing.md, marginBottom: Spacing.md,
-      backgroundColor: C.bgCard, borderRadius: Radius.lg,
-      padding: Spacing.md, flexDirection: 'row', alignItems: 'flex-start',
-      gap: Spacing.sm, borderWidth: 1, borderColor: C.primary + '30',
-    },
-    suggestionText: { ...Typography.small, color: C.textSecondary, flex: 1, lineHeight: 22 },
-
-    card: {
-      marginHorizontal: Spacing.md, marginBottom: Spacing.md,
-      backgroundColor: C.bgCard, borderRadius: Radius.lg,
-      padding: Spacing.md, borderWidth: 1, borderColor: C.border,
-    },
-    cardHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-    cardTitle:   { ...Typography.label, color: C.textHint, letterSpacing: 0.6 },
-    seeAllRow:   { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    seeAll:      { ...Typography.caption, color: C.primary, fontWeight: '600' },
-
-    billRow:     { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: Spacing.sm, borderTopWidth: 1, borderTopColor: C.border },
-    billName:    { ...Typography.bodyBold, color: C.textPrimary },
-    billDays:    { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
-    billAmount:  { ...Typography.bodyBold, color: C.bills },
-
-    goalsEmpty: {
-      flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-      paddingVertical: Spacing.md,
-    },
-    goalsEmptyText: { ...Typography.smallBold, color: C.textPrimary },
-    goalsEmptySub:  { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
-    goalsEmptyBtn: {
-      flexDirection: 'row', alignItems: 'center', gap: 2,
-      paddingHorizontal: Spacing.sm, paddingVertical: 6,
-      borderRadius: Radius.full, borderWidth: 1, borderColor: C.primary + '50',
-    },
-    goalsEmptyBtnText: { ...Typography.caption, color: C.primary, fontWeight: '600' },
-  });
 }
