@@ -116,7 +116,15 @@ export default function DashboardScreen({ navigation }: any) {
     >
       {/* ── Header (§2) ────────────────────────────────────────── */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.sm, marginBottom: Spacing.md }}>
-        <PeggyAvatar size={44} name="P" />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile')}
+          accessibilityRole="button"
+          accessibilityLabel="Open profile"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.7}
+        >
+          <PeggyAvatar size={44} name="P" />
+        </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
             {greetingForNow()} 👋

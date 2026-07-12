@@ -28,7 +28,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
   const [amount,        setAmount]        = useState(prefill.amount ? String(prefill.amount) : '');
   const [category,      setCategory]      = useState<Category>(prefill.category ?? 'groceries');
   const [note,          setNote]          = useState(prefill.note ?? '');
-  const [photoUri,      setPhotoUri]      = useState<string | null>(null);
+  const [photoUri,      setPhotoUri]      = useState<string | null>(prefill.capturedPhoto ?? null);
   const [isRecurring,   setIsRecurring]   = useState(false);
   const [saving,        setSaving]        = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);

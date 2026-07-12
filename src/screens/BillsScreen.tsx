@@ -148,8 +148,8 @@ export default function BillsScreen({ navigation, route }: any) {
           );
         } else {
           await db.runAsync(
-            `INSERT INTO bills (name, amount, frequency, due_day, due_weekday) VALUES (?, ?, ?, ?, ?)`,
-            [name.trim(), parsed, frequency, dueDay, dueWeekday]
+            `INSERT INTO bills (name, amount, frequency, due_day, due_weekday, photo_uri) VALUES (?, ?, ?, ?, ?, ?)`,
+            [name.trim(), parsed, frequency, dueDay, dueWeekday, route?.params?.capturedPhoto ?? null]
           );
         }
       } else {

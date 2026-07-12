@@ -1,11 +1,10 @@
-import React, { useMemo } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
 
 // Tab screens
@@ -32,45 +31,28 @@ import BillsScreen            from '../screens/BillsScreen';
 import CalendarScreen         from '../screens/CalendarScreen';
 import DebtScreen             from '../screens/DebtScreen';
 import MonthlyBreakdownScreen from '../screens/MonthlyBreakdownScreen';
+import ProfileScreen         from '../screens/ProfileScreen';
+import QuickCaptureScreen    from '../screens/QuickCaptureScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function CenterFabButton({ onPress }: { onPress?: () => void }) {
-  const C = useColors();
-  const fabStyles = useMemo(() => StyleSheet.create({
-    wrap: {
-      top: -16,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    btn: {
-      width: 62, height: 62, borderRadius: 31,
-      backgroundColor: C.primary,
-      alignItems: 'center', justifyContent: 'center',
-      ...Shadow.glow,
-    },
-  }), [C]);
+function EmptyScreen() { return null; }
 
+// Camera control: emphasized-but-in-bar (soft tinted circle, NOT a floating +).
+function CameraTabIcon() {
+  const C = useColors();
   return (
-    <View style={fabStyles.wrap} pointerEvents="box-none">
-      <TouchableOpacity
-        style={fabStyles.btn}
-        onPress={onPress}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="add" size={30} color={C.textOnPrimary} />
-      </TouchableOpacity>
+    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.primary + '18', alignItems: 'center', justifyContent: 'center' }}>
+      <Ionicons name="camera" size={24} color={C.primary} />
     </View>
   );
 }
 
-function EmptyScreen() { return null; }
-
 function HomeTabs() {
   const insets = useSafeAreaInsets();
   const C = useColors();
-  const tabBarHeight = 60 + insets.bottom;
+  const tabBarHeight = 62 + insets.bottom;
 
   return (
     <Tab.Navigator
@@ -78,11 +60,13 @@ function HomeTabs() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: C.bgCard,
-          borderTopColor:  C.border,
-          borderTopWidth:  1,
+          borderTopWidth:  0,          // Design System §9: no heavy border
           height:          tabBarHeight,
           paddingBottom:   insets.bottom + 8,
           paddingTop:      8,
+          // soft elevation
+          shadowColor: '#3C3278', shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.06, shadowRadius: 12, elevation: 8,
         },
         tabBarShowLabel:         true,
         tabBarLabelStyle:        { fontSize: 11, fontWeight: '600', marginTop: 2 },
@@ -90,23 +74,19 @@ function HomeTabs() {
         tabBarInactiveTintColor: C.textHint,
         tabBarIcon: ({ focused, color }) => {
           if (route.name === 'Dashboard') {
-            return <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />;
+            return <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />;
           }
-          if (route.name === 'Spending') {
-            return <Ionicons name={focused ? 'receipt' : 'receipt-outline'} size={22} color={color} />;
+          if (route.name === 'MoreScreen') {
+            return <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />;
           }
-          if (route.name === 'BillsTab') {
-            return <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={22} color={color} />;
-          }
-          if (route.name === 'MoreTab') {
-            return <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />;
+          if (route.name === 'CameraTab') {
+            return <CameraTabIcon />;
           }
           return null;
         },
       })}
     >
-      {/* Bible bottom bar: Home · Spending · + · Bills · More.
-          Nav tabs navigate only. The center + opens the Action Hub only. */}
+      {/* Final bottom bar: Home · Camera · More — exactly three, evenly spaced. */}
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
@@ -114,50 +94,21 @@ function HomeTabs() {
       />
 
       <Tab.Screen
-        name="Spending"
-        component={ExpensesScreen}
-        options={{ tabBarLabel: 'Spending' }}
-      />
-
-      <Tab.Screen
-        name="QuickAddTab"
+        name="CameraTab"
         component={EmptyScreen}
-        options={{
-          tabBarLabel: () => null,
-          tabBarButton: (props) => (
-            <CenterFabButton onPress={props.onPress as () => void} />
-          ),
-        }}
+        options={{ tabBarLabel: 'Camera' }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('QuickAdd');
+            navigation.navigate('QuickCapture'); // opens the camera immediately
           },
         })}
       />
 
       <Tab.Screen
-        name="BillsTab"
-        component={EmptyScreen}
-        options={{ tabBarLabel: 'Bills' }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('Bills');
-          },
-        })}
-      />
-
-      <Tab.Screen
-        name="MoreTab"
-        component={EmptyScreen}
+        name="MoreScreen"
+        component={MoreScreen}
         options={{ tabBarLabel: 'More' }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            navigation.navigate('More');
-          },
-        })}
       />
     </Tab.Navigator>
   );
@@ -170,17 +121,25 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Home"       component={HomeTabs} />
 
+        {/* DORMANT fallback — the Action Hub is retired. No control opens this
+            route; kept registered only as fallback code until the new nav is
+            device-verified, then removed in a cleanup audit. */}
         <Stack.Screen
           name="QuickAdd"
           component={QuickAddScreen}
           options={{ presentation: 'transparentModal', animation: 'fade_from_bottom' }}
         />
 
+        {/* Camera / Smart Quick Capture — full-screen */}
+        <Stack.Screen name="QuickCapture" component={QuickCaptureScreen} options={{ presentation: 'modal' }} />
+
         <Stack.Screen name="AddExpense"  component={AddExpenseScreen}  options={{ presentation: 'modal' }} />
         <Stack.Screen name="AddIncome"   component={AddIncomeScreen}   options={{ presentation: 'modal' }} />
         <Stack.Screen name="Payday"      component={PaydayScreen}      options={{ presentation: 'modal' }} />
 
-        <Stack.Screen name="More"             component={MoreScreen}            options={{ presentation: 'modal' }} />
+        {/* Spending is now reached from More (no longer a tab) */}
+        <Stack.Screen name="Spending"         component={ExpensesScreen}        options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Profile"          component={ProfileScreen}         options={{ presentation: 'modal' }} />
         <Stack.Screen name="Goals"            component={GoalsScreen}           options={{ presentation: 'modal' }} />
         <Stack.Screen name="Bills"            component={BillsScreen}           options={{ presentation: 'modal' }} />
         <Stack.Screen name="Calendar"         component={CalendarScreen}        options={{ presentation: 'modal' }} />

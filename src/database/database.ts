@@ -114,6 +114,7 @@ export async function setupDatabase(): Promise<void> {
   const migrations = [
     `ALTER TABLE bills ADD COLUMN frequency TEXT DEFAULT 'monthly'`,
     `ALTER TABLE bills ADD COLUMN due_weekday INTEGER`,
+    `ALTER TABLE bills ADD COLUMN photo_uri TEXT`,
     `ALTER TABLE expenses ADD COLUMN photo_uri TEXT`,
     `ALTER TABLE expenses ADD COLUMN is_recurring INTEGER DEFAULT 0`,
     `ALTER TABLE subscriptions ADD COLUMN is_paid INTEGER DEFAULT 0`,
@@ -123,5 +124,31 @@ export async function setupDatabase(): Promise<void> {
   ];
   for (const sql of migrations) {
     try { await database.execAsync(sql + ';'); } catch {}
+  }
+}
+
+// Every PeggyBank-owned table. Used by the destructive wipe.
+const ALL_TABLES = [
+  'expenses', 'income', 'bills', 'savings_goals',
+  'debts', 'subscriptions', 'calendar_reminders', 'settings',
+];
+
+/**
+ * Delete ALL local PeggyBank data, transactionally. Does NOT touch files on
+ * disk — the caller (Profile delete flow) handles receipt-image cleanup and the
+ * app reset. Throws on failure so the caller can report it.
+ */
+export async function wipeAllLocalData(): Promise<void> {
+  const database = await getDatabase();
+  await database.execAsync('BEGIN TRANSACTION;');
+  try {
+    for (const table of ALL_TABLES) {
+      // Guard each table so a missing table can't abort the whole wipe.
+      try { await database.execAsync(`DELETE FROM ${table};`); } catch {}
+    }
+    await database.execAsync('COMMIT;');
+  } catch (e) {
+    try { await database.execAsync('ROLLBACK;'); } catch {}
+    throw e;
   }
 }
