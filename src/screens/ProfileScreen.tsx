@@ -55,7 +55,7 @@ export default function ProfileScreen({ navigation }: any) {
     setEditingName(false);
   };
 
-  const changePhoto = async () => {
+  const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Photo access needed', 'Please allow photo access.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
@@ -63,6 +63,23 @@ export default function ProfileScreen({ navigation }: any) {
       const uri = result.assets[0].uri;
       setPhoto(uri);
       await setSetting('profile_photo_uri', uri);
+    }
+  };
+
+  const removePhoto = async () => {
+    setPhoto(null);
+    await setSetting('profile_photo_uri', '');
+  };
+
+  const changePhoto = () => {
+    if (photo) {
+      Alert.alert('Profile photo', undefined, [
+        { text: 'Change photo', onPress: pickPhoto },
+        { text: 'Remove photo', style: 'destructive', onPress: removePhoto },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    } else {
+      pickPhoto();
     }
   };
 

@@ -23,11 +23,10 @@ interface MonthSummary {
   safeToSpend: number;
 }
 
-function greetingForNow(): string {
+function greetingForNow(name?: string): string {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning!';
-  if (h < 18) return 'Good afternoon!';
-  return 'Good evening!';
+  const g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  return name ? `${g}, ${name}!` : `${g}!`;
 }
 
 export default function DashboardScreen({ navigation }: any) {
@@ -39,11 +38,19 @@ export default function DashboardScreen({ navigation }: any) {
   const [pinnedGoals, setPinnedGoals] = useState<SavingsGoal[]>([]);
   const [suggestion, setSuggestion] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       const db = await getDatabase();
       const { start, end } = getMonthRange();
+
+      // Profile (shared with the Profile screen via the settings table)
+      const nameRow = await db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'display_name'`);
+      const photoRow = await db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'profile_photo_uri'`);
+      setProfileName(nameRow?.value?.trim() ?? '');
+      setProfilePhoto(photoRow?.value ? photoRow.value : null);
 
       const incomeResult = await db.getFirstAsync<{ total: number }>(
         `SELECT COALESCE(SUM(amount), 0) as total FROM income WHERE date >= ? AND date <= ?`,
@@ -123,11 +130,11 @@ export default function DashboardScreen({ navigation }: any) {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.7}
         >
-          <PeggyAvatar size={44} name="P" />
+          <PeggyAvatar size={44} name={profileName || 'P'} source={profilePhoto ? { uri: profilePhoto } : undefined} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
-            {greetingForNow()} 👋
+            {greetingForNow(profileName)} 👋
           </Text>
           <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 1 }]} numberOfLines={1}>
             You're doing amazing today! 💜
