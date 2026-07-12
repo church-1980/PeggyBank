@@ -98,7 +98,14 @@ export default function BillsScreen({ navigation, route }: any) {
   useFocusEffect(useCallback(() => { loadAll(); }, [loadAll]));
 
   useEffect(() => {
-    if (route?.params?.autoOpen) openAdd('bill');
+    if (route?.params?.autoOpen) {
+      openAdd('bill');
+      // Prefill from Smart Quick Capture, where available (user still reviews).
+      const p = route.params;
+      if (p.billName) setName(String(p.billName));
+      if (p.billAmount != null) setAmount(String(p.billAmount));
+      if (p.billDueDay && p.billDueDay >= 1 && p.billDueDay <= 31) setSelectedDay(p.billDueDay);
+    }
   }, []);
 
   // ── Open modal ────────────────────────────────────────────────────────────
