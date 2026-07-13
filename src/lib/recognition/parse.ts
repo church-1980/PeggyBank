@@ -74,9 +74,14 @@ function parseDate(text: string): string | undefined {
   // 2026-07-28 or 2026/07/28
   let m = text.match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/);
   if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
-  // 07/28/2026 or 28/07/2026 (ambiguous → assume M/D/Y for en-CA receipts)
+  // 07/28/2026 (M/D/Y) or 28/07/2026 (D/M/Y). Disambiguate by which field can
+  // only be a day; when both are ≤ 12 it's genuinely ambiguous → assume M/D/Y.
   m = text.match(/\b(\d{1,2})[-/](\d{1,2})[-/](20\d{2})\b/);
-  if (m) return `${m[3]}-${pad(+m[1])}-${pad(+m[2])}`;
+  if (m) {
+    let month = +m[1], day = +m[2];
+    if (month > 12 && day <= 12) { month = +m[2]; day = +m[1]; } // clearly D/M/Y
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) return `${m[3]}-${pad(month)}-${pad(day)}`;
+  }
   // Jul 28, 2026  /  July 28 2026  /  28 Jul 2026
   m = text.match(/\b([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(20\d{2})\b/);
   if (m && MONTHS[m[1].slice(0, 3).toLowerCase()]) return `${m[3]}-${pad(MONTHS[m[1].slice(0, 3).toLowerCase()])}-${pad(+m[2])}`;

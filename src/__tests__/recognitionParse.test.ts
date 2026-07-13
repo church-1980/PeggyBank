@@ -38,6 +38,19 @@ describe('parseDocument — receipts', () => {
   it('has no due date for a receipt', () => expect(r.dueDate).toBeUndefined());
 });
 
+describe('parseDocument — date formats', () => {
+  it('parses day-first D/M/Y (day > 12) correctly', () => {
+    const r = parseDocument('Amount due $10.00\nDue date 28/07/2026');
+    expect(r.dueDate).toBe('2026-07-28');
+  });
+  it('parses month-first M/D/Y', () => {
+    expect(parseDocument('Total $5.00\n07/12/2026').date).toBe('2026-07-12');
+  });
+  it('parses ISO YYYY-MM-DD', () => {
+    expect(parseDocument('Total $5.00\n2026-02-13').date).toBe('2026-02-13');
+  });
+});
+
 describe('parseDocument — nothing readable', () => {
   const r = parseDocument('');
   it('is unknown with no fabricated fields', () => {

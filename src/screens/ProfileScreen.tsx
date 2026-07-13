@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getDatabase, wipeAllLocalData } from '../database/database';
-import { wipeAllReceipts } from '../lib/receiptStorage';
+import { wipeAllReceipts, saveAcceptedImage, deleteReceiptImage, isOwnedReceipt } from '../lib/receiptStorage';
 import { useColors } from '../context/ThemeContext';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 
@@ -60,13 +60,16 @@ export default function ProfileScreen({ navigation }: any) {
     if (!perm.granted) { Alert.alert('Photo access needed', 'Please allow photo access.'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
     if (!result.canceled && result.assets[0]?.uri) {
-      const uri = result.assets[0].uri;
-      setPhoto(uri);
-      await setSetting('profile_photo_uri', uri);
+      // Copy into durable private storage so it survives cache eviction/restart.
+      const owned = await saveAcceptedImage(result.assets[0].uri);
+      if (photo && isOwnedReceipt(photo)) await deleteReceiptImage(photo);
+      setPhoto(owned);
+      await setSetting('profile_photo_uri', owned);
     }
   };
 
   const removePhoto = async () => {
+    if (photo && isOwnedReceipt(photo)) await deleteReceiptImage(photo);
     setPhoto(null);
     await setSetting('profile_photo_uri', '');
   };
