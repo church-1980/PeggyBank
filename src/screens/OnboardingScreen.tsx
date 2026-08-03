@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Animated,
+  View, Text, StyleSheet, TouchableOpacity, Animated, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
@@ -68,19 +68,33 @@ export default function OnboardingScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.dots}>
-        {STEPS.map((_, i) => (
-          <View
-            key={i}
-            style={[styles.dot, i === step && styles.dotActive]}
-          />
-        ))}
+      <View style={styles.top}>
+        <Text style={styles.brand} accessibilityRole="header">
+          <Text style={{ color: C.primary }}>Peggy</Text>
+          <Text style={{ color: '#25C2A0' }}>Bank</Text>
+        </Text>
+        <View style={styles.dots}>
+          {STEPS.map((_, i) => (
+            <View
+              key={i}
+              style={[styles.dot, i === step && styles.dotActive]}
+            />
+          ))}
+        </View>
       </View>
 
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <View style={[styles.iconCircle, { backgroundColor: stepColor + '18' }]}>
-          <Ionicons name={current.icon} size={52} color={stepColor} />
-        </View>
+        {step === 0 ? (
+          <Image
+            source={require('../../assets/peggy-mascot.png')}
+            style={styles.mascot}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={[styles.iconCircle, { backgroundColor: stepColor + '18' }]}>
+            <Ionicons name={current.icon} size={52} color={stepColor} />
+          </View>
+        )}
 
         <Text style={styles.headline}>{current.headline}</Text>
         <Text style={styles.body}>{current.body}</Text>
@@ -118,6 +132,15 @@ function makeStyles(C: ColorPalette) {
       paddingBottom: 48,
       justifyContent: 'space-between',
     },
+    top: {
+      alignItems: 'center',
+      gap: Spacing.md,
+    },
+    brand: {
+      fontSize: 26,
+      fontWeight: '800',
+      letterSpacing: -0.5,
+    },
     dots: {
       flexDirection: 'row',
       gap: 8,
@@ -146,6 +169,11 @@ function makeStyles(C: ColorPalette) {
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: Spacing.xl,
+    },
+    mascot: {
+      width: 190,
+      height: 190,
+      marginBottom: Spacing.lg,
     },
     headline: {
       ...Typography.h2,
