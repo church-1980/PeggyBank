@@ -47,21 +47,21 @@ export interface IconEntry {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
-  travel:           { label: 'Travel',         ionicon: 'airplane-outline' },
-  vehicle:          { label: 'Vehicle',        ionicon: 'car-outline' },
-  home:             { label: 'Home',           ionicon: 'home-outline' },
-  family:           { label: 'Family',         ionicon: 'people-outline' },
-  education:        { label: 'Education',       ionicon: 'school-outline' },
-  'emergency-fund': { label: 'Emergency Fund',  ionicon: 'shield-checkmark-outline' },
-  investing:        { label: 'Investing',       ionicon: 'trending-up-outline' },
-  debt:             { label: 'Debt',            ionicon: 'card-outline' },
-  gifts:            { label: 'Gifts',           ionicon: 'gift-outline' },
-  health:           { label: 'Health',          ionicon: 'medkit-outline' },
-  pet:              { label: 'Pet',             ionicon: 'paw-outline' },
-  food:             { label: 'Food',            ionicon: 'restaurant-outline' },
-  shopping:         { label: 'Shopping',        ionicon: 'bag-handle-outline' },
-  fun:              { label: 'Fun',             ionicon: 'game-controller-outline' },
-  other:            { label: 'Other',           ionicon: 'ellipsis-horizontal-outline' },
+  travel:           { label: 'Travel',         ionicon: 'airplane-outline',            image: require('../../assets/peggy-icons/travel.png') },
+  vehicle:          { label: 'Vehicle',        ionicon: 'car-outline',                 image: require('../../assets/peggy-icons/vehicle.png') },
+  home:             { label: 'Home',           ionicon: 'home-outline',                image: require('../../assets/peggy-icons/home.png') },
+  family:           { label: 'Family',         ionicon: 'people-outline',              image: require('../../assets/peggy-icons/family.png') },
+  education:        { label: 'Education',       ionicon: 'school-outline',              image: require('../../assets/peggy-icons/education.png') },
+  'emergency-fund': { label: 'Emergency Fund',  ionicon: 'shield-checkmark-outline',    image: require('../../assets/peggy-icons/emergency-fund.png') },
+  investing:        { label: 'Investing',       ionicon: 'trending-up-outline',         image: require('../../assets/peggy-icons/investing.png') },
+  debt:             { label: 'Debt',            ionicon: 'card-outline',                image: require('../../assets/peggy-icons/debt.png') },
+  gifts:            { label: 'Gifts',           ionicon: 'gift-outline',                image: require('../../assets/peggy-icons/gifts.png') },
+  health:           { label: 'Health',          ionicon: 'medkit-outline',              image: require('../../assets/peggy-icons/health.png') },
+  pet:              { label: 'Pet',             ionicon: 'paw-outline',                 image: require('../../assets/peggy-icons/pet.png') },
+  food:             { label: 'Food',            ionicon: 'restaurant-outline',          image: require('../../assets/peggy-icons/food.png') },
+  shopping:         { label: 'Shopping',        ionicon: 'bag-handle-outline',          image: require('../../assets/peggy-icons/shopping.png') },
+  fun:              { label: 'Fun',             ionicon: 'game-controller-outline',     image: require('../../assets/peggy-icons/fun.png') },
+  other:            { label: 'Other',           ionicon: 'ellipsis-horizontal-outline', image: require('../../assets/peggy-icons/other.png') },
 };
 
 /** Every goal type resolves to one registry bucket. */
