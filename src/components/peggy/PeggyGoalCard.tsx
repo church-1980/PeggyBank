@@ -6,7 +6,9 @@ import { useColors, } from '../../context/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 import PeggyCard from './PeggyCard';
 import PeggyIllustration from './PeggyIllustration';
+import PeggyIconBadge from './PeggyIconBadge';
 import PeggyProgressBar from './PeggyProgressBar';
+import { IconKey } from '../../data/iconRegistry';
 
 /**
  * PeggyGoalCard — Design Bible §4 (Goals) + §5 (Progress Bars).
@@ -55,6 +57,7 @@ interface Props {
   current: number;
   target: number;
   formatAmount: (n: number) => string;
+  iconKey?: IconKey;             // registry concept icon (premium PNG) — preferred
   artwork?: any;                 // registry PNG when it exists; placeholder until then
   artworkTint?: string;
   onPress?: () => void;
@@ -67,6 +70,7 @@ export default function PeggyGoalCard({
   current,
   target,
   formatAmount,
+  iconKey,
   artwork,
   artworkTint,
   onPress,
@@ -85,7 +89,11 @@ export default function PeggyGoalCard({
   return (
     <PeggyCard onPress={onPress} style={style} testID={testID}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 4 }}>
-        <PeggyIllustration size={52} circle source={artwork} tint={artworkTint ?? barColor} />
+        {iconKey ? (
+          <PeggyIconBadge iconKey={iconKey} color={artworkTint ?? barColor} shape="circle" size={52} iconSize={IconSize.md} />
+        ) : (
+          <PeggyIllustration size={52} circle source={artwork} tint={artworkTint ?? barColor} />
+        )}
 
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

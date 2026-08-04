@@ -219,6 +219,7 @@ export default function DashboardScreen({ navigation }: any) {
               current={goal.current_amount}
               target={goal.target_amount}
               formatAmount={formatCurrency}
+              iconKey={typeInfo.iconKey}
               artworkTint={typeInfo.color}
               onPress={() => navigation.navigate('Goals')}
               style={i > 0 ? { marginTop: Spacing.sm + 2 } : undefined}
