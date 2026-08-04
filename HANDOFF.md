@@ -16,15 +16,20 @@ and device-approved. The profile-connection + two code-review fixes are in.
 
 **Current task: generating the 15 premium app icons, one at a time.**
 
-## The icon job (the live task)
-- **Style is LOCKED:** see `docs/PEGGYBANK_ICON_STYLE.md` (matte purple `#7B61FF`
-  + mint/teal, soft-3D ~20–30°, no gloss, transparent PNG, 1024×1024).
-- **The piggy mascot/logo is separate** from this icon set.
-- **Done (9/15)** in `assets/peggy-icons/`: `travel, home, vehicle, family,
-  education, emergency-fund, investing` (a pile of nuts/acorns — on-brand),
-  `debt, gifts`.
-- **Remaining (6):** `health` (medical cross), `pet` (paw), `food` (grocery bag),
-  `shopping` (shopping bag), `fun` (game controller), `other` (plus in a circle).
+## Brand assets — DONE
+- **All 15 icons generated + wired** into `src/data/iconRegistry.ts` (matte
+  purple/teal, `assets/peggy-icons/`). Style: `docs/PEGGYBANK_ICON_STYLE.md`.
+  (Investing = a pile of acorns; ties to the squirrel mascot.)
+- **Mascot:** `assets/peggy-mascot.png` — Peggy the purple squirrel + acorn in a
+  "P". Placed on the onboarding welcome step.
+- **Wordmark:** `assets/peggy-wordmark.png` (image, white bg) AND rendered as
+  crisp two-tone text on onboarding (Peggy purple / Bank teal `#25C2A0`).
+- Mascot is NOT on the Dashboard hero (purple-on-purple would vanish).
+
+## THE NEXT STEP: a test build
+Everything above is committed but **unbuilt** — EAS free build quota resets
+**Aug 1** (or upgrade). Decision made: **test on the next build first**, THEN
+decide which secondary screens need the full "match the Dashboard" layout pass.
 
 ### To make each remaining icon
 Paste the **style block from `docs/PEGGYBANK_ICON_STYLE.md`** into an image
