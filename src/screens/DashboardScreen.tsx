@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
@@ -13,7 +13,7 @@ import { GOAL_TYPES, GoalType } from '../data/goalTypes';
 import {
   PeggyScreen, PeggyHeroCard, PeggySectionHeader, PeggyCard,
   PeggyQuickActionCard, PeggyGoalCard, PeggyListRow, PeggyEmptyState,
-  PeggyAvatar, PeggyButton, PeggyProgressBar, PeggyIllustration,
+  PeggyAvatar, PeggyButton, PeggyProgressBar,
 } from '../components/peggy';
 
 interface MonthSummary {
@@ -160,9 +160,10 @@ export default function DashboardScreen({ navigation }: any) {
               {formatCurrency(summary.safeToSpend)}
             </Text>
           </View>
-          {/* Reserved slot for the PeggyBank piggy illustration (Bible §3).
-              Placeholder now; real art drops into `source` later with no layout shift. */}
-          <PeggyIllustration size={76} circle tint={C.glassBright} />
+          {/* Peggy mascot in a soft light circle so she pops on the purple hero */}
+          <View style={{ width: 84, height: 84, borderRadius: 42, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center' }}>
+            <Image source={require('../../assets/peggy-mascot.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
+          </View>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4 }}>
