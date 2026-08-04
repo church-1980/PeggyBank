@@ -199,7 +199,7 @@ export default function DashboardScreen({ navigation }: any) {
       ) : null}
 
       {/* ── Quick Add (§6) ─────────────────────────────────────── */}
-      <PeggySectionHeader title="Quick Add" onAction={() => navigation.navigate('QuickAdd')} />
+      <PeggySectionHeader title="Quick Add" />
       <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
         <PeggyQuickActionCard tone="green"  ionicon="receipt"     label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
         <PeggyQuickActionCard tone="blue"   ionicon="cash"        label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />

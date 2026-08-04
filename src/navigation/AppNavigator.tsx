@@ -12,7 +12,6 @@ import DashboardScreen        from '../screens/DashboardScreen';
 import ExpensesScreen         from '../screens/ExpensesScreen';
 
 // Modal / stack screens
-import QuickAddScreen         from '../screens/QuickAddScreen';
 import MoreScreen             from '../screens/MoreScreen';
 import GoalsScreen            from '../screens/GoalsScreen';
 import WeeklyCheckInScreen    from '../screens/WeeklyCheckInScreen';
@@ -120,15 +119,6 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Home"       component={HomeTabs} />
-
-        {/* DORMANT fallback — the Action Hub is retired. No control opens this
-            route; kept registered only as fallback code until the new nav is
-            device-verified, then removed in a cleanup audit. */}
-        <Stack.Screen
-          name="QuickAdd"
-          component={QuickAddScreen}
-          options={{ presentation: 'transparentModal', animation: 'fade_from_bottom' }}
-        />
 
         {/* Camera / Smart Quick Capture — full-screen */}
         <Stack.Screen name="QuickCapture" component={QuickCaptureScreen} options={{ presentation: 'modal' }} />
