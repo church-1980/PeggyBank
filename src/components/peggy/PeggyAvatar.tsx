@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Typography, Shadow } from '../../theme';
 import { useColors } from '../../context/ThemeContext';

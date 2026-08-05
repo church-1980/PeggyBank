@@ -65,6 +65,13 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. DESIGN SYSTEM LOCK (v2.0 — non-negotiable)
 
+> **GOVERNING CHARTER:** `docs/PEGGYBANK_OS_CHARTER.md` is the supreme directive for
+> this project. Read it before any visual work. You are a Product/UX/Design-Systems/
+> Frontend Architect building **PeggyBank OS**, not a feature developer. Screens
+> assemble the OS; they never invent UI. Finish the OS before migrating screens.
+> Deliver **visual evidence at every phase gate** (APK + HTML mirror), and do not
+> proceed until it is approved. Everything below implements that charter.
+
 **As of the `design-system-foundation-lock-20260804` tag, PeggyBank has ONE design
 system. The component library in `src/components/peggy/` and the tokens in
 `src/theme/` are the single source of truth. `docs/PEGGYBANK_DESIGN_BIBLE_V2.md`
