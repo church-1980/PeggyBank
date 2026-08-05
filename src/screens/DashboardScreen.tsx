@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
 import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
 import { SavingsGoal, Bill, Category } from '../types';
-import { Spacing, Typography, IconSize } from '../theme';
+import { Spacing, Typography, IconSize, Shadow } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { CATEGORIES } from '../data/categories';
 import { categoryIconKey } from '../data/iconRegistry';
@@ -130,7 +130,14 @@ export default function DashboardScreen({ navigation }: any) {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.7}
         >
-          <PeggyAvatar size={44} name={profileName || 'P'} source={profilePhoto ? { uri: profilePhoto } : undefined} />
+          {profilePhoto ? (
+            <PeggyAvatar size={44} name={profileName || 'P'} source={{ uri: profilePhoto }} />
+          ) : (
+            // No user photo yet → show the Peggy logo here (the app's one brand mark).
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...Shadow.card }}>
+              <Image source={require('../../assets/peggy-mascot.png')} style={{ width: 38, height: 38 }} resizeMode="contain" />
+            </View>
+          )}
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
@@ -150,21 +157,13 @@ export default function DashboardScreen({ navigation }: any) {
 
       {/* ── Hero: Safe to Spend (§3) ───────────────────────────── */}
       <PeggyHeroCard>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <Text style={[Typography.helper, { color: C.glassText, fontWeight: '600' }]}>Safe to Spend</Text>
-              <Ionicons name="information-circle-outline" size={14} color={C.glassText} />
-            </View>
-            <Text style={[Typography.heroAmount, { color: C.glassBright, marginTop: 6 }]}>
-              {formatCurrency(summary.safeToSpend)}
-            </Text>
-          </View>
-          {/* Peggy mascot in a soft light circle so she pops on the purple hero */}
-          <View style={{ width: 84, height: 84, borderRadius: 42, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center' }}>
-            <Image source={require('../../assets/peggy-mascot.png')} style={{ width: 68, height: 68 }} resizeMode="contain" />
-          </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <Text style={[Typography.helper, { color: C.glassText, fontWeight: '600' }]}>Safe to Spend</Text>
+          <Ionicons name="information-circle-outline" size={14} color={C.glassText} />
         </View>
+        <Text style={[Typography.heroAmount, { color: C.glassBright, marginTop: 6 }]}>
+          {formatCurrency(summary.safeToSpend)}
+        </Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4 }}>
           <Text style={[Typography.helper, { color: C.glassText }]}>
