@@ -37,6 +37,15 @@ export interface IconEntry {
   label: string;
   ionicon: keyof typeof Ionicons.glyphMap; // fallback, used until a premium PNG exists
   image?: any;                             // require('../../assets/peggy-icons/<key>.png')
+  color: string;                           // dominant concept color — default frame tint
+  status: 'ready' | 'pending';             // 'ready' = premium art exists; 'pending' = fallback
+  accessibilityLabel?: string;             // defaults to `label`
+}
+
+/** Resolve a concept's accessibility label. */
+export function iconLabel(key: IconKey): string {
+  const e = ICON_REGISTRY[key] ?? ICON_REGISTRY.other;
+  return e.accessibilityLabel ?? e.label;
 }
 
 // ── PNG PHASE: THE ONLY EDIT NEEDED ──────────────────────────────────────────
@@ -47,21 +56,21 @@ export interface IconEntry {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
-  travel:           { label: 'Travel',         ionicon: 'airplane-outline',            image: require('../../assets/peggy-icons/travel.png') },
-  vehicle:          { label: 'Vehicle',        ionicon: 'car-outline',                 image: require('../../assets/peggy-icons/vehicle.png') },
-  home:             { label: 'Home',           ionicon: 'home-outline',                image: require('../../assets/peggy-icons/home.png') },
-  family:           { label: 'Family',         ionicon: 'people-outline',              image: require('../../assets/peggy-icons/family.png') },
-  education:        { label: 'Education',       ionicon: 'school-outline',              image: require('../../assets/peggy-icons/education.png') },
-  'emergency-fund': { label: 'Emergency Fund',  ionicon: 'shield-checkmark-outline',    image: require('../../assets/peggy-icons/emergency-fund.png') },
-  investing:        { label: 'Investing',       ionicon: 'trending-up-outline',         image: require('../../assets/peggy-icons/investing.png') },
-  debt:             { label: 'Debt',            ionicon: 'card-outline',                image: require('../../assets/peggy-icons/debt.png') },
-  gifts:            { label: 'Gifts',           ionicon: 'gift-outline',                image: require('../../assets/peggy-icons/gifts.png') },
-  health:           { label: 'Health',          ionicon: 'medkit-outline',              image: require('../../assets/peggy-icons/health.png') },
-  pet:              { label: 'Pet',             ionicon: 'paw-outline',                 image: require('../../assets/peggy-icons/pet.png') },
-  food:             { label: 'Food',            ionicon: 'restaurant-outline',          image: require('../../assets/peggy-icons/food.png') },
-  shopping:         { label: 'Shopping',        ionicon: 'bag-handle-outline',          image: require('../../assets/peggy-icons/shopping.png') },
-  fun:              { label: 'Fun',             ionicon: 'game-controller-outline',     image: require('../../assets/peggy-icons/fun.png') },
-  other:            { label: 'Other',           ionicon: 'ellipsis-horizontal-outline', image: require('../../assets/peggy-icons/other.png') },
+  travel:           { label: 'Travel',         ionicon: 'airplane-outline',            color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/travel.png') },
+  vehicle:          { label: 'Vehicle',        ionicon: 'car-outline',                 color: '#4B9BFF', status: 'ready', image: require('../../assets/peggy-icons/vehicle.png') },
+  home:             { label: 'Home',           ionicon: 'home-outline',                color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/home.png') },
+  family:           { label: 'Family',         ionicon: 'people-outline',              color: '#8B5CF6', status: 'ready', image: require('../../assets/peggy-icons/family.png') },
+  education:        { label: 'Education',       ionicon: 'school-outline',              color: '#4B9BFF', status: 'ready', image: require('../../assets/peggy-icons/education.png') },
+  'emergency-fund': { label: 'Emergency Fund',  ionicon: 'shield-checkmark-outline',    color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/emergency-fund.png') },
+  investing:        { label: 'Investing',       ionicon: 'trending-up-outline',         color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/investing.png') },
+  debt:             { label: 'Debt',            ionicon: 'card-outline',                color: '#FF6B6B', status: 'ready', image: require('../../assets/peggy-icons/debt.png') },
+  gifts:            { label: 'Gifts',           ionicon: 'gift-outline',                color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/gifts.png') },
+  health:           { label: 'Health',          ionicon: 'medkit-outline',              color: '#FF6B6B', status: 'ready', image: require('../../assets/peggy-icons/health.png') },
+  pet:              { label: 'Pet',             ionicon: 'paw-outline',                 color: '#FF9F5A', status: 'ready', image: require('../../assets/peggy-icons/pet.png') },
+  food:             { label: 'Food',            ionicon: 'restaurant-outline',          color: '#3FBF7F', status: 'ready', image: require('../../assets/peggy-icons/food.png') },
+  shopping:         { label: 'Shopping',        ionicon: 'bag-handle-outline',          color: '#8B5CF6', status: 'ready', image: require('../../assets/peggy-icons/shopping.png') },
+  fun:              { label: 'Fun',             ionicon: 'game-controller-outline',     color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/fun.png') },
+  other:            { label: 'Other',           ionicon: 'ellipsis-horizontal-outline', color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/other.png') },
 };
 
 /** Every goal type resolves to one registry bucket. */

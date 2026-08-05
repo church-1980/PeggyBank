@@ -13,6 +13,7 @@ import ExpensesScreen         from '../screens/ExpensesScreen';
 
 // Modal / stack screens
 import MoreScreen             from '../screens/MoreScreen';
+import ComponentShowcaseScreen from '../screens/ComponentShowcaseScreen';
 import GoalsScreen            from '../screens/GoalsScreen';
 import WeeklyCheckInScreen    from '../screens/WeeklyCheckInScreen';
 import AddExpenseScreen       from '../screens/AddExpenseScreen';
@@ -119,6 +120,9 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Home"       component={HomeTabs} />
+
+        {/* PRIVATE dev gallery — not a user destination; reached via More ▸ Design System (dev). */}
+        <Stack.Screen name="ComponentShowcase" component={ComponentShowcaseScreen} />
 
         {/* Camera / Smart Quick Capture — full-screen */}
         <Stack.Screen name="QuickCapture" component={QuickCaptureScreen} options={{ presentation: 'modal' }} />

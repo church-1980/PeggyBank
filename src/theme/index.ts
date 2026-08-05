@@ -117,6 +117,33 @@ export const IconSize = {
   xl: 36, // hero / onboarding
 };
 
+// ── SEMANTIC ICON SCALE (the one true scale for concept artwork) ──────────────
+// Screens/components request a NAME, never a raw number. These are deliberately
+// larger than the old sm/md so premium 3D icons read clearly ("not visual" fix).
+// The number is the FRAME (container) size; the artwork sits inside with padding.
+export const IconFrameSize = {
+  compact:  36,  // dense list rows, chips
+  standard: 44,  // list rows, coming-up
+  card:     52,  // goal cards, quick actions
+  feature:  64,  // pickers, focused single concept
+  hero:     84,  // splash / large single concept
+} as const;
+export type IconFrameSizeName = keyof typeof IconFrameSize;
+
+// ── ROW HEIGHTS ───────────────────────────────────────────────────────────────
+export const RowHeight = {
+  compact:     56,
+  standard:    68,
+  comfortable: 80,
+} as const;
+
+// ── HEADER HEIGHTS ──────────────────────────────────────────────────────────────
+export const HeaderHeight = {
+  standard:  56,  // title + optional back
+  large:     84,  // big title
+  dashboard: 64,  // avatar + greeting + action
+} as const;
+
 // Standard container for a category/concept icon (one shape everywhere):
 // a soft rounded square, tinted with the concept color.
 export const IconBadgeSize = 36;

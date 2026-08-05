@@ -1,71 +1,41 @@
 import React from 'react';
-import { View, Image, StyleProp, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconSize } from '../../theme';
-import { ICON_REGISTRY, IconKey } from '../../data/iconRegistry';
+import { StyleProp, ViewStyle } from 'react-native';
+import PeggyIconFrame from './PeggyIconFrame';
+import { IconKey } from '../../data/iconRegistry';
 
 /**
- * PeggyIconBadge — Design Bible §13 (Icons) + §10 (Radius).
+ * PeggyIconBadge — DEPRECATED shim. Kept so existing call sites keep working
+ * while screens migrate. It now delegates entirely to the canonical
+ * PeggyIconFrame, so there is exactly ONE icon-container implementation.
  *
- * The container for every concept icon. Two shapes, chosen by context:
- *  - `circle` → list rows (Coming Up, history rows)
- *  - `square` → grids/tiles (pickers, quick actions)
- *
- * Artwork always resolves from the single icon registry: the premium PNG when
- * it exists, the Ionicon fallback until then. No screen may define its own icon.
- *
- * RULE: One concept = one artwork, everywhere, forever.
+ * New code should use <PeggyIconFrame iconKey=… size="card" … /> directly.
  */
 
 interface Props {
   iconKey: IconKey;
-  color: string;                    // concept color (tints bg + glyph)
-  size?: number;                    // container size
-  iconSize?: number;                // glyph size — use only IconSize.*
+  color?: string;                    // legacy tone override
+  size?: number;                     // legacy raw size
+  iconSize?: number;                 // ignored — frame scales artwork proportionally
   shape?: 'circle' | 'square';
-  bg?: string;                      // explicit background (e.g. pastel tile)
-  tinted?: boolean;                 // tinted background (default true)
+  bg?: string;
+  tinted?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
 export default function PeggyIconBadge({
-  iconKey,
-  color,
-  size = 40,
-  iconSize = IconSize.sm,
-  shape = 'circle',
-  bg,
-  tinted = true,
-  style,
-  testID,
+  iconKey, color, size = 40, shape = 'circle', bg, tinted = true, style, testID,
 }: Props) {
-  const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  const radius = shape === 'circle' ? size / 2 : Radius.sm;
-
   return (
-    <View
+    <PeggyIconFrame
+      iconKey={iconKey}
+      size={size}
+      shape={shape === 'square' ? 'tile' : 'circle'}
+      tone={color}
+      bg={bg}
+      tinted={tinted}
+      style={style}
       testID={testID}
-      style={[
-        {
-          width: size,
-          height: size,
-          borderRadius: radius,
-          backgroundColor: bg ?? (tinted ? color + '18' : 'transparent'),
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        style,
-      ]}
-    >
-      {entry.image ? (
-        <Image
-          source={entry.image}
-          style={{ width: iconSize + 10, height: iconSize + 10, resizeMode: 'contain' }}
-        />
-      ) : (
-        <Ionicons name={entry.ionicon} size={iconSize} color={color} />
-      )}
-    </View>
+    />
   );
 }
