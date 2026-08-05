@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
  */
 
 export type IconKey =
+  // ── Category / goal concepts (final matte art) ──
   | 'travel'
   | 'vehicle'
   | 'home'
@@ -31,7 +32,23 @@ export type IconKey =
   | 'food'
   | 'shopping'
   | 'fun'
-  | 'other';
+  | 'other'
+  // ── Navigation / action / tool concepts (placeholder until art lands) ──
+  | 'camera'
+  | 'add-expense'
+  | 'add-income'
+  | 'bills'
+  | 'goals'
+  | 'check-in'
+  | 'reports'
+  | 'calendar'
+  | 'currency'
+  | 'payday'
+  | 'backup'
+  | 'settings'
+  | 'profile'
+  | 'notifications'
+  | 'share';
 
 export interface IconEntry {
   label: string;
@@ -55,6 +72,12 @@ export function iconLabel(key: IconKey): string {
 // Leave a key's `image` unset to keep falling back to its Ionicon.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Clearly-marked placeholder asset. A 'pending' concept renders THIS through the
+// same PeggyIconFrame — never an Ionicon. When the real matte art is generated,
+// swap this one entry's `image` + `status` and the whole app upgrades; no screen
+// edits, no layout change (Charter: Placeholder Rule).
+const PENDING_ART = require('../../assets/peggy-icons/_placeholder.png');
+
 export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   travel:           { label: 'Travel',         ionicon: 'airplane-outline',            color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/travel.png') },
   vehicle:          { label: 'Vehicle',        ionicon: 'car-outline',                 color: '#4B9BFF', status: 'ready', image: require('../../assets/peggy-icons/vehicle.png') },
@@ -71,6 +94,24 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   shopping:         { label: 'Shopping',        ionicon: 'bag-handle-outline',          color: '#8B5CF6', status: 'ready', image: require('../../assets/peggy-icons/shopping.png') },
   fun:              { label: 'Fun',             ionicon: 'game-controller-outline',     color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/fun.png') },
   other:            { label: 'Other',           ionicon: 'ellipsis-horizontal-outline', color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/other.png') },
+
+  // ── Navigation / action / tool concepts — placeholder until matte art lands.
+  //    Swap `image: PENDING_ART` → the real require + set status:'ready'. Nothing else changes.
+  camera:           { label: 'Camera',          ionicon: 'camera-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  'add-expense':    { label: 'Add Expense',     ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'pending', image: PENDING_ART },
+  'add-income':     { label: 'Add Income',      ionicon: 'arrow-down-circle-outline',   color: '#34C77B', status: 'pending', image: PENDING_ART },
+  bills:            { label: 'Bills',           ionicon: 'receipt-outline',             color: '#FF9F5A', status: 'pending', image: PENDING_ART },
+  goals:            { label: 'Goals',           ionicon: 'flag-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
+  'check-in':       { label: 'Weekly Check-In', ionicon: 'checkmark-circle-outline',    color: '#34C77B', status: 'pending', image: PENDING_ART },
+  reports:          { label: 'Reports',         ionicon: 'bar-chart-outline',           color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  calendar:         { label: 'Calendar',        ionicon: 'calendar-outline',            color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  currency:         { label: 'Currency',        ionicon: 'swap-horizontal-outline',     color: '#25C2A0', status: 'pending', image: PENDING_ART },
+  payday:           { label: 'Payday',          ionicon: 'cash-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
+  backup:           { label: 'Backup',          ionicon: 'cloud-download-outline',      color: '#8E8CA3', status: 'pending', image: PENDING_ART },
+  settings:         { label: 'Settings',        ionicon: 'settings-outline',            color: '#8E8CA3', status: 'pending', image: PENDING_ART },
+  profile:          { label: 'Profile',         ionicon: 'person-circle-outline',       color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  notifications:    { label: 'Notifications',   ionicon: 'notifications-outline',       color: '#F4B740', status: 'pending', image: PENDING_ART },
+  share:            { label: 'Share',           ionicon: 'share-social-outline',        color: '#25C2A0', status: 'pending', image: PENDING_ART },
 };
 
 /** Every goal type resolves to one registry bucket. */
