@@ -20,9 +20,17 @@ const DIRECT_ART = /require\([^)]*(peggy-icons|peggy-mascot)/;
 // Reaching into the retired icon registry / old PeggyIcon (must use iconRegistry).
 const RETIRED_REGISTRY = /from ['"][^'"]*(data\/peggyIcons|components\/PeggyIcon)['"]/;
 
+// Emoji in product UI (forbidden once a screen is migrated/approved).
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/u;
+
 // Screens that predate the lock. THIS LIST MAY ONLY SHRINK.
 const ART_ALLOWLIST = new Set<string>(['DashboardScreen.tsx', 'OnboardingScreen.tsx']);
 const REGISTRY_ALLOWLIST = new Set<string>([]);
+
+// Screens that have been MIGRATED to PeggyBank OS and are held to the full
+// standard (no emoji, no direct art, no retired registry). GROWS as screens
+// migrate in Phase 7. Empty now — no product screen is migrated yet.
+const MIGRATED_SCREENS = new Set<string>([]);
 
 function screensMatching(re: RegExp): string[] {
   return fs
@@ -45,6 +53,14 @@ describe('Design System Lock', () => {
   it('allow-listed screens still exist (keep the ratchet honest)', () => {
     for (const f of ART_ALLOWLIST) {
       expect(fs.existsSync(path.join(SCREENS_DIR, f))).toBe(true);
+    }
+  });
+
+  it('MIGRATED screens contain no emoji and no direct art imports', () => {
+    for (const f of MIGRATED_SCREENS) {
+      const src = fs.readFileSync(path.join(SCREENS_DIR, f), 'utf8');
+      expect({ screen: f, hasEmoji: EMOJI.test(src) }).toEqual({ screen: f, hasEmoji: false });
+      expect({ screen: f, hasDirectArt: DIRECT_ART.test(src) }).toEqual({ screen: f, hasDirectArt: false });
     }
   });
 });

@@ -37,21 +37,31 @@ export { default as PeggyQuickActionCard } from './PeggyQuickActionCard';
 export { default as PeggyListRow } from './PeggyListRow';
 export { default as PeggyStatCard } from './PeggyStatCard';
 export { default as PeggyPickerTile } from './PeggyPickerTile';
+export { default as PeggyDocumentCard } from './PeggyDocumentCard';
 
 // ── Controls ──────────────────────────────────────────────────────────────────
 export { default as PeggyButton } from './PeggyButton';
 export { default as PeggyIconButton } from './PeggyIconButton';
 export { default as PeggyInput } from './PeggyInput';
 export { default as PeggyCurrencyInput } from './PeggyCurrencyInput';
+export { default as PeggySearchBar } from './PeggySearchBar';
+export { default as PeggyForm } from './PeggyForm';
 export { default as PeggyChip } from './PeggyChip';
 export { default as PeggyBadge } from './PeggyBadge';
+export { default as PeggyNotificationBadge } from './PeggyNotificationBadge';
 export { default as PeggyProgressBar } from './PeggyProgressBar';
+
+// ── Camera flow ───────────────────────────────────────────────────────────────
+export { default as PeggyCameraCapture } from './PeggyCameraCapture';
+export { default as PeggyReceiptPreview } from './PeggyReceiptPreview';
 
 // ── States & overlays ─────────────────────────────────────────────────────────
 export { default as PeggyEmptyState } from './PeggyEmptyState';
 export { default as PeggyLoadingState } from './PeggyLoadingState';
 export { default as PeggyErrorState } from './PeggyErrorState';
+export { default as PeggySuccessState } from './PeggySuccessState';
 export { default as PeggyModal } from './PeggyModal';
 export { default as PeggyConfirmationModal } from './PeggyConfirmationModal';
+export { default as PeggyDeleteConfirmation } from './PeggyDeleteConfirmation';
 
 export type { PastelTone } from './PeggyQuickActionCard';

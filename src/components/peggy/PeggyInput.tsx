@@ -15,13 +15,15 @@ import { useColors } from '../../context/ThemeContext';
 
 interface Props extends Omit<TextInputProps, 'style'> {
   label?: string;
+  error?: string;                 // shows a soft danger-tinted well + message
   containerStyle?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
-export default function PeggyInput({ label, containerStyle, testID, ...inputProps }: Props) {
+export default function PeggyInput({ label, error, containerStyle, testID, ...inputProps }: Props) {
   const C = useColors();
   const [focused, setFocused] = useState(false);
+  const wellBg = error ? C.danger + '12' : focused ? C.primary + '12' : C.surfaceMuted;
 
   return (
     <View style={containerStyle}>
@@ -32,7 +34,7 @@ export default function PeggyInput({ label, containerStyle, testID, ...inputProp
         style={{
           height: 52,
           borderRadius: Radius.md,
-          backgroundColor: focused ? C.primary + '12' : C.surfaceMuted,
+          backgroundColor: wellBg,
           paddingHorizontal: Spacing.md,
           justifyContent: 'center',
         }}
@@ -50,6 +52,9 @@ export default function PeggyInput({ label, containerStyle, testID, ...inputProp
           }}
         />
       </View>
+      {error ? (
+        <Text style={[Typography.caption, { color: C.danger, marginTop: 5 }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
