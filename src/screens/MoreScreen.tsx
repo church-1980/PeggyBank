@@ -32,7 +32,7 @@ const TOOLS: ToolItem[] = [
   { label: 'Add Expense',         description: 'Record a new expense',               iconKey: 'food',                  colorKey: 'spending',      screen: 'AddExpense' },
   { label: 'Add Bill',            description: 'Track a new recurring bill',         iconKey: 'home',                  colorKey: 'bills',         screen: 'Bills',   params: { autoOpen: true } },
   { label: 'Add Goal',            description: 'Start saving for something',         iconKey: 'gifts',                 colorKey: 'goals',         screen: 'Goals',  params: { autoOpen: true } },
-  { label: 'Weekly Check-In',     description: 'How did this week go?',              icon: 'checkmark-circle-outline', colorKey: 'income',        screen: 'WeeklyCheckIn' },
+  { label: 'Weekly Check-In',     description: 'How did this week go?',              iconKey: 'check-in',              colorKey: 'income',        screen: 'WeeklyCheckIn' },
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },
   { label: 'Calendar',            description: 'See your month at a glance',         iconKey: 'calendar',              colorKey: 'primary',       screen: 'Calendar' },
   { label: 'Payday',              description: 'Plan around your next paycheck',     iconKey: 'investing',             colorKey: 'income',        screen: 'Payday' },
