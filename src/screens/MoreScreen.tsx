@@ -36,7 +36,7 @@ const TOOLS: ToolItem[] = [
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },
   { label: 'Calendar',            description: 'See your month at a glance',         iconKey: 'calendar',              colorKey: 'primary',       screen: 'Calendar' },
   { label: 'Payday',              description: 'Plan around your next paycheck',     iconKey: 'investing',             colorKey: 'income',        screen: 'Payday' },
-  { label: 'Currency Calculator', description: 'Convert money, works offline',       icon: 'swap-horizontal-outline',  colorKey: 'primaryLight',  screen: 'Currency' },
+  { label: 'Currency Calculator', description: 'Convert money, works offline',       iconKey: 'currency',              colorKey: 'primaryLight',  screen: 'Currency' },
   { label: 'Export & Backup',     description: 'Save or share your data',            icon: 'cloud-download-outline',   colorKey: 'textSecondary', screen: 'Export' },
   { label: 'Share PeggyBank',     description: 'Tell a friend about the app',        icon: 'share-social-outline',     colorKey: 'income',        screen: 'Share' },
   { label: 'Settings',            description: 'Preferences, backup, and about',     icon: 'settings-outline',         colorKey: 'textSecondary', screen: 'Settings' },
