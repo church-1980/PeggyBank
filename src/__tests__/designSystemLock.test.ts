@@ -24,7 +24,7 @@ const RETIRED_REGISTRY = /from ['"][^'"]*(data\/peggyIcons|components\/PeggyIcon
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/u;
 
 // Screens that predate the lock. THIS LIST MAY ONLY SHRINK.
-const ART_ALLOWLIST = new Set<string>(['DashboardScreen.tsx', 'OnboardingScreen.tsx']);
+const ART_ALLOWLIST = new Set<string>(['OnboardingScreen.tsx']);
 const REGISTRY_ALLOWLIST = new Set<string>([]);
 
 // Screens that have been MIGRATED to PeggyBank OS and are held to the full

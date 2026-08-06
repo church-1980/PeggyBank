@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, RefreshControl, TouchableOpacity, Image } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
 import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
 import { SavingsGoal, Bill, Category } from '../types';
-import { Spacing, Typography, IconSize, Shadow } from '../theme';
+import { Spacing, Typography, IconSize } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { CATEGORIES } from '../data/categories';
 import { categoryIconKey } from '../data/iconRegistry';
@@ -130,14 +130,12 @@ export default function DashboardScreen({ navigation }: any) {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.7}
         >
-          {profilePhoto ? (
-            <PeggyAvatar size={44} name={profileName || 'P'} source={{ uri: profilePhoto }} />
-          ) : (
-            // No user photo yet → show the Peggy logo here (the app's one brand mark).
-            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...Shadow.card }}>
-              <Image source={require('../../assets/peggy-mascot.png')} style={{ width: 38, height: 38 }} resizeMode="contain" />
-            </View>
-          )}
+          <PeggyAvatar
+            size={44}
+            source={profilePhoto ? { uri: profilePhoto } : undefined}
+            name={profileName || 'P'}
+            brand
+          />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
@@ -200,10 +198,10 @@ export default function DashboardScreen({ navigation }: any) {
       {/* ── Quick Add (§6) ─────────────────────────────────────── */}
       <PeggySectionHeader title="Quick Add" />
       <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
-        <PeggyQuickActionCard tone="green"  ionicon="receipt"     label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
-        <PeggyQuickActionCard tone="blue"   ionicon="cash"        label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
-        <PeggyQuickActionCard tone="peach"  ionicon="camera"      label="Scan Receipt" onPress={() => navigation.navigate('AddExpense', { openCamera: true })} />
-        <PeggyQuickActionCard tone="purple" ionicon="add-circle"  label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
+        <PeggyQuickActionCard tone="green"  iconKey="food"       label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
+        <PeggyQuickActionCard tone="blue"   iconKey="investing"  label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
+        <PeggyQuickActionCard tone="peach"  ionicon="camera"     label="Scan Receipt" onPress={() => navigation.navigate('AddExpense', { openCamera: true })} />
+        <PeggyQuickActionCard tone="purple" iconKey="gifts"      label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
       </View>
 
       {/* ── Your Goals (§4) ────────────────────────────────────── */}
