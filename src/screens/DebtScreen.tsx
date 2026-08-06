@@ -11,6 +11,7 @@ import { getDatabase } from '../database/database';
 import { formatCurrency } from '../utils/helpers';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 
 interface Debt {
   id?: number;
@@ -220,13 +221,13 @@ export default function DebtScreen({ navigation }: any) {
         style={[styles.card, paid && { borderLeftColor: C.goals }]}
       >
         <View style={styles.cardTop}>
-          <View style={[styles.debtIcon, { backgroundColor: (paid ? C.goals : C.primary) + '18' }]}>
-            <Ionicons
-              name={paid ? 'checkmark-circle' : 'trending-down-outline'}
-              size={20}
-              color={paid ? C.goals : C.primary}
-            />
-          </View>
+          {paid ? (
+            <View style={[styles.debtIcon, { backgroundColor: C.goals + '18', marginRight: Spacing.sm }]}>
+              <Ionicons name="checkmark-circle" size={20} color={C.goals} />
+            </View>
+          ) : (
+            <PeggyIconFrame iconKey="debt" size={40} shape="tile" style={{ marginRight: Spacing.sm }} />
+          )}
           <View style={{ flex: 1 }}>
             <Text style={styles.debtName}>{item.name}</Text>
             {item.apr > 0 && (

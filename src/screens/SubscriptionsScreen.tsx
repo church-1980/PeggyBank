@@ -10,6 +10,7 @@ import { getDatabase } from '../database/database';
 import { formatCurrency, getDaysUntil } from '../utils/helpers';
 import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 
 interface Subscription {
   id?: number;
@@ -237,9 +238,7 @@ export default function SubscriptionsScreen({ navigation }: any) {
                   onLongPress={() => item.id && deleteSub(item.id)}
                   activeOpacity={0.75}
                 >
-                  <View style={[styles.subIconWrap, { backgroundColor: C.subs + '18' }]}>
-                    <Ionicons name="repeat-outline" size={18} color={C.subs} />
-                  </View>
+                  <PeggyIconFrame iconKey="fun" size={36} shape="tile" style={{ marginRight: Spacing.sm }} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.subName}>{item.name}</Text>
                     <Text style={[styles.subDue, urgent && { color: C.spending }]}>

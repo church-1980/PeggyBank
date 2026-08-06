@@ -11,6 +11,7 @@ import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Income } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import UndoToast from '../components/UndoToast';
 
 const QUICK_LABELS = ['Paycheck', 'Freelance', 'Cash', 'Gift', 'Side Job', 'Other'];
@@ -136,9 +137,7 @@ export default function IncomesScreen({ navigation }: any) {
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.item} onPress={() => showOptions(item)} activeOpacity={0.75}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="arrow-down-circle-outline" size={22} color={C.income} />
-              </View>
+              <PeggyIconFrame iconKey="investing" size={44} shape="circle" style={{ marginRight: 12 }} />
               <View style={styles.itemMiddle}>
                 <Text style={styles.itemLabel}>{item.label || 'Income'}</Text>
                 <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
