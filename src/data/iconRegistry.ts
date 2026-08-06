@@ -104,7 +104,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   goals:            { label: 'Goals',           ionicon: 'flag-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
   'check-in':       { label: 'Weekly Check-In', ionicon: 'checkmark-circle-outline',    color: '#34C77B', status: 'pending', image: PENDING_ART },
   reports:          { label: 'Reports',         ionicon: 'bar-chart-outline',           color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/reports.png') },
-  calendar:         { label: 'Calendar',        ionicon: 'calendar-outline',            color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  calendar:         { label: 'Calendar',        ionicon: 'calendar-outline',            color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/calendar.png') },
   currency:         { label: 'Currency',        ionicon: 'swap-horizontal-outline',     color: '#25C2A0', status: 'pending', image: PENDING_ART },
   payday:           { label: 'Payday',          ionicon: 'cash-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
   backup:           { label: 'Backup',          ionicon: 'cloud-download-outline',      color: '#8E8CA3', status: 'pending', image: PENDING_ART },
