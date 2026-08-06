@@ -196,7 +196,7 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
         <PeggyQuickActionCard tone="green"  iconKey="food"       label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
         <PeggyQuickActionCard tone="blue"   iconKey="investing"  label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
-        <PeggyQuickActionCard tone="peach"  ionicon="camera"     label="Scan Receipt" onPress={() => navigation.navigate('AddExpense', { openCamera: true })} />
+        <PeggyQuickActionCard tone="peach"  iconKey="camera"     label="Scan Receipt" onPress={() => navigation.navigate('AddExpense', { openCamera: true })} />
         <PeggyQuickActionCard tone="purple" iconKey="gifts"      label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
       </View>
 
