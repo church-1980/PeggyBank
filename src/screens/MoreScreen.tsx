@@ -23,7 +23,7 @@ interface ToolItem {
 }
 
 const TOOLS: ToolItem[] = [
-  { label: 'Profile',             description: 'Photo, name, data & privacy',        icon: 'person-circle-outline',    colorKey: 'primary',       screen: 'Profile' },
+  { label: 'Profile',             description: 'Photo, name, data & privacy',        iconKey: 'profile',               colorKey: 'primary',       screen: 'Profile' },
   { label: 'Spending',            description: 'Your expense history',               iconKey: 'food',                  colorKey: 'spending',      screen: 'Spending' },
   { label: 'Income',              description: 'Money coming in',                    iconKey: 'investing',             colorKey: 'income',        screen: 'Incomes' },
   { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'travel',                colorKey: 'goals',         screen: 'Goals' },
