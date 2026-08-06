@@ -11,6 +11,8 @@ import { formatCurrency, getDaysUntil, getDaysUntilWeekday, WEEKDAY_NAMES, WEEKD
 import { Bill, BillFrequency } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
+import { categoryIconKey } from '../data/iconRegistry';
 
 interface Subscription {
   id?: number;
@@ -312,13 +314,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 onPress={() => openEditBill(item)}
                 activeOpacity={0.75}
               >
-                <TouchableOpacity
-                  style={[styles.checkbox, { borderColor: color, backgroundColor: item.is_paid ? color + '20' : 'transparent' }]}
-                  onPress={() => toggleBillPaid(item)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  {item.is_paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
-                </TouchableOpacity>
+                <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size={42} shape="circle" style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
@@ -328,6 +324,13 @@ export default function BillsScreen({ navigation, route }: any) {
                 <Text style={[styles.cardAmount, { color }, !!item.is_paid && styles.paidText]}>
                   {formatCurrency(item.amount)}
                 </Text>
+                <TouchableOpacity
+                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: item.is_paid ? color + '20' : 'transparent' }]}
+                  onPress={() => toggleBillPaid(item)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {item.is_paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })
@@ -358,13 +361,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 onPress={() => openEditSub(item)}
                 activeOpacity={0.75}
               >
-                <TouchableOpacity
-                  style={[styles.checkbox, { borderColor: color, backgroundColor: item.is_paid ? color + '20' : 'transparent' }]}
-                  onPress={() => toggleSubPaid(item)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  {item.is_paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
-                </TouchableOpacity>
+                <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size={42} shape="circle" style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
@@ -379,6 +376,13 @@ export default function BillsScreen({ navigation, route }: any) {
                 <Text style={[styles.cardAmount, { color }, !!item.is_paid && styles.paidText]}>
                   {formatCurrency(item.amount)}
                 </Text>
+                <TouchableOpacity
+                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: item.is_paid ? color + '20' : 'transparent' }]}
+                  onPress={() => toggleSubPaid(item)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {item.is_paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })
