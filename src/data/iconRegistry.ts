@@ -159,6 +159,36 @@ export function goalTypeIconKey(goalType?: string): IconKey {
   return GOAL_TYPE_ICON[goalType ?? 'other'] ?? 'other';
 }
 
+/**
+ * Best concept icon for a goal. Uses the goal's type when it maps to something
+ * specific; otherwise infers from the goal NAME (many goals are created without
+ * a type). Keeps "Vacation" → travel, "Visa" → debt, etc. instead of the generic
+ * "other" icon.
+ */
+const GOAL_NAME_HINTS: [RegExp, IconKey][] = [
+  [/vacation|trip|travel|holiday|flight|cruise|disney/i, 'travel'],
+  [/\bcar\b|auto|vehicle|truck|motor/i, 'vehicle'],
+  [/visa|debt|loan|credit|master ?card|amex|payoff|pay off/i, 'debt'],
+  [/home|house|rent|mortgage|down ?payment|reno|furnitur/i, 'home'],
+  [/wedding|baby|family|kids?|child/i, 'family'],
+  [/school|tuition|educat|college|universit|course/i, 'education'],
+  [/emergency|rainy|safety ?net/i, 'emergency-fund'],
+  [/invest|retire|stock|business|nest ?egg/i, 'investing'],
+  [/pet|dog|cat|vet|puppy|kitten/i, 'pet'],
+  [/gift|present|birthday|christmas|holiday ?gift/i, 'gifts'],
+  [/health|medical|dental|doctor|surgery|braces/i, 'health'],
+  [/grocer|restaurant|dining/i, 'food'],
+  [/shop|clothes|amazon|wardrobe/i, 'shopping'],
+  [/\bfun\b|game|hobby|tech|gadget|phone|laptop|console/i, 'fun'],
+];
+export function goalIconKey(name?: string, goalType?: string): IconKey {
+  const byType = goalTypeIconKey(goalType);
+  if (byType !== 'other') return byType;
+  const n = name ?? '';
+  for (const [re, key] of GOAL_NAME_HINTS) if (re.test(n)) return key;
+  return 'other';
+}
+
 /** Registry bucket key for an expense category. */
 export function categoryIconKey(category?: string): IconKey {
   return CATEGORY_ICON[category ?? 'other'] ?? 'other';

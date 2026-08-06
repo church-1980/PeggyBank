@@ -8,8 +8,7 @@ import { SavingsGoal, Bill, Category } from '../types';
 import { Spacing, Typography, IconSize } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { CATEGORIES } from '../data/categories';
-import { categoryIconKey } from '../data/iconRegistry';
-import { GOAL_TYPES, GoalType } from '../data/goalTypes';
+import { categoryIconKey, goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
 import {
   PeggyScreen, PeggyHeroCard, PeggySectionHeader, PeggyCard,
   PeggyQuickActionCard, PeggyGoalCard, PeggyListRow, PeggyEmptyState,
@@ -130,12 +129,9 @@ export default function DashboardScreen({ navigation }: any) {
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.7}
         >
-          <PeggyAvatar
-            size={44}
-            source={profilePhoto ? { uri: profilePhoto } : undefined}
-            name={profileName || 'P'}
-            brand
-          />
+          {/* Top-left is the PeggyBank logo (spec). Always shows Peggy; a saved
+              profile photo lives on the Profile screen, not here. */}
+          <PeggyAvatar size={44} brand />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
@@ -208,7 +204,7 @@ export default function DashboardScreen({ navigation }: any) {
       <PeggySectionHeader title="Your Goals" onAction={() => navigation.navigate('Goals')} />
       {pinnedGoals.length > 0 ? (
         pinnedGoals.map((goal, i) => {
-          const typeInfo = GOAL_TYPES[(goal.goal_type ?? 'other') as GoalType] ?? GOAL_TYPES.other;
+          const gKey = goalIconKey(goal.name, goal.goal_type);
           return (
             <PeggyGoalCard
               key={goal.id}
@@ -216,8 +212,8 @@ export default function DashboardScreen({ navigation }: any) {
               current={goal.current_amount}
               target={goal.target_amount}
               formatAmount={formatCurrency}
-              iconKey={typeInfo.iconKey}
-              artworkTint={typeInfo.color}
+              iconKey={gKey}
+              artworkTint={ICON_REGISTRY[gKey].color}
               onPress={() => navigation.navigate('Goals')}
               style={i > 0 ? { marginTop: Spacing.sm + 2 } : undefined}
             />

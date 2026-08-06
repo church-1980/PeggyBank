@@ -14,6 +14,7 @@ import { GOAL_TYPES, GoalType } from '../data/goalTypes';
 import { Spacing, Radius, Typography, IconSize, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import IconBadge from '../components/IconBadge';
+import { goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
 
 function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; borderColor: string }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -183,7 +184,8 @@ export default function GoalsScreen({ navigation, route }: any) {
 
     const typeKey  = (item.goal_type ?? 'other') as import('../data/goalTypes').GoalType;
     const typeInfo = GOAL_TYPES[typeKey] ?? GOAL_TYPES.other;
-    const accent   = typeInfo.color;
+    const gKey     = goalIconKey(item.name, item.goal_type);
+    const accent   = ICON_REGISTRY[gKey].color;
 
     return (
       <TouchableOpacity
@@ -198,7 +200,7 @@ export default function GoalsScreen({ navigation, route }: any) {
               <Ionicons name="checkmark-circle" size={IconSize.sm} color={accent} />
             </View>
           ) : (
-            <IconBadge iconKey={typeInfo.iconKey} color={accent} size={40} />
+            <IconBadge iconKey={gKey} color={accent} size={40} />
           )}
 
           <View style={{ flex: 1 }}>
