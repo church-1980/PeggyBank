@@ -39,7 +39,7 @@ const TOOLS: ToolItem[] = [
   { label: 'Currency Calculator', description: 'Convert money, works offline',       iconKey: 'currency',              colorKey: 'primaryLight',  screen: 'Currency' },
   { label: 'Export & Backup',     description: 'Save or share your data',            icon: 'cloud-download-outline',   colorKey: 'textSecondary', screen: 'Export' },
   { label: 'Share PeggyBank',     description: 'Tell a friend about the app',        icon: 'share-social-outline',     colorKey: 'income',        screen: 'Share' },
-  { label: 'Settings',            description: 'Preferences, backup, and about',     icon: 'settings-outline',         colorKey: 'textSecondary', screen: 'Settings' },
+  { label: 'Settings',            description: 'Preferences, backup, and about',     iconKey: 'settings',              colorKey: 'textSecondary', screen: 'Settings' },
   { label: 'Design System (dev)', description: 'Component gallery — internal',        icon: 'color-palette-outline',    colorKey: 'primary',       screen: 'ComponentShowcase' },
 ];
 

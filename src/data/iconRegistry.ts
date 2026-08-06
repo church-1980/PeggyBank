@@ -108,7 +108,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   currency:         { label: 'Currency',        ionicon: 'swap-horizontal-outline',     color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/currency.png') },
   payday:           { label: 'Payday',          ionicon: 'cash-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
   backup:           { label: 'Backup',          ionicon: 'cloud-download-outline',      color: '#8E8CA3', status: 'pending', image: PENDING_ART },
-  settings:         { label: 'Settings',        ionicon: 'settings-outline',            color: '#8E8CA3', status: 'pending', image: PENDING_ART },
+  settings:         { label: 'Settings',        ionicon: 'settings-outline',            color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/settings.png') },
   profile:          { label: 'Profile',         ionicon: 'person-circle-outline',       color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/profile.png') },
   notifications:    { label: 'Notifications',   ionicon: 'notifications-outline',       color: '#F4B740', status: 'pending', image: PENDING_ART },
   share:            { label: 'Share',           ionicon: 'share-social-outline',        color: '#25C2A0', status: 'pending', image: PENDING_ART },
