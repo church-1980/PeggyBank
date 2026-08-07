@@ -14,6 +14,7 @@ import { useColors } from '../context/ThemeContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { categoryIconKey } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
+import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
 
 interface Subscription {
   id?: number;
@@ -454,6 +455,33 @@ export default function BillsScreen({ navigation, route }: any) {
                 placeholderTextColor={C.textHint}
                 autoCapitalize="words"
               />
+
+              {modalType === 'subscription' && !editingSub && (
+                <View style={{ marginBottom: Spacing.sm }}>
+                  <Text style={styles.modalLabel}>Popular subscriptions</Text>
+                  {POPULAR_SUBSCRIPTIONS.map((cat) => (
+                    <View key={cat.title} style={{ marginBottom: Spacing.sm }}>
+                      <Text style={{ ...Typography.caption, color: C.textHint, marginBottom: 6 }}>{cat.title}</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                        {cat.data.map((sub) => {
+                          const active = name.trim().toLowerCase() === sub.name.toLowerCase();
+                          return (
+                            <TouchableOpacity
+                              key={sub.name}
+                              onPress={() => setName(sub.name)}
+                              activeOpacity={0.75}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: active ? C.primary + '18' : C.surfaceMuted, borderRadius: Radius.full, paddingVertical: 7, paddingHorizontal: 11, borderWidth: active ? 1.5 : 0, borderColor: C.primary }}
+                            >
+                              <Ionicons name={sub.icon} size={15} color={sub.color} />
+                              <Text style={{ ...Typography.caption, color: C.textPrimary, fontWeight: '600' }}>{sub.name}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               <Text style={styles.modalLabel}>Logo</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.sm }}>
