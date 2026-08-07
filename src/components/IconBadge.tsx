@@ -22,6 +22,7 @@ interface Props {
   size?: number;      // container size (default = IconBadgeSize)
   iconSize?: number;  // glyph size (default = IconSize.sm) — use only IconSize.*
   tinted?: boolean;   // tinted background (default true)
+  overrideSource?: any;   // user-attached custom logo — overrides the concept icon
   style?: StyleProp<ViewStyle>;
 }
 
@@ -31,6 +32,7 @@ export default function IconBadge({
   size = IconBadgeSize,
   iconSize = IconSize.sm,
   tinted = true,
+  overrideSource,
   style,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
@@ -41,14 +43,17 @@ export default function IconBadge({
           width: size,
           height: size,
           borderRadius: Radius.sm,
-          backgroundColor: tinted ? color + '18' : 'transparent',
+          backgroundColor: overrideSource ? '#FFFFFF' : tinted ? color + '18' : 'transparent',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
         },
         style,
       ]}
     >
-      {entry.image ? (
+      {overrideSource ? (
+        <Image source={overrideSource} style={{ width: size, height: size, resizeMode: 'cover' }} />
+      ) : entry.image ? (
         <Image
           source={entry.image}
           style={{ width: iconSize + 10, height: iconSize + 10, resizeMode: 'contain' }}

@@ -11,6 +11,7 @@ import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Income } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import UndoToast from '../components/UndoToast';
 
@@ -19,6 +20,7 @@ const QUICK_LABELS = ['Paycheck', 'Freelance', 'Cash', 'Gift', 'Side Job', 'Othe
 export default function IncomesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const { logoFor } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [total, setTotal] = useState(0);
@@ -137,7 +139,7 @@ export default function IncomesScreen({ navigation }: any) {
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.item} onPress={() => showOptions(item)} activeOpacity={0.75}>
-              <PeggyIconFrame iconKey="investing" size={44} shape="circle" style={{ marginRight: 12 }} />
+              <PeggyIconFrame iconKey="investing" size={44} shape="circle" overrideSource={logoFor(item.label) ? { uri: logoFor(item.label) } : undefined} style={{ marginRight: 12 }} />
               <View style={styles.itemMiddle}>
                 <Text style={styles.itemLabel}>{item.label || 'Income'}</Text>
                 <Text style={styles.itemDate}>{formatDate(item.date)}</Text>

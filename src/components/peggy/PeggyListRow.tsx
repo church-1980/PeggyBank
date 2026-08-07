@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Spacing, Typography } from '../../theme';
 import { useColors } from '../../context/ThemeContext';
-import PeggyIconBadge from './PeggyIconBadge';
+import { useCustomLogos } from '../../context/CustomLogoContext';
+import PeggyIconFrame from './PeggyIconFrame';
 import { IconKey } from '../../data/iconRegistry';
 
 /**
@@ -42,6 +43,8 @@ export default function PeggyListRow({
   testID,
 }: Props) {
   const C = useColors();
+  const { logoFor } = useCustomLogos();
+  const logo = logoFor(title);    // a user-attached logo for this item name, if any
 
   const body = (
     <View
@@ -55,7 +58,13 @@ export default function PeggyListRow({
         style,
       ]}
     >
-      <PeggyIconBadge iconKey={iconKey} color={iconColor} shape="circle" size={40} />
+      <PeggyIconFrame
+        iconKey={iconKey}
+        tone={iconColor}
+        shape="circle"
+        size={40}
+        overrideSource={logo ? { uri: logo } : undefined}
+      />
 
       <View style={{ flex: 1 }}>
         <Text style={[Typography.cardTitle, { color: C.textPrimary }]} numberOfLines={1}>

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getDatabase, wipeAllLocalData } from '../database/database';
 import { wipeAllReceipts, saveAcceptedImage, deleteReceiptImage, isOwnedReceipt } from '../lib/receiptStorage';
+import { wipeAllLogos } from '../lib/customLogos';
 import { useColors } from '../context/ThemeContext';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 
@@ -89,8 +90,9 @@ export default function ProfileScreen({ navigation }: any) {
   const runDelete = async () => {
     setDeleting(true);
     try {
-      await wipeAllLocalData();     // transactional DB wipe
+      await wipeAllLocalData();     // transactional DB wipe (incl. custom_logos rows)
       await wipeAllReceipts();      // remove owned receipt images
+      await wipeAllLogos();         // remove owned custom-logo images
       // Reset to valid first-use state.
       navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
     } catch (e: any) {

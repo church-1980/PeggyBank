@@ -11,12 +11,14 @@ import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Expense, Category } from '../types';
 import { Spacing, Radius, Typography, IconSize, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { useCustomLogos } from '../context/CustomLogoContext';
 import UndoToast from '../components/UndoToast';
 import IconBadge from '../components/IconBadge';
 
 export default function ExpensesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const { logoFor } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [total, setTotal] = useState(0);
@@ -76,7 +78,7 @@ export default function ExpensesScreen({ navigation }: any) {
         onPress={() => setSelectedExpense(item)}
         activeOpacity={0.75}
       >
-        <IconBadge iconKey={catInfo.iconKey} color={catInfo.color} />
+        <IconBadge iconKey={catInfo.iconKey} color={catInfo.color} overrideSource={item.note && logoFor(item.note) ? { uri: logoFor(item.note) } : undefined} />
         <View style={styles.itemMiddle}>
           <Text style={styles.itemCategory}>{catInfo.label}</Text>
           {item.note ? <Text style={styles.itemNote}>{item.note}</Text> : null}

@@ -13,6 +13,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { categoryIconKey } from '../data/iconRegistry';
+import { useCustomLogos } from '../context/CustomLogoContext';
 
 interface Subscription {
   id?: number;
@@ -62,6 +63,7 @@ function ordinal(n: number): string {
 export default function BillsScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const { logoFor, pickAndSetLogo, removeLogo, hasLogo } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
 
   const [bills, setBills] = useState<Bill[]>([]);
@@ -314,7 +316,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 onPress={() => openEditBill(item)}
                 activeOpacity={0.75}
               >
-                <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size={42} shape="circle" style={{ marginRight: Spacing.sm + 2 }} />
+                <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size={42} shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
@@ -361,7 +363,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 onPress={() => openEditSub(item)}
                 activeOpacity={0.75}
               >
-                <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size={42} shape="circle" style={{ marginRight: Spacing.sm + 2 }} />
+                <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size={42} shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
@@ -452,6 +454,30 @@ export default function BillsScreen({ navigation, route }: any) {
                 placeholderTextColor={C.textHint}
                 autoCapitalize="words"
               />
+
+              <Text style={styles.modalLabel}>Logo</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.sm }}>
+                <PeggyIconFrame
+                  iconKey={categoryIconKey((editingBill as any)?.category)}
+                  size={52}
+                  shape="circle"
+                  overrideSource={logoFor(name) ? { uri: logoFor(name) } : undefined}
+                />
+                <TouchableOpacity
+                  onPress={() => (name.trim() ? pickAndSetLogo(name) : null)}
+                  style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: name.trim() ? 1 : 0.5 }}
+                >
+                  <Text style={{ color: C.primary, fontWeight: '700' }}>{hasLogo(name) ? 'Change logo' : 'Add a logo'}</Text>
+                </TouchableOpacity>
+                {hasLogo(name) ? (
+                  <TouchableOpacity onPress={() => removeLogo(name)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={{ color: C.textSecondary, fontWeight: '600' }}>Remove</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <Text style={{ ...Typography.caption, color: C.textHint, marginBottom: Spacing.md }}>
+                Shows on this item everywhere in the app. Great for real brand logos (Bell, Visa…).
+              </Text>
 
               <Text style={styles.modalLabel}>Amount</Text>
               <View style={[styles.amountRow, focusedField === 'amount' && styles.amountRowFocused]}>

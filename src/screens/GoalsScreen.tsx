@@ -15,6 +15,7 @@ import { Spacing, Radius, Typography, IconSize, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import IconBadge from '../components/IconBadge';
 import { goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
+import { useCustomLogos } from '../context/CustomLogoContext';
 
 function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; borderColor: string }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -44,6 +45,7 @@ function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; 
 export default function GoalsScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const { logoFor, pickAndSetLogo, removeLogo, hasLogo } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -200,7 +202,7 @@ export default function GoalsScreen({ navigation, route }: any) {
               <Ionicons name="checkmark-circle" size={IconSize.sm} color={accent} />
             </View>
           ) : (
-            <IconBadge iconKey={gKey} color={accent} size={40} />
+            <IconBadge iconKey={gKey} color={accent} size={40} overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} />
           )}
 
           <View style={{ flex: 1 }}>
@@ -330,6 +332,23 @@ export default function GoalsScreen({ navigation, route }: any) {
                   placeholder="e.g. Emergency Fund, Vacation, Car"
                   placeholderTextColor={C.textHint}
                 />
+
+                <Text style={styles.modalLabel}>Logo</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.sm }}>
+                  <IconBadge iconKey={goalIconKey(name)} color={ICON_REGISTRY[goalIconKey(name)].color} size={48} overrideSource={logoFor(name) ? { uri: logoFor(name) } : undefined} />
+                  <TouchableOpacity
+                    onPress={() => (name.trim() ? pickAndSetLogo(name) : null)}
+                    style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: name.trim() ? 1 : 0.5 }}
+                  >
+                    <Text style={{ color: C.primary, fontWeight: '700' }}>{hasLogo(name) ? 'Change logo' : 'Add a logo'}</Text>
+                  </TouchableOpacity>
+                  {hasLogo(name) ? (
+                    <TouchableOpacity onPress={() => removeLogo(name)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={{ color: C.textSecondary, fontWeight: '600' }}>Remove</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
                 <Text style={styles.modalLabel}>Target Amount</Text>
                 <TextInput
                   style={[styles.modalInput, focusedField === 'target' && styles.modalInputFocused]}

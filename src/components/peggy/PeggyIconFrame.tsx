@@ -28,6 +28,7 @@ interface Props {
   bg?: string;                         // explicit background (e.g. a pastel tile)
   selected?: boolean;
   disabled?: boolean;
+  overrideSource?: any;                // user-attached custom logo — overrides the concept icon
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -41,6 +42,7 @@ export default function PeggyIconFrame({
   bg,
   selected = false,
   disabled = false,
+  overrideSource,
   style,
   testID,
 }: Props) {
@@ -49,8 +51,9 @@ export default function PeggyIconFrame({
   const color = tone ?? entry.color;
   const radius = shape === 'circle' ? px / 2 : Radius.tile;
 
-  const background = bg
-    ?? (selected ? color + '2E' : tinted ? color + '1A' : 'transparent');
+  const background = overrideSource
+    ? '#FFFFFF'
+    : bg ?? (selected ? color + '2E' : tinted ? color + '1A' : 'transparent');
 
   return (
     <View
@@ -71,7 +74,9 @@ export default function PeggyIconFrame({
         style,
       ]}
     >
-      {entry.image ? (
+      {overrideSource ? (
+        <Image source={overrideSource} style={{ width: px, height: px, resizeMode: 'cover' }} />
+      ) : entry.image ? (
         <Image
           source={entry.image}
           style={{ width: px * 0.74, height: px * 0.74, resizeMode: 'contain' }}

@@ -6,9 +6,10 @@ import { useColors, } from '../../context/ThemeContext';
 import { ColorPalette } from '../../theme/colors';
 import PeggyCard from './PeggyCard';
 import PeggyIllustration from './PeggyIllustration';
-import PeggyIconBadge from './PeggyIconBadge';
+import PeggyIconFrame from './PeggyIconFrame';
 import PeggyProgressBar from './PeggyProgressBar';
 import { IconKey } from '../../data/iconRegistry';
+import { useCustomLogos } from '../../context/CustomLogoContext';
 
 /**
  * PeggyGoalCard — Design Bible §4 (Goals) + §5 (Progress Bars).
@@ -85,12 +86,19 @@ export default function PeggyGoalCard({
   // Completed = gold bar with a subtle green success accent on the text (§5).
   const encColor = done ? C.success : barColor;
   const secondary = goalEncouragementSecondary(pct);
+  const logo = useCustomLogos().logoFor(name);   // user-attached logo for this goal, if any
 
   return (
     <PeggyCard onPress={onPress} style={style} testID={testID}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 4 }}>
-        {iconKey ? (
-          <PeggyIconBadge iconKey={iconKey} color={artworkTint ?? barColor} shape="circle" size={52} iconSize={IconSize.md} />
+        {iconKey || logo ? (
+          <PeggyIconFrame
+            iconKey={iconKey ?? 'other'}
+            tone={artworkTint ?? barColor}
+            shape="circle"
+            size={52}
+            overrideSource={logo ? { uri: logo } : undefined}
+          />
         ) : (
           <PeggyIllustration size={52} circle source={artwork} tint={artworkTint ?? barColor} />
         )}

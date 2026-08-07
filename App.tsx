@@ -13,6 +13,7 @@ console.error = (...args: unknown[]) => {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavProvider, useNavConfig } from './src/context/NavContext';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { CustomLogoProvider } from './src/context/CustomLogoContext';
 import { setupDatabase, getDatabase } from './src/database/database';
 import AppNavigator from './src/navigation/AppNavigator';
 import { Colors, Typography } from './src/theme';
@@ -100,7 +101,9 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <NavProvider>
-          <AppRoot />
+          <CustomLogoProvider>
+            <AppRoot />
+          </CustomLogoProvider>
         </NavProvider>
       </ThemeProvider>
     </SafeAreaProvider>

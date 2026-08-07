@@ -10,6 +10,7 @@ import { getDatabase } from '../database/database';
 import { formatCurrency, getDaysUntil } from '../utils/helpers';
 import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 
 interface Subscription {
@@ -103,6 +104,7 @@ const QUICK_CATEGORIES: { title: string; data: QuickSub[] }[] = [
 export default function SubscriptionsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const { logoFor, pickAndSetLogo, removeLogo, hasLogo } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -238,7 +240,7 @@ export default function SubscriptionsScreen({ navigation }: any) {
                   onLongPress={() => item.id && deleteSub(item.id)}
                   activeOpacity={0.75}
                 >
-                  <PeggyIconFrame iconKey="fun" size={36} shape="tile" style={{ marginRight: Spacing.sm }} />
+                  <PeggyIconFrame iconKey="fun" size={36} shape="tile" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm }} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.subName}>{item.name}</Text>
                     <Text style={[styles.subDue, urgent && { color: C.spending }]}>

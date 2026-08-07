@@ -108,6 +108,12 @@ export async function setupDatabase(): Promise<void> {
       title TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS custom_logos (
+      key TEXT PRIMARY KEY,
+      uri TEXT NOT NULL,
+      updated_at INTEGER
+    );
   `);
 
   // Safe migrations — silently skip if column already exists
@@ -130,7 +136,7 @@ export async function setupDatabase(): Promise<void> {
 // Every PeggyBank-owned table. Used by the destructive wipe.
 const ALL_TABLES = [
   'expenses', 'income', 'bills', 'savings_goals',
-  'debts', 'subscriptions', 'calendar_reminders', 'settings',
+  'debts', 'subscriptions', 'calendar_reminders', 'settings', 'custom_logos',
 ];
 
 /**
