@@ -29,7 +29,9 @@ describe('icon registry integrity', () => {
   });
 
   it('ready concepts do not use the placeholder asset', () => {
-    const pendingImage = ICON_REGISTRY.settings.image; // a known pending entry
+    const pendingKey = keys.find((k) => ICON_REGISTRY[k].status === 'pending');
+    if (!pendingKey) return; // every concept has final art — nothing to compare
+    const pendingImage = ICON_REGISTRY[pendingKey].image;
     const ready = keys.filter((k) => ICON_REGISTRY[k].status === 'ready');
     for (const k of ready) {
       expect(ICON_REGISTRY[k].image).not.toBe(pendingImage);
