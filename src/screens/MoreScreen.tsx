@@ -22,23 +22,28 @@ interface ToolItem {
   params?: object;
 }
 
+// One destination per row. Actions that already exist inside a screen (add a
+// bill/goal/expense) or inside Settings (Export & Backup, Share) do NOT get a
+// duplicate tile here. Ordered by purpose: money → planning → insights → tools →
+// account.
 const TOOLS: ToolItem[] = [
-  { label: 'Profile',             description: 'Photo, name, data & privacy',        iconKey: 'profile',               colorKey: 'primary',       screen: 'Profile' },
+  // ── Money in & out ──
   { label: 'Spending',            description: 'Your expense history',               iconKey: 'food',                  colorKey: 'spending',      screen: 'Spending' },
   { label: 'Income',              description: 'Money coming in',                    iconKey: 'investing',             colorKey: 'income',        screen: 'Incomes' },
-  { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'travel',                colorKey: 'goals',         screen: 'Goals' },
-  { label: 'Bills & Subscriptions', description: "Recurring bills and charges",       iconKey: 'home',                  colorKey: 'bills',         screen: 'Bills' },
+  { label: 'Bills & Subscriptions', description: 'Recurring bills and charges',      iconKey: 'home',                  colorKey: 'bills',         screen: 'Bills' },
   { label: 'Debt Tracker',        description: 'Pay it down, one step at a time',    iconKey: 'debt',                  colorKey: 'debt',          screen: 'Debt' },
-  { label: 'Add Expense',         description: 'Record a new expense',               iconKey: 'food',                  colorKey: 'spending',      screen: 'AddExpense' },
+  // ── Saving & planning ──
+  { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'travel',                colorKey: 'goals',         screen: 'Goals' },
+  { label: 'Payday',              description: 'Plan around your next paycheck',     iconKey: 'investing',             colorKey: 'income',        screen: 'Payday' },
   { label: 'Weekly Check-In',     description: 'How did this week go?',              iconKey: 'check-in',              colorKey: 'income',        screen: 'WeeklyCheckIn' },
+  // ── Insights ──
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },
   { label: 'Calendar',            description: 'See your month at a glance',         iconKey: 'calendar',              colorKey: 'primary',       screen: 'Calendar' },
-  { label: 'Payday',              description: 'Plan around your next paycheck',     iconKey: 'investing',             colorKey: 'income',        screen: 'Payday' },
+  // ── Tools ──
   { label: 'Currency Calculator', description: 'Convert money, works offline',       iconKey: 'currency',              colorKey: 'primaryLight',  screen: 'Currency' },
-  { label: 'Export & Backup',     description: 'Save or share your data',            iconKey: 'backup',                colorKey: 'textSecondary', screen: 'Export' },
-  { label: 'Share PeggyBank',     description: 'Tell a friend about the app',        iconKey: 'share',                 colorKey: 'income',        screen: 'Share' },
-  { label: 'Settings',            description: 'Preferences, backup, and about',     iconKey: 'settings',              colorKey: 'textSecondary', screen: 'Settings' },
-  { label: 'Design System (dev)', description: 'Component gallery — internal',        icon: 'color-palette-outline',    colorKey: 'primary',       screen: 'ComponentShowcase' },
+  // ── Account ──
+  { label: 'Profile',             description: 'Photo, name, data & privacy',        iconKey: 'profile',               colorKey: 'primary',       screen: 'Profile' },
+  { label: 'Settings',            description: 'Preferences, export, share & about', iconKey: 'settings',              colorKey: 'textSecondary', screen: 'Settings' },
 ];
 
 export default function MoreScreen({ navigation }: any) {
