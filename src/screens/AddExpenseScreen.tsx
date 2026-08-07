@@ -12,6 +12,8 @@ import { getTodayString } from '../utils/helpers';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { useCustomLogos } from '../context/CustomLogoContext';
+import { categoryIconKey } from '../data/iconRegistry';
 import IconBadge from '../components/IconBadge';
 
 const VALID_CATEGORIES = Object.keys(CATEGORIES) as Category[];
@@ -20,6 +22,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const C      = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const { logoFor, pickAndSetLogo, removeLogo, hasLogo } = useCustomLogos();
 
   const prefill  = route?.params ?? {};
   const editingId: number | undefined = prefill.id;
@@ -235,6 +238,22 @@ export default function AddExpenseScreen({ navigation, route }: any) {
             placeholderTextColor={C.textHint}
             returnKeyType="done"
           />
+
+          {/* Logo — attach a brand logo to this merchant (keyed by the note). */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm }}>
+            <IconBadge iconKey={categoryIconKey(category)} color={C.primary} size={48} overrideSource={note.trim() && logoFor(note) ? { uri: logoFor(note) } : undefined} />
+            <TouchableOpacity
+              onPress={() => (note.trim() ? pickAndSetLogo(note) : null)}
+              style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: note.trim() ? 1 : 0.5 }}
+            >
+              <Text style={{ color: C.primary, fontWeight: '700' }}>{note.trim() && hasLogo(note) ? 'Change logo' : 'Add a logo'}</Text>
+            </TouchableOpacity>
+            {note.trim() && hasLogo(note) ? (
+              <TouchableOpacity onPress={() => removeLogo(note)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={{ color: C.textSecondary, fontWeight: '600' }}>Remove</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
 
           {/* Camera */}
           <TouchableOpacity

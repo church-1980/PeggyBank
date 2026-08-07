@@ -20,7 +20,7 @@ const QUICK_LABELS = ['Paycheck', 'Freelance', 'Cash', 'Gift', 'Side Job', 'Othe
 export default function IncomesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
-  const { logoFor } = useCustomLogos();
+  const { logoFor, pickAndSetLogo, removeLogo, hasLogo } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [total, setTotal] = useState(0);
@@ -237,6 +237,22 @@ export default function IncomesScreen({ navigation }: any) {
                 placeholder="Or type a custom label..."
                 placeholderTextColor={C.textHint}
               />
+
+              <Text style={styles.fieldLabel}>Logo</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md }}>
+                <PeggyIconFrame iconKey="investing" size={48} shape="circle" overrideSource={logoFor(label) ? { uri: logoFor(label) } : undefined} />
+                <TouchableOpacity
+                  onPress={() => (label.trim() ? pickAndSetLogo(label) : null)}
+                  style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: label.trim() ? 1 : 0.5 }}
+                >
+                  <Text style={{ color: C.primary, fontWeight: '700' }}>{hasLogo(label) ? 'Change logo' : 'Add a logo'}</Text>
+                </TouchableOpacity>
+                {hasLogo(label) ? (
+                  <TouchableOpacity onPress={() => removeLogo(label)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={{ color: C.textSecondary, fontWeight: '600' }}>Remove</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
 
               <TouchableOpacity
                 style={[styles.saveBtn, saving && { opacity: 0.6 }]}
