@@ -110,7 +110,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   backup:           { label: 'Backup',          ionicon: 'cloud-download-outline',      color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/backup.png') },
   settings:         { label: 'Settings',        ionicon: 'settings-outline',            color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/settings.png') },
   profile:          { label: 'Profile',         ionicon: 'person-circle-outline',       color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/profile.png') },
-  notifications:    { label: 'Notifications',   ionicon: 'notifications-outline',       color: '#F4B740', status: 'pending', image: PENDING_ART },
+  notifications:    { label: 'Notifications',   ionicon: 'notifications-outline',       color: '#F4B740', status: 'ready', image: require('../../assets/peggy-icons/notifications.png') },
   share:            { label: 'Share',           ionicon: 'share-social-outline',        color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/share.png') },
 };
 

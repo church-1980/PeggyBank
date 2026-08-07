@@ -12,7 +12,7 @@ import { categoryIconKey, goalIconKey, ICON_REGISTRY } from '../data/iconRegistr
 import {
   PeggyScreen, PeggyHeroCard, PeggySectionHeader, PeggyCard,
   PeggyQuickActionCard, PeggyGoalCard, PeggyListRow, PeggyEmptyState,
-  PeggyAvatar, PeggyButton, PeggyProgressBar,
+  PeggyAvatar, PeggyButton, PeggyProgressBar, PeggyIconFrame,
 } from '../components/peggy';
 
 interface MonthSummary {
@@ -145,7 +145,7 @@ export default function DashboardScreen({ navigation }: any) {
           onPress={() => navigation.navigate('Settings')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="notifications-outline" size={24} color={C.textSecondary} />
+          <PeggyIconFrame iconKey="notifications" size={38} tinted={false} />
         </TouchableOpacity>
       </View>
 
