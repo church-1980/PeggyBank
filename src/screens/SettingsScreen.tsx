@@ -1,12 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
+  View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
+import PeggyAvatar from '../components/peggy/PeggyAvatar';
 import {
   NotificationMode,
   getNotificationMode,
@@ -21,6 +23,7 @@ interface RowItem {
   label: string;
   sub: string;
   icon: keyof typeof Ionicons.glyphMap;
+  iconKey?: IconKey;                 // matte concept icon (preferred when available)
   iconColorKey: keyof ColorPalette;
   screen: string;
 }
@@ -37,6 +40,7 @@ const APP_ROWS: RowItem[] = [
     label: 'Export & Backup',
     sub: 'Save or share a copy of your data',
     icon: 'cloud-download-outline',
+    iconKey: 'backup',
     iconColorKey: 'textSecondary',
     screen: 'Export',
   },
@@ -47,6 +51,7 @@ const SHARE_ROWS: RowItem[] = [
     label: 'Share with a Friend',
     sub: 'Let someone know about PeggyBank',
     icon: 'share-social-outline',
+    iconKey: 'share',
     iconColorKey: 'income',
     screen: 'Share',
   },
@@ -112,7 +117,11 @@ export default function SettingsScreen({ navigation }: any) {
       >
         <View style={styles.rowLeft}>
           <View style={[styles.iconWrap, { backgroundColor: iconColor + '18' }]}>
-            <Ionicons name={item.icon} size={20} color={iconColor} />
+            {item.iconKey ? (
+              <Image source={ICON_REGISTRY[item.iconKey].image} style={styles.matteIcon} />
+            ) : (
+              <Ionicons name={item.icon} size={20} color={iconColor} />
+            )}
           </View>
           <View style={styles.rowText}>
             <Text style={styles.rowLabel}>{item.label}</Text>
@@ -146,7 +155,7 @@ export default function SettingsScreen({ navigation }: any) {
         <TouchableOpacity style={[styles.row, styles.rowFirst, styles.rowLast]} onPress={handleNotifMode} activeOpacity={0.7}>
           <View style={styles.rowLeft}>
             <View style={[styles.iconWrap, { backgroundColor: C.primary + '18' }]}>
-              <Ionicons name="notifications-outline" size={20} color={C.primary} />
+              <Image source={ICON_REGISTRY.notifications.image} style={styles.matteIcon} />
             </View>
             <View style={styles.rowText}>
               <Text style={styles.rowLabel}>Reminders</Text>
@@ -166,9 +175,7 @@ export default function SettingsScreen({ navigation }: any) {
 
       <View style={styles.aboutCard}>
         <View style={styles.aboutLogoRow}>
-          <View style={styles.aboutLogoBox}>
-            <Ionicons name="heart" size={28} color={C.primary} />
-          </View>
+          <PeggyAvatar size={48} brand style={styles.aboutLogo} />
           <View>
             <Text style={styles.aboutAppName}>PeggyBank</Text>
             <Text style={styles.aboutVersion}>Version {APP_VERSION}</Text>
@@ -248,6 +255,8 @@ function makeStyles(C: ColorPalette) {
     rowLeft:      { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
     rowText:      { flex: 1 },
     iconWrap:     { width: 38, height: 38, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
+    matteIcon:    { width: 28, height: 28, resizeMode: 'contain' },
+    aboutLogo:    { },
     rowLabel:     { ...Typography.bodyBold, color: C.textPrimary },
     rowSub:       { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
 

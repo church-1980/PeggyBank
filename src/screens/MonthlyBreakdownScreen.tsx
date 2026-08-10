@@ -185,7 +185,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       ) : (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="bar-chart-outline" size={32} color={C.textHint} />
+            <IconBadge iconKey="reports" color={C.textHint} size={44} iconSize={28} tinted={false} />
           </View>
           <Text style={styles.emptyText}>No spending recorded this month yet.</Text>
         </View>
