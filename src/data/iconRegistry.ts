@@ -108,7 +108,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   'add-expense':    { label: 'Add Expense',     ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'pending', image: PENDING_ART },
   'add-income':     { label: 'Add Income',      ionicon: 'arrow-down-circle-outline',   color: '#34C77B', status: 'pending', image: PENDING_ART },
   bills:            { label: 'Bills',           ionicon: 'receipt-outline',             color: '#FF9F5A', status: 'pending', image: PENDING_ART },
-  goals:            { label: 'Goals',           ionicon: 'flag-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
+  goals:            { label: 'Goals',           ionicon: 'flag-outline',                color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/goals.png') },
   'check-in':       { label: 'Weekly Check-In', ionicon: 'checkmark-circle-outline',    color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/check-in.png') },
   reports:          { label: 'Reports',         ionicon: 'bar-chart-outline',           color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/reports.png') },
   calendar:         { label: 'Calendar',        ionicon: 'calendar-outline',            color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/calendar.png') },
