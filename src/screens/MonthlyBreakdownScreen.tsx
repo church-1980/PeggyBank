@@ -114,7 +114,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       {/* Big numbers */}
       <View style={styles.bigRow}>
         <View style={[styles.bigCard, { flex: 1 }]}>
-          <Ionicons name="arrow-down-circle-outline" size={18} color={C.income} />
+          <IconBadge iconKey="income" color={C.income} size={30} iconSize={20} tinted={false} />
           <Text style={styles.bigLabel}>Income</Text>
           <Text style={[styles.bigNumber, { color: C.income }]}>{formatCurrency(data?.totalIncome ?? 0)}</Text>
         </View>
