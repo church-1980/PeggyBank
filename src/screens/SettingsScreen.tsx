@@ -33,6 +33,7 @@ const APP_ROWS: RowItem[] = [
     label: 'Appearance',
     sub: 'Light, dark, or follow your device setting',
     icon: 'contrast-outline',
+    iconKey: 'appearance',
     iconColorKey: 'primary',
     screen: 'Appearance',
   },
