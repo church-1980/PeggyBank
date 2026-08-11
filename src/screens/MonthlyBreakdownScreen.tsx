@@ -138,7 +138,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         <Text style={styles.cardLabel}>Bills this month</Text>
         <View style={styles.statRow}>
           <View style={styles.statCell}>
-            <Ionicons name="checkmark-circle-outline" size={20} color={C.income} />
+            <IconBadge iconKey="paid" color={C.income} size={30} iconSize={20} tinted={false} />
             <Text style={styles.statNumber}>{data?.billsPaid ?? 0}</Text>
             <Text style={styles.statLabel}>Paid</Text>
           </View>
