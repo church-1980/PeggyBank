@@ -55,7 +55,11 @@ export type IconKey =
   | 'paid'
   | 'due'
   | 'paid-out'
-  | 'appearance';
+  | 'appearance'
+  // ── Insights / rewards / recurrence concepts ──
+  | 'tips'
+  | 'award'
+  | 'recurring';
 
 export interface IconEntry {
   label: string;
@@ -127,6 +131,9 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   due:              { label: 'Still Due',       ionicon: 'time-outline',                color: '#F5A623', status: 'ready', image: require('../../assets/peggy-icons/due.png') },
   'paid-out':       { label: 'Paid Out',        ionicon: 'wallet-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/paidout.png') },
   appearance:       { label: 'Appearance',      ionicon: 'contrast-outline',            color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/appearance.png') },
+  tips:             { label: 'Tips',            ionicon: 'bulb-outline',                color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/tips.png') },
+  award:            { label: 'Award',           ionicon: 'ribbon-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  recurring:        { label: 'Recurring',       ionicon: 'repeat-outline',              color: '#25C2A0', status: 'pending', image: PENDING_ART },
 };
 
 /** Every goal type resolves to one registry bucket. */
