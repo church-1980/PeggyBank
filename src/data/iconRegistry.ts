@@ -113,7 +113,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   reports:          { label: 'Reports',         ionicon: 'bar-chart-outline',           color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/reports.png') },
   calendar:         { label: 'Calendar',        ionicon: 'calendar-outline',            color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/calendar.png') },
   currency:         { label: 'Currency',        ionicon: 'swap-horizontal-outline',     color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/currency.png') },
-  payday:           { label: 'Payday',          ionicon: 'cash-outline',                color: '#34C77B', status: 'pending', image: PENDING_ART },
+  payday:           { label: 'Payday',          ionicon: 'cash-outline',                color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/payday.png') },
   backup:           { label: 'Backup',          ionicon: 'cloud-download-outline',      color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/backup.png') },
   settings:         { label: 'Settings',        ionicon: 'settings-outline',            color: '#8E8CA3', status: 'ready', image: require('../../assets/peggy-icons/settings.png') },
   profile:          { label: 'Profile',         ionicon: 'person-circle-outline',       color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/profile.png') },
