@@ -122,7 +122,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
 
   // ── Summary / status concepts — swap `image: PENDING_ART` → real require + status:'ready' as art lands.
   income:           { label: 'Income',          ionicon: 'arrow-down-circle-outline',   color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/income.png') },
-  spent:            { label: 'Spent',           ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'pending', image: PENDING_ART },
+  spent:            { label: 'Spent',           ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'ready', image: require('../../assets/peggy-icons/spent.png') },
   paid:             { label: 'Paid',            ionicon: 'checkmark-circle-outline',    color: '#34C77B', status: 'pending', image: PENDING_ART },
   due:              { label: 'Still Due',       ionicon: 'time-outline',                color: '#F5A623', status: 'pending', image: PENDING_ART },
   'paid-out':       { label: 'Paid Out',        ionicon: 'wallet-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },

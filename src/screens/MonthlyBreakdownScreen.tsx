@@ -119,7 +119,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           <Text style={[styles.bigNumber, { color: C.income }]}>{formatCurrency(data?.totalIncome ?? 0)}</Text>
         </View>
         <View style={[styles.bigCard, { flex: 1 }]}>
-          <Ionicons name="arrow-up-circle-outline" size={18} color={C.spending} />
+          <IconBadge iconKey="spent" color={C.spending} size={30} iconSize={20} tinted={false} />
           <Text style={styles.bigLabel}>Spent</Text>
           <Text style={[styles.bigNumber, { color: C.spending }]}>{formatCurrency(data?.totalSpending ?? 0)}</Text>
         </View>
