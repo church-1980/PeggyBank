@@ -125,7 +125,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   spent:            { label: 'Spent',           ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'ready', image: require('../../assets/peggy-icons/spent.png') },
   paid:             { label: 'Paid',            ionicon: 'checkmark-circle-outline',    color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/paid.png') },
   due:              { label: 'Still Due',       ionicon: 'time-outline',                color: '#F5A623', status: 'ready', image: require('../../assets/peggy-icons/due.png') },
-  'paid-out':       { label: 'Paid Out',        ionicon: 'wallet-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  'paid-out':       { label: 'Paid Out',        ionicon: 'wallet-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/paidout.png') },
   appearance:       { label: 'Appearance',      ionicon: 'contrast-outline',            color: '#7B61FF', status: 'pending', image: PENDING_ART },
 };
 

@@ -152,7 +152,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCell}>
-            <Ionicons name="wallet-outline" size={20} color={C.primaryLight} />
+            <IconBadge iconKey="paid-out" color={C.primaryLight} size={30} iconSize={20} tinted={false} />
             <Text style={styles.statNumber}>{formatCurrency(data?.billsPaidAmount ?? 0)}</Text>
             <Text style={styles.statLabel}>Paid out</Text>
           </View>
