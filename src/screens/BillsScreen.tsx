@@ -12,6 +12,7 @@ import { Bill, BillFrequency } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
+import IconBadge from '../components/IconBadge';
 import { categoryIconKey } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
@@ -302,7 +303,7 @@ export default function BillsScreen({ navigation, route }: any) {
 
         {bills.length === 0 ? (
           <TouchableOpacity style={styles.emptyRow} onPress={() => openAdd('bill')}>
-            <Ionicons name="receipt-outline" size={18} color={C.textHint} />
+            <IconBadge iconKey="bills" color={C.textHint} size={26} iconSize={18} tinted={false} />
             <Text style={styles.emptyRowText}>No bills yet — tap to add one</Text>
           </TouchableOpacity>
         ) : (
@@ -349,7 +350,7 @@ export default function BillsScreen({ navigation, route }: any) {
 
         {subs.length === 0 ? (
           <TouchableOpacity style={styles.emptyRow} onPress={() => openAdd('subscription')}>
-            <Ionicons name="repeat-outline" size={18} color={C.textHint} />
+            <IconBadge iconKey="recurring" color={C.textHint} size={26} iconSize={18} tinted={false} />
             <Text style={styles.emptyRowText}>No subscriptions yet — tap to add one</Text>
           </TouchableOpacity>
         ) : (
@@ -431,14 +432,14 @@ export default function BillsScreen({ navigation, route }: any) {
                     style={[styles.typeBtn, modalType === 'bill' && { borderColor: C.bills, backgroundColor: C.bills + '18' }]}
                     onPress={() => setModalType('bill')}
                   >
-                    <Ionicons name="receipt-outline" size={16} color={modalType === 'bill' ? C.bills : C.textHint} />
+                    <IconBadge iconKey="bills" color={modalType === 'bill' ? C.bills : C.textHint} size={24} iconSize={16} tinted={false} />
                     <Text style={[styles.typeBtnText, modalType === 'bill' && { color: C.bills }]}>Bill</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.typeBtn, modalType === 'subscription' && { borderColor: C.subs, backgroundColor: C.subs + '18' }]}
                     onPress={() => setModalType('subscription')}
                   >
-                    <Ionicons name="repeat-outline" size={16} color={modalType === 'subscription' ? C.subs : C.textHint} />
+                    <IconBadge iconKey="recurring" color={modalType === 'subscription' ? C.subs : C.textHint} size={24} iconSize={16} tinted={false} />
                     <Text style={[styles.typeBtnText, modalType === 'subscription' && { color: C.subs }]}>Subscription</Text>
                   </TouchableOpacity>
                 </View>
@@ -531,14 +532,14 @@ export default function BillsScreen({ navigation, route }: any) {
                       style={[styles.toggleBtn, frequency === 'monthly' && styles.toggleActive]}
                       onPress={() => setFrequency('monthly')}
                     >
-                      <Ionicons name="calendar-outline" size={18} color={frequency === 'monthly' ? C.primary : C.textHint} />
+                      <IconBadge iconKey="calendar" color={frequency === 'monthly' ? C.primary : C.textHint} size={26} iconSize={18} tinted={false} />
                       <Text style={[styles.toggleText, frequency === 'monthly' && styles.toggleTextActive]}>Monthly</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.toggleBtn, frequency === 'weekly' && styles.toggleActive]}
                       onPress={() => setFrequency('weekly')}
                     >
-                      <Ionicons name="repeat-outline" size={18} color={frequency === 'weekly' ? C.primary : C.textHint} />
+                      <IconBadge iconKey="recurring" color={frequency === 'weekly' ? C.primary : C.textHint} size={26} iconSize={18} tinted={false} />
                       <Text style={[styles.toggleText, frequency === 'weekly' && styles.toggleTextActive]}>Weekly</Text>
                     </TouchableOpacity>
                   </View>

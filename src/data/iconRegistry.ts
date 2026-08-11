@@ -109,8 +109,8 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   // ── Navigation / action / tool concepts — placeholder until matte art lands.
   //    Swap `image: PENDING_ART` → the real require + set status:'ready'. Nothing else changes.
   camera:           { label: 'Camera',          ionicon: 'camera-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/camera.png') },
-  'add-expense':    { label: 'Add Expense',     ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'pending', image: PENDING_ART },
-  'add-income':     { label: 'Add Income',      ionicon: 'arrow-down-circle-outline',   color: '#34C77B', status: 'pending', image: PENDING_ART },
+  'add-expense':    { label: 'Add Expense',     ionicon: 'arrow-up-circle-outline',     color: '#FF6B6B', status: 'ready', image: require('../../assets/peggy-icons/spent.png') },
+  'add-income':     { label: 'Add Income',      ionicon: 'arrow-down-circle-outline',   color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/income.png') },
   bills:            { label: 'Bills',           ionicon: 'receipt-outline',             color: '#FF9F5A', status: 'ready', image: require('../../assets/peggy-icons/bills.png') },
   goals:            { label: 'Goals',           ionicon: 'flag-outline',                color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/goals.png') },
   'check-in':       { label: 'Weekly Check-In', ionicon: 'checkmark-circle-outline',    color: '#34C77B', status: 'ready', image: require('../../assets/peggy-icons/check-in.png') },

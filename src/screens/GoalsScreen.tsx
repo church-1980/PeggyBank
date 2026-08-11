@@ -230,7 +230,7 @@ export default function GoalsScreen({ navigation, route }: any) {
 
         {done ? (
           <View style={[styles.completeBanner, { backgroundColor: accent + '14', borderColor: accent + '30' }]}>
-            <Ionicons name="ribbon-outline" size={15} color={accent} />
+            <IconBadge iconKey="award" color={accent} size={22} iconSize={15} tinted={false} />
             <Text style={[styles.completeText, { color: accent }]}>Goal reached — well done.</Text>
           </View>
         ) : (
@@ -268,7 +268,7 @@ export default function GoalsScreen({ navigation, route }: any) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="flag-outline" size={36} color={C.textHint} />
+              <IconBadge iconKey="goals" color={C.textHint} size={46} iconSize={32} tinted={false} />
             </View>
             <Text style={styles.emptyText}>No savings goals yet</Text>
             <Text style={styles.emptySubText}>

@@ -5,6 +5,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import IconBadge from '../components/IconBadge';
 import { getDatabase } from '../database/database';
 import { formatCurrency } from '../utils/helpers';
 import { CATEGORIES } from '../data/categories';
@@ -306,7 +307,7 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
         <>
           <Text style={styles.sectionTitle}>One gentle idea</Text>
           <View style={styles.suggestionCard}>
-            <Ionicons name="bulb-outline" size={20} color={C.primary} style={{ marginTop: 1 }} />
+            <IconBadge iconKey="tips" color={C.primary} size={28} iconSize={20} tinted={false} style={{ marginTop: 1 }} />
             <Text style={styles.suggestionText}>{suggestion}</Text>
           </View>
         </>
@@ -328,7 +329,7 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
           onPress={() => navigation.navigate('MonthlyBreakdown')}
           activeOpacity={0.8}
         >
-          <Ionicons name="bar-chart-outline" size={18} color={C.primary} />
+          <IconBadge iconKey="reports" color={C.primary} size={26} iconSize={18} tinted={false} />
           <Text style={styles.bottomLinkText}>Monthly Breakdown</Text>
           <Ionicons name="chevron-forward" size={16} color={C.textHint} />
         </TouchableOpacity>
@@ -340,7 +341,7 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
           onPress={() => navigation.navigate('Home', { screen: 'Spending' })}
           activeOpacity={0.8}
         >
-          <Ionicons name="receipt-outline" size={18} color={C.primary} />
+          <IconBadge iconKey="bills" color={C.primary} size={26} iconSize={18} tinted={false} />
           <Text style={styles.bottomLinkText}>View Spending</Text>
           <Ionicons name="chevron-forward" size={16} color={C.textHint} />
         </TouchableOpacity>

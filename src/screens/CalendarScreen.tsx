@@ -6,6 +6,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import IconBadge from '../components/IconBadge';
 import { getDatabase } from '../database/database';
 import { formatCurrency } from '../utils/helpers';
 import { Expense, Bill, SavingsGoal } from '../types';
@@ -188,7 +189,7 @@ function EventList({ date, events, onAddReminder, styles, C }: EventListProps) {
       )}
 
       <TouchableOpacity style={styles.addReminderBtn} onPress={onAddReminder} activeOpacity={0.8}>
-        <Ionicons name="alarm-outline" size={16} color={C.primary} />
+        <IconBadge iconKey="due" color={C.primary} size={24} iconSize={16} tinted={false} />
         <Text style={styles.addReminderText}>Add a reminder</Text>
       </TouchableOpacity>
     </>

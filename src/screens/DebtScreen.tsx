@@ -7,6 +7,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import IconBadge from '../components/IconBadge';
 import { getDatabase } from '../database/database';
 import { formatCurrency } from '../utils/helpers';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
@@ -258,7 +259,7 @@ export default function DebtScreen({ navigation }: any) {
         {!paid && effectivePayment > 0 && payoffMonths < 999 && (
           <View style={styles.timelineCard}>
             <View style={styles.timelineRow}>
-              <Ionicons name="calendar-outline" size={14} color={C.textSecondary} />
+              <IconBadge iconKey="calendar" color={C.textSecondary} size={22} iconSize={14} tinted={false} />
               <Text style={styles.timelineText}>
                 At {formatCurrency(effectivePayment)}/mo → paid off in{' '}
                 <Text style={styles.timelineHighlight}>{formatMonths(payoffMonths)}</Text>
@@ -267,7 +268,7 @@ export default function DebtScreen({ navigation }: any) {
             </View>
             {item.apr > 0 && (
               <View style={styles.timelineRow}>
-                <Ionicons name="cash-outline" size={14} color={C.textSecondary} />
+                <IconBadge iconKey="payday" color={C.textSecondary} size={22} iconSize={14} tinted={false} />
                 <Text style={styles.timelineText}>
                   Estimated interest: <Text style={styles.timelineHighlight}>{formatCurrency(totalInterest)}</Text>
                 </Text>

@@ -118,7 +118,7 @@ export default function ExpensesScreen({ navigation }: any) {
       {expenses.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="receipt-outline" size={34} color={C.textHint} />
+            <IconBadge iconKey="bills" color={C.textHint} size={46} iconSize={32} tinted={false} />
           </View>
           <Text style={styles.emptyText}>Nothing recorded yet</Text>
           <Text style={styles.emptySubText}>Tap the + button to add your first expense.</Text>

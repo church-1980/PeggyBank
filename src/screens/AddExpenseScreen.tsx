@@ -222,11 +222,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
             onPress={() => setIsRecurring(!isRecurring)}
             activeOpacity={0.75}
           >
-            <Ionicons
-              name="repeat-outline"
-              size={18}
-              color={isRecurring ? C.primary : C.textSecondary}
-            />
+            <IconBadge iconKey="recurring" color={isRecurring ? C.primary : C.textSecondary} size={26} iconSize={18} tinted={false} />
           </TouchableOpacity>
 
           {/* Note */}

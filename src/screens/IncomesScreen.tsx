@@ -6,6 +6,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import IconBadge from '../components/IconBadge';
 import { getDatabase } from '../database/database';
 import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Income } from '../types';
@@ -127,7 +128,7 @@ export default function IncomesScreen({ navigation }: any) {
       {incomes.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <Ionicons name="arrow-down-circle-outline" size={34} color={C.textHint} />
+            <IconBadge iconKey="income" color={C.textHint} size={46} iconSize={32} tinted={false} />
           </View>
           <Text style={styles.emptyText}>No income recorded yet</Text>
           <Text style={styles.emptySubText}>Tap the + button to add income.</Text>

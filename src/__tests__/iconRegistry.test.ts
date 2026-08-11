@@ -21,9 +21,9 @@ describe('icon registry integrity', () => {
     }
   });
 
-  it('all pending concepts share exactly one placeholder asset', () => {
+  it('any pending concepts share exactly one placeholder asset', () => {
     const pending = keys.filter((k) => ICON_REGISTRY[k].status === 'pending');
-    expect(pending.length).toBeGreaterThan(0);
+    if (pending.length === 0) return; // every concept has final matte art — nothing pending
     const distinctImages = new Set(pending.map((k) => ICON_REGISTRY[k].image));
     expect(distinctImages.size).toBe(1);
   });
