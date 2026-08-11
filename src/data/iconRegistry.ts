@@ -133,7 +133,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   appearance:       { label: 'Appearance',      ionicon: 'contrast-outline',            color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/appearance.png') },
   tips:             { label: 'Tips',            ionicon: 'bulb-outline',                color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/tips.png') },
   award:            { label: 'Award',           ionicon: 'ribbon-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/award.png') },
-  recurring:        { label: 'Recurring',       ionicon: 'repeat-outline',              color: '#25C2A0', status: 'pending', image: PENDING_ART },
+  recurring:        { label: 'Recurring',       ionicon: 'repeat-outline',              color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/recurring.png') },
 };
 
 /** Every goal type resolves to one registry bucket. */
