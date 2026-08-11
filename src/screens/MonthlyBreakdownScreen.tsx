@@ -144,7 +144,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCell}>
-            <Ionicons name="time-outline" size={20} color={data?.billsUnpaid ? C.bills : C.income} />
+            <IconBadge iconKey="due" color={data?.billsUnpaid ? C.bills : C.income} size={30} iconSize={20} tinted={false} />
             <Text style={[styles.statNumber, { color: data?.billsUnpaid ? C.bills : C.income }]}>
               {data?.billsUnpaid ?? 0}
             </Text>
