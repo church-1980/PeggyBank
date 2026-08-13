@@ -59,7 +59,17 @@ export type IconKey =
   // ── Insights / rewards / recurrence concepts ──
   | 'tips'
   | 'award'
-  | 'recurring';
+  | 'recurring'
+  // ── Goal-type specific concepts ──
+  | 'cruise'
+  | 'flight'
+  | 'down-payment'
+  | 'renovation'
+  | 'wedding'
+  | 'baby'
+  | 'business'
+  | 'retirement'
+  | 'technology';
 
 export interface IconEntry {
   label: string;
@@ -134,12 +144,23 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   tips:             { label: 'Tips',            ionicon: 'bulb-outline',                color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/tips.png') },
   award:            { label: 'Award',           ionicon: 'ribbon-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/award.png') },
   recurring:        { label: 'Recurring',       ionicon: 'repeat-outline',              color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/recurring.png') },
+
+  // ── Goal-type specific matte icons — swap PENDING_ART -> real require + status:'ready' as art lands. ──
+  cruise:           { label: 'Cruise',          ionicon: 'boat-outline',                color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/cruise.png') },
+  flight:           { label: 'Flight',          ionicon: 'airplane-outline',            color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  'down-payment':   { label: 'Down Payment',    ionicon: 'key-outline',                 color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  renovation:       { label: 'Renovation',      ionicon: 'hammer-outline',              color: '#F5A662', status: 'pending', image: PENDING_ART },
+  wedding:          { label: 'Wedding',         ionicon: 'heart-outline',               color: '#F57FA0', status: 'pending', image: PENDING_ART },
+  baby:             { label: 'Baby',            ionicon: 'happy-outline',               color: '#25C2A0', status: 'pending', image: PENDING_ART },
+  business:         { label: 'Business',        ionicon: 'briefcase-outline',           color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  retirement:       { label: 'Retirement',      ionicon: 'sunny-outline',               color: '#F5A662', status: 'pending', image: PENDING_ART },
+  technology:       { label: 'Technology',      ionicon: 'laptop-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
 };
 
 /** Every goal type resolves to one registry bucket. */
 export const GOAL_TYPE_ICON: Record<string, IconKey> = {
   vacation: 'travel',
-  cruise: 'travel',
+  cruise: 'cruise',
   flight: 'travel',
   car: 'vehicle',
   home: 'home',
