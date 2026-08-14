@@ -147,7 +147,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
 
   // ── Goal-type specific matte icons — swap PENDING_ART -> real require + status:'ready' as art lands. ──
   cruise:           { label: 'Cruise',          ionicon: 'boat-outline',                color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/cruise.png') },
-  flight:           { label: 'Flight',          ionicon: 'airplane-outline',            color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  flight:           { label: 'Flight',          ionicon: 'airplane-outline',            color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/flight.png') },
   'down-payment':   { label: 'Down Payment',    ionicon: 'key-outline',                 color: '#7B61FF', status: 'pending', image: PENDING_ART },
   renovation:       { label: 'Renovation',      ionicon: 'hammer-outline',              color: '#F5A662', status: 'pending', image: PENDING_ART },
   wedding:          { label: 'Wedding',         ionicon: 'heart-outline',               color: '#F57FA0', status: 'pending', image: PENDING_ART },
@@ -161,7 +161,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
 export const GOAL_TYPE_ICON: Record<string, IconKey> = {
   vacation: 'travel',
   cruise: 'cruise',
-  flight: 'travel',
+  flight: 'flight',
   car: 'vehicle',
   home: 'home',
   down_payment: 'home',
