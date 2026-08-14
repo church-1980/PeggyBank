@@ -62,7 +62,7 @@ export default function PeggyListRow({
         iconKey={iconKey}
         tone={iconColor}
         shape="circle"
-        size={40}
+        size="card"
         overrideSource={logo ? { uri: logo } : undefined}
       />
 

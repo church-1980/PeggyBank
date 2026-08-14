@@ -96,7 +96,7 @@ export default function PeggyGoalCard({
             iconKey={iconKey ?? 'other'}
             tone={artworkTint ?? barColor}
             shape="circle"
-            size={52}
+            size="card"
             overrideSource={logo ? { uri: logo } : undefined}
           />
         ) : (

@@ -318,7 +318,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 onPress={() => openEditBill(item)}
                 activeOpacity={0.75}
               >
-                <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size={42} shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
+                <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
@@ -365,7 +365,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 onPress={() => openEditSub(item)}
                 activeOpacity={0.75}
               >
-                <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size={42} shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
+                <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>

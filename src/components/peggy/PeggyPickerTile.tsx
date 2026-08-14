@@ -40,7 +40,7 @@ export default function PeggyPickerTile({ iconKey, label, selected = false, onPr
         style,
       ]}
     >
-      <PeggyIconFrame iconKey={iconKey} size="feature" shape="tile" selected={selected} />
+      <PeggyIconFrame iconKey={iconKey} size="card" shape="tile" selected={selected} />
       <Text style={[Typography.helper, { color: C.textPrimary, fontWeight: '600' }]} numberOfLines={1}>
         {label ?? entry.label}
       </Text>

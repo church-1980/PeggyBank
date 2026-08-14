@@ -1,0 +1,2 @@
+﻿PeggyBank Dev emulator setup - 08/12/2026 09:55:11
+STOP: Need cmdline-tools before an emulator can be created.

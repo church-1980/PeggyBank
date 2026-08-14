@@ -66,7 +66,7 @@ export default function MoreScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               {item.iconKey ? (
-                <PeggyIconFrame iconKey={item.iconKey} size={48} shape="tile" style={styles.iconSlot} />
+                <PeggyIconFrame iconKey={item.iconKey} size="card" shape="tile" style={styles.iconSlot} />
               ) : (
                 <View style={[styles.iconWrap, { backgroundColor: color + '18' }]}>
                   <Ionicons name={item.icon!} size={24} color={color} />

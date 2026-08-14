@@ -124,7 +124,7 @@ export const IconSize = {
 export const IconFrameSize = {
   compact:  36,  // dense list rows, chips
   standard: 44,  // list rows, coming-up
-  card:     52,  // goal cards, quick actions
+  card:     50,  // THE standard concept-icon size — used app-wide for uniformity
   feature:  64,  // pickers, focused single concept
   hero:     84,  // splash / large single concept
 } as const;
@@ -133,7 +133,7 @@ export const IconFrameSize = {
 // One knob to make every concept icon + its frame read a little larger app-wide.
 // Applied to the box size in PeggyIconFrame and IconBadge; the artwork is drawn
 // as a % of the box, so both grow together. Tune this single number to taste.
-export const ICON_SCALE = 1.38;
+export const ICON_SCALE = 1.0;
 export type IconFrameSizeName = keyof typeof IconFrameSize;
 
 // ── ROW HEIGHTS ───────────────────────────────────────────────────────────────

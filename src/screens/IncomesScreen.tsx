@@ -128,7 +128,7 @@ export default function IncomesScreen({ navigation }: any) {
       {incomes.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <IconBadge iconKey="income" color={C.textHint} size={46} iconSize={32} tinted={false} />
+            <IconBadge iconKey="income" color={C.textHint} size={50} iconSize={38} tinted={false} />
           </View>
           <Text style={styles.emptyText}>No income recorded yet</Text>
           <Text style={styles.emptySubText}>Tap the + button to add income.</Text>
@@ -140,7 +140,7 @@ export default function IncomesScreen({ navigation }: any) {
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.item} onPress={() => showOptions(item)} activeOpacity={0.75}>
-              <PeggyIconFrame iconKey="investing" size={44} shape="circle" overrideSource={logoFor(item.label) ? { uri: logoFor(item.label) } : undefined} style={{ marginRight: 12 }} />
+              <PeggyIconFrame iconKey="investing" size="card" shape="circle" overrideSource={logoFor(item.label) ? { uri: logoFor(item.label) } : undefined} style={{ marginRight: 12 }} />
               <View style={styles.itemMiddle}>
                 <Text style={styles.itemLabel}>{item.label || 'Income'}</Text>
                 <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
@@ -241,7 +241,7 @@ export default function IncomesScreen({ navigation }: any) {
 
               <Text style={styles.fieldLabel}>Logo</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md }}>
-                <PeggyIconFrame iconKey="investing" size={48} shape="circle" overrideSource={logoFor(label) ? { uri: logoFor(label) } : undefined} />
+                <PeggyIconFrame iconKey="investing" size="card" shape="circle" overrideSource={logoFor(label) ? { uri: logoFor(label) } : undefined} />
                 <TouchableOpacity
                   onPress={() => (label.trim() ? pickAndSetLogo(label) : null)}
                   style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: label.trim() ? 1 : 0.5 }}

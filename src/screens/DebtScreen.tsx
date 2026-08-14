@@ -229,7 +229,7 @@ export default function DebtScreen({ navigation }: any) {
               <Ionicons name="checkmark-circle" size={20} color={C.goals} />
             </View>
           ) : (
-            <PeggyIconFrame iconKey="debt" size={40} shape="tile" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm }} />
+            <PeggyIconFrame iconKey="debt" size="card" shape="tile" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm }} />
           )}
           <View style={{ flex: 1 }}>
             <Text style={styles.debtName}>{item.name}</Text>
@@ -386,7 +386,7 @@ export default function DebtScreen({ navigation }: any) {
 
               <Text style={styles.modalLabel}>Logo</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md }}>
-                <PeggyIconFrame iconKey="debt" size={48} shape="tile" overrideSource={logoFor(name) ? { uri: logoFor(name) } : undefined} />
+                <PeggyIconFrame iconKey="debt" size="card" shape="tile" overrideSource={logoFor(name) ? { uri: logoFor(name) } : undefined} />
                 <TouchableOpacity
                   onPress={() => (name.trim() ? pickAndSetLogo(name) : null)}
                   style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: name.trim() ? 1 : 0.5 }}
