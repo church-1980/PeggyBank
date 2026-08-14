@@ -133,7 +133,7 @@ export const IconFrameSize = {
 // One knob to make every concept icon + its frame read a little larger app-wide.
 // Applied to the box size in PeggyIconFrame and IconBadge; the artwork is drawn
 // as a % of the box, so both grow together. Tune this single number to taste.
-export const ICON_SCALE = 1.15;
+export const ICON_SCALE = 1.38;
 export type IconFrameSizeName = keyof typeof IconFrameSize;
 
 // ── ROW HEIGHTS ───────────────────────────────────────────────────────────────
