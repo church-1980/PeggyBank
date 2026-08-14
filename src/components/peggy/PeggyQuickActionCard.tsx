@@ -74,7 +74,7 @@ export default function PeggyQuickActionCard({ iconKey, ionicon, label, tone, on
           iconKey={iconKey ?? 'other'}
           color={tint}
           shape="square"
-          size={50}
+          size={56}
           iconSize={IconSize.md}
           tinted={false}
         />

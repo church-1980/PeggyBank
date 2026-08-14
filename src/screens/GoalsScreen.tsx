@@ -268,7 +268,7 @@ export default function GoalsScreen({ navigation, route }: any) {
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
-              <IconBadge iconKey="goals" color={C.textHint} size={50} iconSize={38} tinted={false} />
+              <IconBadge iconKey="goals" color={C.textHint} size={56} iconSize={40} tinted={false} />
             </View>
             <Text style={styles.emptyText}>No savings goals yet</Text>
             <Text style={styles.emptySubText}>
@@ -312,7 +312,7 @@ export default function GoalsScreen({ navigation, route }: any) {
                         onPress={() => setGoalType(key)}
                         activeOpacity={0.75}
                       >
-                        <IconBadge iconKey={info.iconKey} color={info.color} size={50} iconSize={38} tinted={!active} style={styles.goalTypeIcon} />
+                        <IconBadge iconKey={info.iconKey} color={info.color} size={56} iconSize={40} tinted={!active} style={styles.goalTypeIcon} />
                         <Text style={[styles.goalTypeLabel, active && { color: C.textPrimary, fontWeight: '700' }]}
                           numberOfLines={1}>
                           {info.label}

@@ -22,6 +22,7 @@ interface Props {
   source?: any;          // user photo — { uri } or require(...)
   name?: string;         // initial fallback
   brand?: boolean;       // no photo → show the Peggy logo instead of an initial
+  bare?: boolean;        // brand logo with NO circle/background — just the mascot on its own
   badgeCount?: number;   // small notification badge (top-right)
   dotColor?: string;     // status dot (bottom-right)
   bordered?: boolean;    // white ring + soft shadow (for photos on colored grounds)
@@ -38,6 +39,7 @@ export default function PeggyAvatar({
   source,
   name,
   brand = false,
+  bare = false,
   badgeCount,
   dotColor,
   bordered = false,
@@ -55,19 +57,19 @@ export default function PeggyAvatar({
         {
           width: size,
           height: size,
-          borderRadius: r,
-          backgroundColor: source ? C.bgCard : brand ? '#FFFFFF' : C.primary + '1F',
+          borderRadius: bare ? 0 : r,
+          backgroundColor: bare ? 'transparent' : source ? C.bgCard : brand ? '#FFFFFF' : C.primary + '1F',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden',
+          overflow: bare ? 'visible' : 'hidden',
         },
-        bordered && { borderWidth: 2, borderColor: '#FFFFFF', ...Shadow.card },
+        bordered && !bare && { borderWidth: 2, borderColor: '#FFFFFF', ...Shadow.card },
       ]}
     >
       {source ? (
         <Image source={source} style={{ width: size, height: size, resizeMode: 'cover' }} />
       ) : brand ? (
-        <Image source={MASCOT} style={{ width: size * 0.82, height: size * 0.82, resizeMode: 'contain' }} />
+        <Image source={MASCOT} style={{ width: size * (bare ? 1 : 0.82), height: size * (bare ? 1 : 0.82), resizeMode: 'contain' }} />
       ) : (
         <Text style={[Typography.cardTitle, { fontSize: size * 0.4, color: C.primary }]}>
           {initial || '·'}

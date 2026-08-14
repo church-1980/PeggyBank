@@ -128,7 +128,7 @@ export default function IncomesScreen({ navigation }: any) {
       {incomes.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
-            <IconBadge iconKey="income" color={C.textHint} size={50} iconSize={38} tinted={false} />
+            <IconBadge iconKey="income" color={C.textHint} size={56} iconSize={40} tinted={false} />
           </View>
           <Text style={styles.emptyText}>No income recorded yet</Text>
           <Text style={styles.emptySubText}>Tap the + button to add income.</Text>

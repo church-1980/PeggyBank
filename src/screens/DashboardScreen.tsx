@@ -131,7 +131,7 @@ export default function DashboardScreen({ navigation }: any) {
         >
           {/* Top-left is the PeggyBank logo (spec). Always shows Peggy; a saved
               profile photo lives on the Profile screen, not here. */}
-          <PeggyAvatar size={84} brand />
+          <PeggyAvatar size={84} brand bare />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
@@ -196,7 +196,7 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
         <PeggyQuickActionCard tone="green"  iconKey="food"       label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
         <PeggyQuickActionCard tone="blue"   iconKey="investing"  label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
-        <PeggyQuickActionCard tone="peach"  iconKey="camera"     label="Scan Receipt" onPress={() => navigation.navigate('AddExpense', { openCamera: true })} />
+        <PeggyQuickActionCard tone="peach"  iconKey="bills"      label="Add Bill"    onPress={() => navigation.navigate('Bills')} />
         <PeggyQuickActionCard tone="purple" iconKey="gifts"      label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
       </View>
 

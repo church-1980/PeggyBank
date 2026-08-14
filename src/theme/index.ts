@@ -124,7 +124,7 @@ export const IconSize = {
 export const IconFrameSize = {
   compact:  36,  // dense list rows, chips
   standard: 44,  // list rows, coming-up
-  card:     50,  // THE standard concept-icon size — used app-wide for uniformity
+  card:     56,  // THE standard concept-icon size — used app-wide for uniformity
   feature:  64,  // pickers, focused single concept
   hero:     84,  // splash / large single concept
 } as const;
