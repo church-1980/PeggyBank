@@ -9,8 +9,18 @@ import { getDatabase } from '../database/database';
 import { getTodayString } from '../utils/helpers';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import IconBadge from '../components/IconBadge';
+import { IconKey } from '../data/iconRegistry';
 
-const QUICK_LABELS = ['Paycheck', 'Freelance', 'Cash', 'Gift', 'Side Job', 'Other'];
+// Income sources — each carries its own matte concept icon.
+const QUICK_SOURCES: { label: string; iconKey: IconKey }[] = [
+  { label: 'Paycheck',  iconKey: 'paycheck' },
+  { label: 'Freelance', iconKey: 'freelance' },
+  { label: 'Cash',      iconKey: 'cash' },
+  { label: 'Gift',      iconKey: 'gifts' },
+  { label: 'Side Job',  iconKey: 'side-job' },
+  { label: 'Other',     iconKey: 'other' },
+];
 
 export default function AddIncomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -88,14 +98,14 @@ export default function AddIncomeScreen({ navigation }: any) {
             style={[styles.modeBtn, mode === 'fixed' && styles.modeBtnActive]}
             onPress={() => setMode('fixed')}
           >
-            <Ionicons name="checkmark-circle-outline" size={16} color={mode === 'fixed' ? C.income : C.textHint} />
+            <IconBadge iconKey="paid" color={mode === 'fixed' ? C.income : C.textHint} size={26} iconSize={18} tinted={false} />
             <Text style={[styles.modeBtnText, mode === 'fixed' && styles.modeBtnTextActive]}>Fixed Amount</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.modeBtn, mode === 'variable' && styles.modeBtnActive]}
             onPress={() => setMode('variable')}
           >
-            <Ionicons name="trending-up-outline" size={16} color={mode === 'variable' ? C.income : C.textHint} />
+            <IconBadge iconKey="reports" color={mode === 'variable' ? C.income : C.textHint} size={26} iconSize={18} tinted={false} />
             <Text style={[styles.modeBtnText, mode === 'variable' && styles.modeBtnTextActive]}>Variable Range</Text>
           </TouchableOpacity>
         </View>
@@ -160,13 +170,14 @@ export default function AddIncomeScreen({ navigation }: any) {
 
         <Text style={styles.sectionLabel}>What is this from?</Text>
         <View style={styles.chipRow}>
-          {QUICK_LABELS.map((q) => (
+          {QUICK_SOURCES.map(({ label: q, iconKey }) => (
             <TouchableOpacity
               key={q}
               style={[styles.chip, label === q && styles.chipActive]}
               onPress={() => setLabel(q)}
               activeOpacity={0.7}
             >
+              <IconBadge iconKey={iconKey} color={C.income} size={30} iconSize={22} tinted={false} />
               <Text style={[styles.chipText, label === q && styles.chipTextActive]}>{q}</Text>
             </TouchableOpacity>
           ))}
@@ -262,7 +273,8 @@ function makeStyles(C: ColorPalette) {
 
     chipRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md },
     chip: {
-      paddingHorizontal: 14, paddingVertical: 9,
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingLeft: 8, paddingRight: 14, paddingVertical: 7,
       borderRadius: Radius.full,
       backgroundColor: C.bgCard,
       borderWidth: 1, borderColor: C.border,

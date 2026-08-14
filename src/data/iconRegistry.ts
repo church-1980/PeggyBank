@@ -69,7 +69,12 @@ export type IconKey =
   | 'baby'
   | 'business'
   | 'retirement'
-  | 'technology';
+  | 'technology'
+  // ── Income-source concepts ──
+  | 'paycheck'
+  | 'freelance'
+  | 'cash'
+  | 'side-job';
 
 export interface IconEntry {
   label: string;
@@ -155,6 +160,12 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   business:         { label: 'Business',        ionicon: 'briefcase-outline',           color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/business.png') },
   retirement:       { label: 'Retirement',      ionicon: 'sunny-outline',               color: '#F5A662', status: 'ready', image: require('../../assets/peggy-icons/retirement.png') },
   technology:       { label: 'Technology',      ionicon: 'laptop-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/technology.png') },
+
+  // ── Income sources — swap PENDING_ART -> real require + status:'ready' as art lands.
+  paycheck:         { label: 'Paycheck',        ionicon: 'card-outline',                color: '#25C2A0', status: 'pending', image: PENDING_ART },
+  freelance:        { label: 'Freelance',       ionicon: 'laptop-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  cash:             { label: 'Cash',            ionicon: 'cash-outline',                color: '#25C2A0', status: 'pending', image: PENDING_ART },
+  'side-job':       { label: 'Side Job',        ionicon: 'construct-outline',           color: '#F5A623', status: 'pending', image: PENDING_ART },
 };
 
 /** Every goal type resolves to one registry bucket. */
