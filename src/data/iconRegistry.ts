@@ -154,7 +154,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   baby:             { label: 'Baby',            ionicon: 'happy-outline',               color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/baby.png') },
   business:         { label: 'Business',        ionicon: 'briefcase-outline',           color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/business.png') },
   retirement:       { label: 'Retirement',      ionicon: 'sunny-outline',               color: '#F5A662', status: 'ready', image: require('../../assets/peggy-icons/retirement.png') },
-  technology:       { label: 'Technology',      ionicon: 'laptop-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
+  technology:       { label: 'Technology',      ionicon: 'laptop-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/technology.png') },
 };
 
 /** Every goal type resolves to one registry bucket. */
@@ -177,7 +177,7 @@ export const GOAL_TYPE_ICON: Record<string, IconKey> = {
   gifts: 'gifts',
   medical: 'health',
   pet: 'pet',
-  technology: 'fun',
+  technology: 'technology',
   other: 'other',
 };
 
