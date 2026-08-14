@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconFrameSize, IconFrameSizeName } from '../../theme';
+import { Radius, IconFrameSize, IconFrameSizeName, ICON_SCALE } from '../../theme';
 import { ICON_REGISTRY, IconKey, iconLabel } from '../../data/iconRegistry';
 
 /**
@@ -47,7 +47,7 @@ export default function PeggyIconFrame({
   testID,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  const px = typeof size === 'number' ? size : IconFrameSize[size];
+  const px = Math.round((typeof size === 'number' ? size : IconFrameSize[size]) * ICON_SCALE);
   const color = tone ?? entry.color;
   const radius = shape === 'circle' ? px / 2 : Radius.tile;
 

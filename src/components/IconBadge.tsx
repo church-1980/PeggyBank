@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconSize, IconBadgeSize } from '../theme';
+import { Radius, IconSize, IconBadgeSize, ICON_SCALE } from '../theme';
 import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
 
 /**
@@ -36,12 +36,16 @@ export default function IconBadge({
   style,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
+  // Global nudge: enlarge box + artwork together, app-wide (see ICON_SCALE).
+  const box = Math.round(size * ICON_SCALE);
+  const img = Math.round((iconSize + 10) * ICON_SCALE);
+  const glyph = Math.round(iconSize * ICON_SCALE);
   return (
     <View
       style={[
         {
-          width: size,
-          height: size,
+          width: box,
+          height: box,
           borderRadius: Radius.sm,
           backgroundColor: overrideSource ? '#FFFFFF' : tinted ? color + '18' : 'transparent',
           alignItems: 'center',
@@ -52,14 +56,14 @@ export default function IconBadge({
       ]}
     >
       {overrideSource ? (
-        <Image source={overrideSource} style={{ width: size, height: size, resizeMode: 'cover' }} />
+        <Image source={overrideSource} style={{ width: box, height: box, resizeMode: 'cover' }} />
       ) : entry.image ? (
         <Image
           source={entry.image}
-          style={{ width: iconSize + 10, height: iconSize + 10, resizeMode: 'contain' }}
+          style={{ width: img, height: img, resizeMode: 'contain' }}
         />
       ) : (
-        <Ionicons name={entry.ionicon} size={iconSize} color={color} />
+        <Ionicons name={entry.ionicon} size={glyph} color={color} />
       )}
     </View>
   );
