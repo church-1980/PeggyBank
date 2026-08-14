@@ -131,7 +131,7 @@ export default function DashboardScreen({ navigation }: any) {
         >
           {/* Top-left is the PeggyBank logo (spec). Always shows Peggy; a saved
               profile photo lives on the Profile screen, not here. */}
-          <PeggyAvatar size={64} brand />
+          <PeggyAvatar size={84} brand />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
           <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>

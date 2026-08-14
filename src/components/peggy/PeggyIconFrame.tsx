@@ -79,7 +79,7 @@ export default function PeggyIconFrame({
       ) : entry.image ? (
         <Image
           source={entry.image}
-          style={{ width: px * 0.74, height: px * 0.74, resizeMode: 'contain' }}
+          style={{ width: px * 0.88, height: px * 0.88, resizeMode: 'contain' }}
         />
       ) : (
         <Ionicons name={entry.ionicon} size={px * 0.5} color={color} />
