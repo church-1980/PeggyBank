@@ -162,7 +162,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   technology:       { label: 'Technology',      ionicon: 'laptop-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/technology.png') },
 
   // ── Income sources — swap PENDING_ART -> real require + status:'ready' as art lands.
-  paycheck:         { label: 'Paycheck',        ionicon: 'card-outline',                color: '#25C2A0', status: 'pending', image: PENDING_ART },
+  paycheck:         { label: 'Paycheck',        ionicon: 'card-outline',                color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/paycheck.png') },
   freelance:        { label: 'Freelance',       ionicon: 'laptop-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
   cash:             { label: 'Cash',            ionicon: 'cash-outline',                color: '#25C2A0', status: 'pending', image: PENDING_ART },
   'side-job':       { label: 'Side Job',        ionicon: 'construct-outline',           color: '#F5A623', status: 'pending', image: PENDING_ART },
