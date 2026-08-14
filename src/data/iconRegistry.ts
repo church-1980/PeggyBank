@@ -153,7 +153,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   wedding:          { label: 'Wedding',         ionicon: 'heart-outline',               color: '#F57FA0', status: 'ready', image: require('../../assets/peggy-icons/wedding.png') },
   baby:             { label: 'Baby',            ionicon: 'happy-outline',               color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/baby.png') },
   business:         { label: 'Business',        ionicon: 'briefcase-outline',           color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/business.png') },
-  retirement:       { label: 'Retirement',      ionicon: 'sunny-outline',               color: '#F5A662', status: 'pending', image: PENDING_ART },
+  retirement:       { label: 'Retirement',      ionicon: 'sunny-outline',               color: '#F5A662', status: 'ready', image: require('../../assets/peggy-icons/retirement.png') },
   technology:       { label: 'Technology',      ionicon: 'laptop-outline',              color: '#7B61FF', status: 'pending', image: PENDING_ART },
 };
 
@@ -172,7 +172,7 @@ export const GOAL_TYPE_ICON: Record<string, IconKey> = {
   emergency: 'emergency-fund',
   investing: 'investing',
   business: 'business',
-  retirement: 'investing',
+  retirement: 'retirement',
   debt: 'debt',
   gifts: 'gifts',
   medical: 'health',
