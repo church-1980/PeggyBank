@@ -140,7 +140,7 @@ export const ICON_SCALE = 1.0;
 // matter what a screen asks for. PeggyIconFrame and IconBadge both enforce it,
 // so icons can never drift out of sync between screens again. Change this one
 // number to resize every concept icon app-wide.
-export const CONCEPT_ICON = 56;
+export const CONCEPT_ICON = 68;
 export const CONCEPT_ICON_FILL = 0.88; // artwork as a fraction of the box
 export type IconFrameSizeName = keyof typeof IconFrameSize;
 
