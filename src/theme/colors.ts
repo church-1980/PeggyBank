@@ -3,10 +3,10 @@
 // LIGHT = the approved PeggyBank Design Bible (design/PeggyBank-Design-Bible.png).
 //         Every value here is extracted from that image. Do not "improve" them.
 //
-// DARK  = TEMPORARILY MAPPED TO LIGHT (see below).
-//         Dark mode is intentionally NOT designed yet. The architecture stays
-//         theme-aware so a future Dark Mode Design Bible can be dropped in
-//         without touching a single component. Do not invent a dark palette.
+// DARK  = the same brand on deep surfaces (added on request). Key-for-key with
+//         LightColors, so every themed component switches automatically.
+//         Same rules apply: no pure black grounds, no pure-white body text,
+//         purple-tinted shadows.
 
 export interface ColorPalette {
   // Surfaces
@@ -126,7 +126,66 @@ export const LightColors: ColorPalette = {
   black:        '#000000',
 };
 
-// TEMPORARY (approved decision): dark mode maps to the light Design Bible.
-// The dark theme is a separate project with its own Design Bible, to be done
-// only after the entire app matches the light Bible. Do not design it here.
-export const DarkColors: ColorPalette = { ...LightColors };
+// DARK PALETTE — the same PeggyBank brand (purple + mint) on deep, warm-neutral
+// surfaces. Mirrors the light Bible's rules: never pure black, never pure white
+// text, soft purple-tinted shadows, brand hues brightened just enough to stay
+// legible on dark ground. Structure matches LightColors key-for-key so every
+// component themes automatically.
+export const DarkColors: ColorPalette = {
+  // ── Surfaces (deep, slightly purple-tinted — never #000) ──
+  bg:           '#14131C',
+  bgCard:       '#1E1C28',
+  bgElevated:   '#262433',
+  bgInput:      '#262433',
+  surfaceMuted: '#2B2839',
+  border:       '#2F2C3D',
+  borderLight:  '#262433',
+
+  // ── Brand (lifted slightly for contrast on dark) ──
+  primary:      '#9B85FF',
+  primaryDim:   '#9B85FF1F',
+  primaryGlow:  '#9B85FF33',
+  primaryLight: '#A78BFA',
+  heroFrom:     '#7A5CE0',
+  heroTo:       '#9350D6',
+
+  // ── Semantic ──
+  success:      '#3FD98D',
+  warning:      '#FFAE6B',
+  danger:       '#FF8080',
+  gold:         '#F7C558',
+  amount:       '#8B82FF',
+
+  // ── Pastels (dark tinted wells + brighter tints) ──
+  pastelGreenBg:  '#17301F', pastelGreen:  '#3FD98D',
+  pastelBlueBg:   '#16233A', pastelBlue:   '#6BAEFF',
+  pastelPeachBg:  '#33241A', pastelPeach:  '#FFAE6B',
+  pastelPurpleBg: '#241F3D', pastelPurple: '#A78BFA',
+
+  // ── Legacy semantic ──
+  income:       '#3FD98D',
+  spending:     '#FF8080',
+  bills:        '#FFAE6B',
+  goals:        '#3FD98D',
+  debt:         '#FF8080',
+  subs:         '#A78BFA',
+
+  // ── Text (soft off-white — never pure #FFF for body) ──
+  textPrimary:  '#F1F0F7',
+  textSecondary:'#A6A3BC',
+  textHint:     '#6E6B82',
+  textOnPrimary:'#FFFFFF',
+
+  // ── Hero / glass ──
+  glassBase:    '#7A5CE0',
+  glassDark:    '#9350D6',
+  glassHighlight:'rgba(255,255,255,0.14)',
+  glassText:    'rgba(255,255,255,0.80)',
+  glassBright:  '#FFFFFF',
+
+  // Purple-tinted shadow, deeper for dark ground
+  shadow:       'rgba(8,4,24,0.55)',
+
+  white:        '#FFFFFF',
+  black:        '#000000',
+};

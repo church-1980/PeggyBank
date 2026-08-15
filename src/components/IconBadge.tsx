@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconSize, IconBadgeSize, CONCEPT_ICON, CONCEPT_ICON_FILL } from '../theme';
+import {
+  Radius, IconSize, IconBadgeSize,
+  CONCEPT_ICON, CONCEPT_ICON_INLINE, CONCEPT_ICON_TIER_THRESHOLD, CONCEPT_ICON_FILL,
+} from '../theme';
 import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
 
 /**
@@ -36,11 +39,11 @@ export default function IconBadge({
   style,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  // UNIFORM SIZE: every concept icon renders at CONCEPT_ICON regardless of what
-  // the call site asks for, so icons are identical on every screen.
-  const box = CONCEPT_ICON;
-  const img = Math.round(CONCEPT_ICON * CONCEPT_ICON_FILL);
-  const glyph = Math.round(CONCEPT_ICON * 0.62);
+  // Snap to one of two uniform tiers so icons match everywhere in the same
+  // context: inline (chips/tabs/toggles) or standard (tiles/rows/cards).
+  const box = size < CONCEPT_ICON_TIER_THRESHOLD ? CONCEPT_ICON_INLINE : CONCEPT_ICON;
+  const img = Math.round(box * CONCEPT_ICON_FILL);
+  const glyph = Math.round(box * 0.62);
   return (
     <View
       style={[

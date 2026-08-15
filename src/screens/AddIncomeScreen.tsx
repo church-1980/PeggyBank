@@ -273,9 +273,11 @@ function makeStyles(C: ColorPalette) {
 
     chipRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: Spacing.md },
     chip: {
-      flexDirection: 'row', alignItems: 'center', gap: 6,
-      paddingLeft: 8, paddingRight: 14, paddingVertical: 7,
-      borderRadius: Radius.full,
+      // Equal-width 2-up grid so the pills line up instead of sizing to text.
+      width: '48%',
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingLeft: 10, paddingRight: 12, paddingVertical: 8,
+      borderRadius: Radius.md,
       backgroundColor: C.bgCard,
       borderWidth: 1, borderColor: C.border,
     },

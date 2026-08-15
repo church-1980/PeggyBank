@@ -140,7 +140,16 @@ export const ICON_SCALE = 1.0;
 // matter what a screen asks for. PeggyIconFrame and IconBadge both enforce it,
 // so icons can never drift out of sync between screens again. Change this one
 // number to resize every concept icon app-wide.
-export const CONCEPT_ICON = 68;
+// TWO TIERS, each internally uniform:
+//   CONCEPT_ICON        — tiles, grids, list rows, cards, pickers (the main size)
+//   CONCEPT_ICON_INLINE — chips, tabs, toggles, header/stat markers sitting
+//                         beside a line of text, where the big size would blow
+//                         the control out of shape.
+// Components pick the tier automatically from the size a screen requests, so
+// every icon in the same context matches exactly.
+export const CONCEPT_ICON = 64;
+export const CONCEPT_ICON_INLINE = 32;
+export const CONCEPT_ICON_TIER_THRESHOLD = 40; // requested < this => inline tier
 export const CONCEPT_ICON_FILL = 0.88; // artwork as a fraction of the box
 export type IconFrameSizeName = keyof typeof IconFrameSize;
 

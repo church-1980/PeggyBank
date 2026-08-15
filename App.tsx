@@ -11,8 +11,9 @@ console.error = (...args: unknown[]) => {
   _origError(...args);
 };
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { NavProvider, useNavConfig } from './src/context/NavContext';
-import { ThemeProvider } from './src/context/ThemeContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { CustomLogoProvider } from './src/context/CustomLogoContext';
 import { setupDatabase, getDatabase } from './src/database/database';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -23,6 +24,12 @@ import {
   rescheduleAll,
   getNotificationMode,
 } from './src/lib/notifications';
+
+/** Status-bar icons must flip with the theme, or they vanish in dark mode. */
+function ThemedStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+}
 
 function AppRoot() {
   const [ready, setReady] = useState(false);
@@ -100,6 +107,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
+        <ThemedStatusBar />
         <NavProvider>
           <CustomLogoProvider>
             <AppRoot />

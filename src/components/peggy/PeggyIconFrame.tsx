@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconFrameSize, IconFrameSizeName, CONCEPT_ICON, CONCEPT_ICON_FILL } from '../../theme';
+import {
+  Radius, IconFrameSize, IconFrameSizeName,
+  CONCEPT_ICON, CONCEPT_ICON_INLINE, CONCEPT_ICON_TIER_THRESHOLD, CONCEPT_ICON_FILL,
+} from '../../theme';
 import { ICON_REGISTRY, IconKey, iconLabel } from '../../data/iconRegistry';
 
 /**
@@ -47,9 +50,10 @@ export default function PeggyIconFrame({
   testID,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  // UNIFORM SIZE: `size` is accepted for compatibility but every concept icon
-  // renders at CONCEPT_ICON so all screens match exactly.
-  const px = CONCEPT_ICON;
+  // Snap to one of two uniform tiers (inline vs standard) so every icon in the
+  // same context is exactly the same size.
+  const requested = typeof size === 'number' ? size : IconFrameSize[size];
+  const px = requested < CONCEPT_ICON_TIER_THRESHOLD ? CONCEPT_ICON_INLINE : CONCEPT_ICON;
   const color = tone ?? entry.color;
   const radius = shape === 'circle' ? px / 2 : Radius.tile;
 
