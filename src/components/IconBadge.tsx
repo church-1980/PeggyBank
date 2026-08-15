@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconSize, IconBadgeSize, ICON_SCALE } from '../theme';
+import { Radius, IconSize, IconBadgeSize, CONCEPT_ICON, CONCEPT_ICON_FILL } from '../theme';
 import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
 
 /**
@@ -36,10 +36,11 @@ export default function IconBadge({
   style,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  // Global nudge: enlarge box + artwork together, app-wide (see ICON_SCALE).
-  const box = Math.round(size * ICON_SCALE);
-  const img = Math.round((iconSize + 10) * ICON_SCALE);
-  const glyph = Math.round(iconSize * ICON_SCALE);
+  // UNIFORM SIZE: every concept icon renders at CONCEPT_ICON regardless of what
+  // the call site asks for, so icons are identical on every screen.
+  const box = CONCEPT_ICON;
+  const img = Math.round(CONCEPT_ICON * CONCEPT_ICON_FILL);
+  const glyph = Math.round(CONCEPT_ICON * 0.62);
   return (
     <View
       style={[

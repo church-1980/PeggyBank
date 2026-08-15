@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, IconFrameSize, IconFrameSizeName, ICON_SCALE } from '../../theme';
+import { Radius, IconFrameSize, IconFrameSizeName, CONCEPT_ICON, CONCEPT_ICON_FILL } from '../../theme';
 import { ICON_REGISTRY, IconKey, iconLabel } from '../../data/iconRegistry';
 
 /**
@@ -47,7 +47,9 @@ export default function PeggyIconFrame({
   testID,
 }: Props) {
   const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  const px = Math.round((typeof size === 'number' ? size : IconFrameSize[size]) * ICON_SCALE);
+  // UNIFORM SIZE: `size` is accepted for compatibility but every concept icon
+  // renders at CONCEPT_ICON so all screens match exactly.
+  const px = CONCEPT_ICON;
   const color = tone ?? entry.color;
   const radius = shape === 'circle' ? px / 2 : Radius.tile;
 
@@ -79,7 +81,7 @@ export default function PeggyIconFrame({
       ) : entry.image ? (
         <Image
           source={entry.image}
-          style={{ width: px * 0.88, height: px * 0.88, resizeMode: 'contain' }}
+          style={{ width: px * CONCEPT_ICON_FILL, height: px * CONCEPT_ICON_FILL, resizeMode: 'contain' }}
         />
       ) : (
         <Ionicons name={entry.ionicon} size={px * 0.5} color={color} />
