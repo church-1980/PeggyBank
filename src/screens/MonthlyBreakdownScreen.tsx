@@ -114,12 +114,12 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       {/* Big numbers */}
       <View style={styles.bigRow}>
         <View style={[styles.bigCard, { flex: 1 }]}>
-          <IconBadge iconKey="income" color={C.income} size={30} iconSize={20} tinted={false} />
+          <IconBadge iconKey="income" color={C.income} size={56} tinted={false} />
           <Text style={styles.bigLabel}>Income</Text>
           <Text style={[styles.bigNumber, { color: C.income }]}>{formatCurrency(data?.totalIncome ?? 0)}</Text>
         </View>
         <View style={[styles.bigCard, { flex: 1 }]}>
-          <IconBadge iconKey="spent" color={C.spending} size={30} iconSize={20} tinted={false} />
+          <IconBadge iconKey="spent" color={C.spending} size={56} tinted={false} />
           <Text style={styles.bigLabel}>Spent</Text>
           <Text style={[styles.bigNumber, { color: C.spending }]}>{formatCurrency(data?.totalSpending ?? 0)}</Text>
         </View>
@@ -138,13 +138,13 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         <Text style={styles.cardLabel}>Bills this month</Text>
         <View style={styles.statRow}>
           <View style={styles.statCell}>
-            <IconBadge iconKey="paid" color={C.income} size={30} iconSize={20} tinted={false} />
+            <IconBadge iconKey="paid" color={C.income} size={56} tinted={false} />
             <Text style={styles.statNumber}>{data?.billsPaid ?? 0}</Text>
             <Text style={styles.statLabel}>Paid</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCell}>
-            <IconBadge iconKey="due" color={data?.billsUnpaid ? C.bills : C.income} size={30} iconSize={20} tinted={false} />
+            <IconBadge iconKey="due" color={data?.billsUnpaid ? C.bills : C.income} size={56} tinted={false} />
             <Text style={[styles.statNumber, { color: data?.billsUnpaid ? C.bills : C.income }]}>
               {data?.billsUnpaid ?? 0}
             </Text>
@@ -152,7 +152,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statCell}>
-            <IconBadge iconKey="paid-out" color={C.primaryLight} size={30} iconSize={20} tinted={false} />
+            <IconBadge iconKey="paid-out" color={C.primaryLight} size={56} tinted={false} />
             <Text style={styles.statNumber}>{formatCurrency(data?.billsPaidAmount ?? 0)}</Text>
             <Text style={styles.statLabel}>Paid out</Text>
           </View>
