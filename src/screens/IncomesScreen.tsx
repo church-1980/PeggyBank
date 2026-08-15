@@ -125,6 +125,21 @@ export default function IncomesScreen({ navigation }: any) {
         <Text style={styles.totalLabel}>total income this month</Text>
       </View>
 
+      {/* Payday Planner lives here — one home for "money coming in" instead of a
+          separate tile that quietly logged paychecks into this same list. */}
+      <TouchableOpacity
+        style={styles.plannerCard}
+        onPress={() => navigation.navigate('Payday')}
+        activeOpacity={0.75}
+      >
+        <IconBadge iconKey="payday" color={C.income} size={56} tinted={false} />
+        <View style={styles.plannerMiddle}>
+          <Text style={styles.plannerTitle}>Payday Planner</Text>
+          <Text style={styles.plannerSub}>Plan how to split your next paycheck</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.textHint} />
+      </TouchableOpacity>
+
       {incomes.length === 0 ? (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
@@ -140,7 +155,7 @@ export default function IncomesScreen({ navigation }: any) {
           contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.item} onPress={() => showOptions(item)} activeOpacity={0.75}>
-              <PeggyIconFrame iconKey="investing" size="card" shape="circle" overrideSource={logoFor(item.label) ? { uri: logoFor(item.label) } : undefined} style={{ marginRight: 12 }} />
+              <PeggyIconFrame iconKey="income" size="card" shape="circle" overrideSource={logoFor(item.label) ? { uri: logoFor(item.label) } : undefined} style={{ marginRight: 12 }} />
               <View style={styles.itemMiddle}>
                 <Text style={styles.itemLabel}>{item.label || 'Income'}</Text>
                 <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
@@ -283,6 +298,18 @@ function makeStyles(C: ColorPalette) {
       borderBottomWidth: 1, borderBottomColor: C.border,
       alignItems: 'center',
     },
+    plannerCard: {
+      flexDirection: 'row', alignItems: 'center', gap: Spacing.sm + 2,
+      marginHorizontal: Spacing.md, marginTop: Spacing.md,
+      padding: Spacing.md,
+      backgroundColor: C.bgCard,
+      borderRadius: Radius.lg,
+      borderWidth: 1, borderColor: C.border,
+    },
+    plannerMiddle: { flex: 1 },
+    plannerTitle:  { ...Typography.bodyBold, color: C.textPrimary },
+    plannerSub:    { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
+
     backBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', marginBottom: Spacing.sm },
     backText:   { ...Typography.small, color: C.textSecondary },
     monthLabel: { ...Typography.label, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.xs },

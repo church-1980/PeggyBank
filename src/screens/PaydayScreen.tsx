@@ -137,9 +137,20 @@ export default function PaydayScreen({ navigation }: any) {
       await db.runAsync(`INSERT OR REPLACE INTO settings (key, value) VALUES ('payday', ?)`, [String(selectedDay)]);
       await db.runAsync(`INSERT OR REPLACE INTO settings (key, value) VALUES ('pay_frequency', ?)`, [payFrequency]);
       await db.runAsync(`INSERT OR REPLACE INTO settings (key, value) VALUES ('pay_weekday', ?)`, [String(selectedWeekday)]);
-      await db.runAsync(`INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`, [income, 'Paycheck', getTodayString()]);
+      // Update today's paycheck instead of stacking a new one — re-saving the
+      // plan used to add another 'Paycheck' row each time, double-counting income.
+      const today = getTodayString();
+      const existing = await db.getFirstAsync<{ id: number }>(
+        `SELECT id FROM income WHERE label = 'Paycheck' AND date = ? LIMIT 1`,
+        [today]
+      );
+      if (existing?.id) {
+        await db.runAsync(`UPDATE income SET amount = ? WHERE id = ?`, [income, existing.id]);
+      } else {
+        await db.runAsync(`INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`, [income, 'Paycheck', today]);
+      }
       setSaved(true);
-      Alert.alert('Saved', 'Your paycheck has been recorded.');
+      Alert.alert('Saved', 'Your paycheck has been recorded in Income.');
     } catch (e) {
       console.error('[Payday] savePlan error:', e);
       Alert.alert('Could not save', 'Something went wrong saving the plan. Please try again.');
