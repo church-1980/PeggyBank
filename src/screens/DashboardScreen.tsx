@@ -194,10 +194,10 @@ export default function DashboardScreen({ navigation }: any) {
       {/* ── Quick Add (§6) ─────────────────────────────────────── */}
       <PeggySectionHeader title="Quick Add" />
       <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
-        <PeggyQuickActionCard tone="green"  iconKey="food"       label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
-        <PeggyQuickActionCard tone="blue"   iconKey="investing"  label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
+        <PeggyQuickActionCard tone="green"  iconKey="add-expense" label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
+        <PeggyQuickActionCard tone="blue"   iconKey="add-income"  label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
         <PeggyQuickActionCard tone="peach"  iconKey="bills"      label="Add Bill"    onPress={() => navigation.navigate('Bills')} />
-        <PeggyQuickActionCard tone="purple" iconKey="gifts"      label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
+        <PeggyQuickActionCard tone="purple" iconKey="goals"       label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
       </View>
 
       {/* ── Your Goals (§4) ────────────────────────────────────── */}

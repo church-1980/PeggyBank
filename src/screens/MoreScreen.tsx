@@ -28,13 +28,13 @@ interface ToolItem {
 // account.
 const TOOLS: ToolItem[] = [
   // ── Money in & out ──
-  { label: 'Spending',            description: 'Your expense history',               iconKey: 'food',                  colorKey: 'spending',      screen: 'Spending' },
-  { label: 'Income',              description: 'Money coming in',                    iconKey: 'investing',             colorKey: 'income',        screen: 'Incomes' },
-  { label: 'Bills & Subscriptions', description: 'Recurring bills and charges',      iconKey: 'home',                  colorKey: 'bills',         screen: 'Bills' },
+  { label: 'Spending',            description: 'Your expense history',               iconKey: 'spent',                 colorKey: 'spending',      screen: 'Spending' },
+  { label: 'Income',              description: 'Money coming in',                    iconKey: 'income',                colorKey: 'income',        screen: 'Incomes' },
+  { label: 'Bills & Subscriptions', description: 'Recurring bills and charges',      iconKey: 'bills',                 colorKey: 'bills',         screen: 'Bills' },
   { label: 'Debt Tracker',        description: 'Pay it down, one step at a time',    iconKey: 'debt',                  colorKey: 'debt',          screen: 'Debt' },
   // ── Saving & planning ──
-  { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'travel',                colorKey: 'goals',         screen: 'Goals' },
-  { label: 'Payday',              description: 'Plan around your next paycheck',     iconKey: 'investing',             colorKey: 'income',        screen: 'Payday' },
+  { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'goals',                 colorKey: 'goals',         screen: 'Goals' },
+  { label: 'Payday',              description: 'Plan around your next paycheck',     iconKey: 'payday',                colorKey: 'income',        screen: 'Payday' },
   { label: 'Weekly Check-In',     description: 'How did this week go?',              iconKey: 'check-in',              colorKey: 'income',        screen: 'WeeklyCheckIn' },
   // ── Insights ──
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },
