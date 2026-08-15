@@ -74,7 +74,8 @@ export type IconKey =
   | 'paycheck'
   | 'freelance'
   | 'cash'
-  | 'side-job';
+  | 'side-job'
+  | 'restaurant';
 
 export interface IconEntry {
   label: string;
@@ -166,6 +167,7 @@ export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   freelance:        { label: 'Freelance',       ionicon: 'laptop-outline',              color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/freelance.png') },
   cash:             { label: 'Cash',            ionicon: 'cash-outline',                color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/cash.png') },
   'side-job':       { label: 'Side Job',        ionicon: 'construct-outline',           color: '#F5A623', status: 'ready', image: require('../../assets/peggy-icons/sidejob.png') },
+  restaurant:       { label: 'Restaurant',      ionicon: 'restaurant-outline',          color: '#7B61FF', status: 'ready', image: require('../../assets/peggy-icons/restaurant.png') },
 };
 
 /** Every goal type resolves to one registry bucket. */
@@ -195,7 +197,7 @@ export const GOAL_TYPE_ICON: Record<string, IconKey> = {
 /** Every expense category resolves to one registry bucket. */
 export const CATEGORY_ICON: Record<string, IconKey> = {
   groceries: 'food',
-  restaurant: 'food',
+  restaurant: 'restaurant',
   gas: 'vehicle',
   shopping: 'shopping',
   health: 'health',
