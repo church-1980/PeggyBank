@@ -131,6 +131,38 @@ export async function setupDatabase(): Promise<void> {
   for (const sql of migrations) {
     try { await database.execAsync(sql + ';'); } catch {}
   }
+
+  // ── ONE-TIME CLEANUP: duplicate paychecks ──────────────────────────────────
+  // The Payday Planner used to INSERT a new 'Paycheck' income row on every save,
+  // so re-saving a plan stacked several rows for the same day and inflated
+  // income. Saving now updates that day's paycheck instead; this clears rows the
+  // old behaviour already created.
+  //
+  // Deliberately narrow: only rows whose label is exactly 'Paycheck', and only
+  // where more than one exists for the SAME date — the newest is kept, earlier
+  // ones for that date are removed. Income with any other label is never
+  // touched. Guarded by a flag so it can only ever run once.
+  try {
+    const done = await database.getFirstAsync<{ value: string }>(
+      `SELECT value FROM settings WHERE key = 'paycheck_dedupe_v1'`
+    );
+    if (!done) {
+      const DUPES = `label = 'Paycheck'
+        AND id NOT IN (SELECT MAX(id) FROM income WHERE label = 'Paycheck' GROUP BY date)`;
+      const found = await database.getFirstAsync<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM income WHERE ${DUPES}`
+      );
+      if ((found?.n ?? 0) > 0) {
+        await database.runAsync(`DELETE FROM income WHERE ${DUPES}`);
+        console.log(`[db] removed ${found?.n} duplicate paycheck row(s)`);
+      }
+      await database.runAsync(
+        `INSERT OR REPLACE INTO settings (key, value) VALUES ('paycheck_dedupe_v1', 'done')`
+      );
+    }
+  } catch (e) {
+    console.warn('[db] paycheck dedupe skipped:', e);
+  }
 }
 
 // Every PeggyBank-owned table. Used by the destructive wipe.
