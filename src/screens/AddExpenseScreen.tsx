@@ -194,7 +194,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
                 <IconBadge
                   iconKey={info.iconKey}
                   color={info.color}
-                  size={30}
+                  size={56}
                   tinted={!active}
                   style={{ marginBottom: 4 }}
                 />

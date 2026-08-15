@@ -78,7 +78,7 @@ export default function ExpensesScreen({ navigation }: any) {
         onPress={() => setSelectedExpense(item)}
         activeOpacity={0.75}
       >
-        <IconBadge iconKey={catInfo.iconKey} color={catInfo.color} overrideSource={item.note && logoFor(item.note) ? { uri: logoFor(item.note) } : undefined} />
+        <IconBadge iconKey={catInfo.iconKey} color={catInfo.color} size={56} overrideSource={item.note && logoFor(item.note) ? { uri: logoFor(item.note) } : undefined} />
         <View style={styles.itemMiddle}>
           <Text style={styles.itemCategory}>{catInfo.label}</Text>
           {item.note ? <Text style={styles.itemNote}>{item.note}</Text> : null}

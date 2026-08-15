@@ -168,7 +168,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
             const barWidth = maxCategory > 0 ? (cat.total / maxCategory) * 100 : 0;
             return (
               <View key={cat.category} style={styles.catRow}>
-                <IconBadge iconKey={info.iconKey} color={info.color} />
+                <IconBadge iconKey={info.iconKey} color={info.color} size={56} />
                 <View style={styles.catMiddle}>
                   <View style={styles.catLabelRow}>
                     <Text style={styles.catName}>{info.label}</Text>
