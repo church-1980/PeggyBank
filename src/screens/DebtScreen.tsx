@@ -313,7 +313,7 @@ export default function DebtScreen({ navigation }: any) {
           {totalOwed > 0 ? (
             <Text style={styles.headerSub}>{formatCurrency(totalOwed)} total remaining</Text>
           ) : debts.length > 0 ? (
-            <Text style={[styles.headerSub, { color: C.goals }]}>Everything is paid off. That's huge.</Text>
+            <Text style={[styles.headerSub, { color: C.goals }]}>Everything is paid off. That&apos;s huge.</Text>
           ) : (
             <Text style={styles.headerSub}>Track what you owe and watch it disappear</Text>
           )}

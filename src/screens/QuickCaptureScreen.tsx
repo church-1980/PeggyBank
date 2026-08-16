@@ -185,7 +185,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
           <View style={[styles.noticeCard, { backgroundColor: C.warning + '18' }]}>
             <Ionicons name="alert-circle-outline" size={18} color={C.warning} />
             <Text style={[Typography.helper, { color: C.textPrimary, flex: 1 }]}>
-              We couldn't read this document automatically. Your photo is saved — choose where it belongs and enter the details.
+              We couldn&apos;t read this document automatically. Your photo is saved — choose where it belongs and enter the details.
             </Text>
           </View>
         )}
@@ -214,7 +214,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
         </View>
 
         <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 10 }]}>
-          You'll review and correct every field on the next screen before saving.
+          You&apos;ll review and correct every field on the next screen before saving.
         </Text>
 
         {/* Actions */}

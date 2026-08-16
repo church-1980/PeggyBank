@@ -67,11 +67,12 @@ const MODE_LABELS: Record<NotificationMode, string> = {
   detailed: 'Detailed',
 };
 
+// These must describe what rescheduleAll() actually does (see lib/notifications).
 const MODE_DESCRIPTIONS: Record<NotificationMode, string> = {
-  off:      'No notifications',
-  minimal:  'Bill reminders 2 days before due',
-  standard: 'Bills, payday, and weekly check-in',
-  detailed: 'Bills, payday, check-in, and mid-month',
+  off:      'No reminders at all',
+  minimal:  'On the day a bill is due',
+  standard: 'A day before, and on the day',
+  detailed: '3 days before, a day before, and on the day (with amounts)',
 };
 
 export default function SettingsScreen({ navigation }: any) {
@@ -222,7 +223,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         <Text style={styles.aboutStory}>
           PeggyBank was created in memory of Peggy — a mother who taught her family
-          that money doesn't have to be scary. Through everyday wisdom, quiet
+          that money doesn&apos;t have to be scary. Through everyday wisdom, quiet
           patience, and real care, she showed that financial peace is built one
           small, steady step at a time.
         </Text>

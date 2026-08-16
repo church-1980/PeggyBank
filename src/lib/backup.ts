@@ -92,7 +92,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     await db.execAsync(`DELETE FROM subscriptions;`).catch(() => {});
 
     // Restore expenses
-    for (const row of backup.expenses as Record<string, unknown>[]) {
+    for (const row of backup.expenses as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR IGNORE INTO expenses (id, amount, category, note, date, photo_uri, is_recurring, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -101,7 +101,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     }
 
     // Restore income
-    for (const row of backup.income as Record<string, unknown>[]) {
+    for (const row of backup.income as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR IGNORE INTO income (id, amount, label, date, is_recurring, created_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -110,7 +110,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     }
 
     // Restore bills
-    for (const row of backup.bills as Record<string, unknown>[]) {
+    for (const row of backup.bills as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR IGNORE INTO bills (id, name, amount, frequency, due_day, due_weekday, category, is_paid, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -119,7 +119,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     }
 
     // Restore goals
-    for (const row of backup.savings_goals as Record<string, unknown>[]) {
+    for (const row of backup.savings_goals as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR IGNORE INTO savings_goals (id, name, target_amount, current_amount, deadline, created_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -128,7 +128,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     }
 
     // Restore debts
-    for (const row of (backup.debts ?? []) as Record<string, unknown>[]) {
+    for (const row of (backup.debts ?? []) as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR IGNORE INTO debts (id, name, total_amount, amount_paid, minimum_payment, created_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -137,7 +137,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     }
 
     // Restore subscriptions
-    for (const row of (backup.subscriptions ?? []) as Record<string, unknown>[]) {
+    for (const row of (backup.subscriptions ?? []) as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR IGNORE INTO subscriptions (id, name, amount, billing_day, created_at)
          VALUES (?, ?, ?, ?, ?)`,
@@ -146,7 +146,7 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
     }
 
     // Restore settings
-    for (const row of backup.settings as Record<string, unknown>[]) {
+    for (const row of backup.settings as Record<string, any>[]) {
       await db.runAsync(
         `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`,
         [row.key, row.value]

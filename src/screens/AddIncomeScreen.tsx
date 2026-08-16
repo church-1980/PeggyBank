@@ -126,7 +126,7 @@ export default function AddIncomeScreen({ navigation }: any) {
         ) : (
           <>
             <Text style={styles.variableHint}>
-              Not sure of the exact amount? Enter a low and high estimate — we'll save the average.
+              Not sure of the exact amount? Enter a low and high estimate — we&apos;ll save the average.
             </Text>
             <View style={styles.rangeRow}>
               <View style={styles.rangeField}>

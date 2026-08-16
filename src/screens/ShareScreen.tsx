@@ -55,7 +55,7 @@ export default function ShareScreen({ navigation }: any) {
           />
         </View>
 
-        <Text style={styles.qrInstructions}>Scan with your phone's camera</Text>
+        <Text style={styles.qrInstructions}>Scan with your phone&apos;s camera</Text>
         <Text style={styles.qrUrl}>{SHARE_URL}</Text>
       </View>
 

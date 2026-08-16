@@ -2,14 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AppState, View, Text, StyleSheet } from 'react-native';
 import { useFonts, DMSans_300Light, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
 
-// TEMP DEBUG: capture which component throws the Text-in-View error
-const _origError = console.error.bind(console);
-console.error = (...args: unknown[]) => {
-  if (typeof args[0] === 'string' && args[0].includes('Text strings must be rendered')) {
-    _origError('[TEXT_BUG] component stack:', args[1] ?? new Error('no stack').stack);
-  }
-  _origError(...args);
-};
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NavProvider, useNavConfig } from './src/context/NavContext';
