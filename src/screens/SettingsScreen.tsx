@@ -15,6 +15,8 @@ import {
   saveNotificationMode,
   requestNotificationPermissions,
   rescheduleAll,
+  sendTestNotification,
+  scheduledCount,
 } from '../lib/notifications';
 
 const APP_VERSION = '1.0.0';
@@ -77,10 +79,28 @@ export default function SettingsScreen({ navigation }: any) {
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [notifMode, setNotifMode] = useState<NotificationMode>('minimal');
+  const [queued, setQueued] = useState<number | null>(null);
 
   useFocusEffect(useCallback(() => {
     getNotificationMode().then(setNotifMode);
+    scheduledCount().then(setQueued);
   }, []));
+
+  const handleTestNotification = async () => {
+    const ok = await sendTestNotification(5);
+    if (!ok) {
+      Alert.alert(
+        'Notifications are blocked',
+        'PeggyBank Dev does not have permission to send notifications. Open your phone Settings → Apps → PeggyBank Dev → Notifications and allow them, then try again.'
+      );
+      return;
+    }
+    Alert.alert(
+      'Test reminder sent',
+      'It will arrive in about 5 seconds. Lock your phone or leave this screen to see it appear like a real reminder.'
+    );
+    scheduledCount().then(setQueued);
+  };
 
   const handleNotifMode = () => {
     const options = (['off', 'minimal', 'standard', 'detailed'] as NotificationMode[]).map((m) => ({
@@ -166,6 +186,23 @@ export default function SettingsScreen({ navigation }: any) {
           <View style={styles.modeChip}>
             <Text style={styles.modeChipText}>{MODE_LABELS[notifMode]}</Text>
           </View>
+        </TouchableOpacity>
+
+        {/* Lets a real reminder be verified on the device without waiting for
+            a due date — asks for permission the first time. */}
+        <TouchableOpacity style={[styles.row, styles.rowLast]} onPress={handleTestNotification} activeOpacity={0.7}>
+          <View style={styles.rowLeft}>
+            <View style={[styles.iconWrap, { backgroundColor: C.income + '18' }]}>
+              <Ionicons name="paper-plane-outline" size={20} color={C.income} />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>Send a test reminder</Text>
+              <Text style={styles.rowSub}>
+                {queued === null ? 'Check notifications are working' : `${queued} reminder${queued === 1 ? '' : 's'} scheduled`}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.textHint} />
         </TouchableOpacity>
       </View>
 

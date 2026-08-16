@@ -16,6 +16,7 @@ import IconBadge from '../components/IconBadge';
 import { categoryIconKey } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
+import { getNotificationMode, rescheduleAll } from '../lib/notifications';
 
 interface Subscription {
   id?: number;
@@ -96,6 +97,12 @@ export default function BillsScreen({ navigation, route }: any) {
         `SELECT * FROM subscriptions ORDER BY is_paid ASC, billing_day ASC`
       );
       setSubs(subsResult ?? []);
+
+      // Keep due-date reminders in step with what's actually on this screen —
+      // loadAll runs after every add/edit/delete/mark-paid.
+      getNotificationMode()
+        .then((mode) => rescheduleAll(mode))
+        .catch(() => {});
     } catch (e) {
       console.error('[Bills] loadAll error:', e);
     }
