@@ -183,35 +183,36 @@ export const Typography = {
   hero:      { fontSize: 46, fontWeight: '700' as const, letterSpacing: -1.5 },
 
   // Headings
-  h1:        { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.5, lineHeight: 36 },
-  h2:        { fontSize: 22, fontWeight: '700' as const, lineHeight: 30 },
-  h3:        { fontSize: 18, fontWeight: '700' as const, lineHeight: 26 },
+  h1:        { fontSize: 30, fontWeight: '700' as const, letterSpacing: -0.5, lineHeight: 38 },
+  h2:        { fontSize: 24, fontWeight: '700' as const, lineHeight: 32 },
+  h3:        { fontSize: 20, fontWeight: '700' as const, lineHeight: 28 },
 
-  // Body — the workhorse. Extra line height for readability.
-  body:      { fontSize: 16, fontWeight: '400' as const, lineHeight: 28 },
-  bodyBold:  { fontSize: 16, fontWeight: '600' as const, lineHeight: 26 },
+  // Body — the workhorse. Apple HIG body is 17pt; Material bodyLarge is 16sp.
+  body:      { fontSize: 17, fontWeight: '400' as const, lineHeight: 28 },
+  bodyBold:  { fontSize: 17, fontWeight: '600' as const, lineHeight: 26 },
 
-  // Small — supporting text. Generous line height for calm reading.
-  small:     { fontSize: 14, fontWeight: '400' as const, lineHeight: 24 },
-  smallBold: { fontSize: 14, fontWeight: '600' as const, lineHeight: 22 },
+  // Small — supporting text. Material bodyMedium (14sp) is the floor.
+  small:     { fontSize: 15, fontWeight: '400' as const, lineHeight: 24 },
+  smallBold: { fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
 
-  // Caption — dates, hints, labels
-  caption:   { fontSize: 12, fontWeight: '400' as const, lineHeight: 19 },
+  // Caption — dates, hints. Never below 14: this app is read by people who
+  // struggle with small type, so 12 was under the accessible floor.
+  caption:   { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
 
-  // Label — uppercase section titles, tab labels
-  label:     { fontSize: 11, fontWeight: '600' as const, letterSpacing: 0.6 },
+  // Label — uppercase section titles. Material labelLarge is 14sp.
+  label:     { fontSize: 13, fontWeight: '700' as const, letterSpacing: 0.6 },
 
   // ── Design Bible §12 scale. Money is always the boldest thing in its
   // container; supporting text is always muted. Use only these.
-  heroAmount:    { fontSize: 40, fontWeight: '800' as const, letterSpacing: -1 },
-  greeting:      { fontSize: 21, fontWeight: '700' as const, lineHeight: 28 },
-  sectionHeader: { fontSize: 17, fontWeight: '700' as const, lineHeight: 24 },
-  cardTitle:     { fontSize: 16, fontWeight: '700' as const, lineHeight: 22 },
-  amountRow:     { fontSize: 15, fontWeight: '700' as const, lineHeight: 20 },
-  helper:        { fontSize: 13, fontWeight: '500' as const, lineHeight: 18 },
-  seeAll:        { fontSize: 13, fontWeight: '600' as const, lineHeight: 18 },
-  percent:       { fontSize: 14, fontWeight: '700' as const, lineHeight: 18 },
-  navLabel:      { fontSize: 11, fontWeight: '600' as const, lineHeight: 14 },
+  heroAmount:    { fontSize: 42, fontWeight: '800' as const, letterSpacing: -1 },
+  greeting:      { fontSize: 23, fontWeight: '700' as const, lineHeight: 30 },
+  sectionHeader: { fontSize: 19, fontWeight: '700' as const, lineHeight: 26 },
+  cardTitle:     { fontSize: 17, fontWeight: '700' as const, lineHeight: 24 },
+  amountRow:     { fontSize: 17, fontWeight: '700' as const, lineHeight: 22 },
+  helper:        { fontSize: 15, fontWeight: '500' as const, lineHeight: 20 },
+  seeAll:        { fontSize: 15, fontWeight: '600' as const, lineHeight: 20 },
+  percent:       { fontSize: 15, fontWeight: '700' as const, lineHeight: 20 },
+  navLabel:      { fontSize: 12, fontWeight: '600' as const, lineHeight: 16 },
 };
 
 // ─────────────────────────────────────────────
