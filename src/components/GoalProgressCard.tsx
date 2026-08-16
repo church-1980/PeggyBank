@@ -109,7 +109,7 @@ function makeStyles(C: ColorPalette) {
       borderWidth: 1, borderRadius: Radius.full,
       paddingHorizontal: 9, paddingVertical: 3,
     },
-    typePillText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.9 },
+    typePillText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.9 },
 
     goalName: {
       ...Typography.bodyBold, color: C.textPrimary,

@@ -761,7 +761,7 @@ function makeStyles(C: ColorPalette) {
     weekLabelRow:  { flexDirection: 'row', paddingHorizontal: Spacing.md, paddingBottom: 6 },
     weekLabelText: {
       flex: 1, textAlign: 'center',
-      fontSize: 11, fontWeight: '700', color: C.textHint, letterSpacing: 0.4,
+      fontSize: 13, fontWeight: '700', color: C.textHint, letterSpacing: 0.4,
     },
 
     monthGrid:       { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.md },
@@ -809,7 +809,7 @@ function makeStyles(C: ColorPalette) {
     weekCardToday: { borderColor: C.primary, borderWidth: 1.5 },
     weekCardSel:   { backgroundColor: C.primary, borderColor: C.primary },
     weekCardLetter: {
-      fontSize: 10, fontWeight: '700',
+      fontSize: 13, fontWeight: '700',
       color: C.textHint, letterSpacing: 0.5,
     },
     weekCardTextSel: { color: C.textOnPrimary },

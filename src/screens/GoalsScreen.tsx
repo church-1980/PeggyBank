@@ -314,7 +314,7 @@ export default function GoalsScreen({ navigation, route }: any) {
                       >
                         <IconBadge iconKey={info.iconKey} color={info.color} size={56} iconSize={40} tinted={!active} style={styles.goalTypeIcon} />
                         <Text style={[styles.goalTypeLabel, active && { color: C.textPrimary, fontWeight: '700' }]}
-                          numberOfLines={1}>
+                          numberOfLines={2}>
                           {info.label}
                         </Text>
                       </TouchableOpacity>
@@ -520,7 +520,7 @@ function makeStyles(C: ColorPalette) {
       borderRadius: Radius.md, borderWidth: 1,
       marginTop: 2,
     },
-    addMoneyText: { fontSize: 13, fontWeight: '600' as const, lineHeight: 18 },
+    addMoneyText: { fontSize: 15, fontWeight: '600' as const, lineHeight: 20 },
 
     completeBanner: {
       flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
@@ -589,12 +589,18 @@ function makeStyles(C: ColorPalette) {
     goalTypeGrid: {
       flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4,
     },
+    // 3-up (was 4-up at 22%): four columns left no room for longer names like
+    // "Down Payment", which truncated to "Down Payme...". Wider tiles + a real
+    // font size + two lines means every label reads in full.
     goalTypeChip: {
-      width: '22%', borderRadius: Radius.md, borderWidth: 1.5,
-      paddingVertical: 8, paddingHorizontal: 4, alignItems: 'center', gap: 2,
+      width: '31.5%', borderRadius: Radius.md, borderWidth: 1.5,
+      paddingVertical: 12, paddingHorizontal: 6, alignItems: 'center', gap: 2,
     },
-    goalTypeIcon: { marginBottom: 3 },
-    goalTypeLabel: { fontSize: 10, fontWeight: '600', color: C.textSecondary, textAlign: 'center' },
+    goalTypeIcon: { marginBottom: 4 },
+    goalTypeLabel: {
+      ...Typography.helper, fontWeight: '600', color: C.textSecondary,
+      textAlign: 'center',
+    },
 
     pinRow: {
       flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,

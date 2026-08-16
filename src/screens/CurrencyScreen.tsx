@@ -498,7 +498,7 @@ function makeStyles(C: ColorPalette) {
     rateValue:       { ...Typography.caption, color: C.income, fontWeight: '600' },
     editHint:        { ...Typography.caption, color: C.textHint, marginTop: 2 },
     customBadge:     { backgroundColor: C.primary + '25', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 },
-    customBadgeText: { color: C.primary, fontSize: 10, fontWeight: '700' },
+    customBadgeText: { color: C.primary, fontSize: 12, fontWeight: '700' },
     restoreHint:     { ...Typography.caption, color: C.primary, marginTop: 2 },
 
     pickerOverlay:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },

@@ -347,7 +347,7 @@ function makeStyles(C: ColorPalette) {
       alignItems: 'center', justifyContent: 'center', marginBottom: 4,
     },
     catLabel: {
-      fontSize: 11, fontWeight: '600', lineHeight: 14, textAlign: 'center',
+      ...Typography.helper, fontWeight: '600', textAlign: 'center',
     },
 
     // ── Options row ──
