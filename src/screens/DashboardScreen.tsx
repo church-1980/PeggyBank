@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,10 +22,31 @@ interface MonthSummary {
   safeToSpend: number;
 }
 
-function greetingForNow(name?: string): string {
+function greetingForNow(): string {
   const h = new Date().getHours();
-  const g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  return name ? `${g}, ${name}!` : `${g}!`;
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+}
+
+/**
+ * Rotating welcome lines. The owner's name is the point of this header, so it
+ * appears in the message too — a different one each time Home is opened.
+ */
+const WELCOME_LINES: ((name: string) => string)[] = [
+  (n) => `Nice to see you again, ${n} 💜`,
+  (n) => `${n}, every small step counts.`,
+  (n) => `You're doing amazing today, ${n}!`,
+  (n) => `Let's make today count, ${n}.`,
+  (n) => `${n}, your future self says thanks.`,
+  (n) => `Small wins add up, ${n}.`,
+  (n) => `Steady as you go, ${n}.`,
+  (n) => `${n}, you've got this.`,
+  (n) => `Good to have you back, ${n}.`,
+  (n) => `${n}, one layer at a time.`,
+];
+
+function welcomeLine(name: string | undefined, tick: number): string {
+  if (!name) return "You're doing amazing today! 💜";
+  return WELCOME_LINES[tick % WELCOME_LINES.length](name);
 }
 
 export default function DashboardScreen({ navigation }: any) {
@@ -38,6 +59,10 @@ export default function DashboardScreen({ navigation }: any) {
   const [suggestion, setSuggestion] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [profileName, setProfileName] = useState('');
+  // Picked once per mount so the welcome line differs each time Home is opened.
+  // A ref (not state) on purpose: setting state from the focus effect re-renders
+  // and loops.
+  const welcomeTick = useRef(Math.floor(Math.random() * WELCOME_LINES.length)).current;
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -133,12 +158,24 @@ export default function DashboardScreen({ navigation }: any) {
               profile photo lives on the Profile screen, not here. */}
           <PeggyAvatar size={84} brand bare />
         </TouchableOpacity>
+        {/* The owner's name is the headline here, on its own line, so it is
+            always fully readable — it must never truncate to "Pau...". */}
         <View style={{ flex: 1, marginLeft: Spacing.sm + 4 }}>
-          <Text style={[Typography.greeting, { color: C.textPrimary }]} numberOfLines={1}>
-            {greetingForNow(profileName)} 👋
+          <Text style={[Typography.helper, { color: C.textSecondary }]} numberOfLines={1}>
+            {greetingForNow()} 👋
           </Text>
-          <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 1 }]} numberOfLines={1}>
-            You're doing amazing today! 💜
+          {profileName ? (
+            <Text
+              style={[Typography.greeting, { color: C.textPrimary }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {profileName}
+            </Text>
+          ) : null}
+          <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 2 }]} numberOfLines={2}>
+            {welcomeLine(profileName, welcomeTick)}
           </Text>
         </View>
         <TouchableOpacity
