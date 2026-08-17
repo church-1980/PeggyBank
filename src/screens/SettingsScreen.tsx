@@ -61,18 +61,20 @@ const SHARE_ROWS: RowItem[] = [
 ];
 
 const MODE_LABELS: Record<NotificationMode, string> = {
-  off:      'Off',
-  minimal:  'Minimal',
-  standard: 'Standard',
-  detailed: 'Detailed',
+  off:        'Off',
+  minimal:    'Minimal',
+  standard:   'Standard',
+  detailed:   'Detailed',
+  aggressive: 'Every day',
 };
 
 // These must describe what rescheduleAll() actually does (see lib/notifications).
 const MODE_DESCRIPTIONS: Record<NotificationMode, string> = {
-  off:      'No reminders at all',
-  minimal:  'On the day a bill is due',
-  standard: 'A day before, and on the day',
-  detailed: '3 days before, a day before, and on the day (with amounts)',
+  off:        'No reminders at all',
+  minimal:    'On the day a bill is due',
+  standard:   'A day before, and on the day',
+  detailed:   '3 days before, a day before, and on the day (with amounts)',
+  aggressive: 'Every day for the whole week before it is due',
 };
 
 export default function SettingsScreen({ navigation }: any) {
@@ -104,7 +106,7 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   const handleNotifMode = () => {
-    const options = (['off', 'minimal', 'standard', 'detailed'] as NotificationMode[]).map((m) => ({
+    const options = (['off', 'minimal', 'standard', 'detailed', 'aggressive'] as NotificationMode[]).map((m) => ({
       text: `${MODE_LABELS[m]}  —  ${MODE_DESCRIPTIONS[m]}`,
       onPress: async () => {
         if (m !== 'off') {

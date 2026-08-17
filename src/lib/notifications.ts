@@ -2,21 +2,24 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { getDatabase } from '../database/database';
 
-export type NotificationMode = 'off' | 'minimal' | 'standard' | 'detailed';
+export type NotificationMode = 'off' | 'minimal' | 'standard' | 'detailed' | 'aggressive';
 
 const CHANNEL_ID = 'peggybank-reminders';
 
 /**
  * How many days before a bill is due we warn, per mode:
- *   minimal  — on the day only
- *   standard — 1 day before + on the day
- *   detailed — 3 days before, 1 day before + on the day
+ *   minimal    — on the day only
+ *   standard   — 1 day before + on the day
+ *   detailed   — 3 days before, 1 day before + on the day
+ *   aggressive — every single day for the week before, plus the day itself.
+ *                For people who need repeated nudges to not miss a payment.
  */
 const LEAD_DAYS: Record<NotificationMode, number[]> = {
-  off:      [],
-  minimal:  [0],
-  standard: [1, 0],
-  detailed: [3, 1, 0],
+  off:        [],
+  minimal:    [0],
+  standard:   [1, 0],
+  detailed:   [3, 1, 0],
+  aggressive: [7, 6, 5, 4, 3, 2, 1, 0],
 };
 
 // Reminders fire at 9am local time on the chosen day.
@@ -98,9 +101,15 @@ function nextWeeklyDue(weekday: number, from = new Date()): Date {
   return d;
 }
 
+function whenText(daysAway: number): string {
+  return daysAway === 0 ? 'today' : daysAway === 1 ? 'tomorrow' : `in ${daysAway} days`;
+}
+
 function bodyFor(mode: NotificationMode, name: string, amount: number, daysAway: number): string {
-  const when = daysAway === 0 ? 'today' : daysAway === 1 ? 'tomorrow' : `in ${daysAway} days`;
-  if (mode === 'detailed') {
+  const when = whenText(daysAway);
+  // Detailed and aggressive both carry the amount — if you are being reminded
+  // daily, knowing how much it is matters as much as when.
+  if (mode === 'detailed' || mode === 'aggressive') {
     return `${name} — $${amount.toFixed(2)} is due ${when}.`;
   }
   if (mode === 'standard') {
@@ -108,6 +117,17 @@ function bodyFor(mode: NotificationMode, name: string, amount: number, daysAway:
   }
   return `${name} is due today.`;
 }
+
+function titleFor(daysAway: number): string {
+  if (daysAway === 0) return 'Bill due today';
+  if (daysAway === 1) return 'Bill due tomorrow';
+  return `Bill due in ${daysAway} days`;
+}
+
+// iOS only keeps 64 pending notifications and silently drops the rest; Android
+// degrades with very large queues too. Aggressive mode schedules 8 per bill, so
+// cap the queue and keep the SOONEST reminders — the ones that matter next.
+const MAX_SCHEDULED = 60;
 
 /**
  * Rebuild every scheduled reminder from what is currently in the database.
@@ -150,24 +170,35 @@ export async function rescheduleAll(mode: NotificationMode): Promise<void> {
       dues.push({ name: s.name, amount: s.amount, date: nextMonthlyDue(s.billing_day, now) });
     }
 
+    // Build the full set first, then schedule soonest-first up to the cap, so a
+    // long tail of far-off reminders can never crowd out this week's.
+    const planned: { fireAt: Date; title: string; body: string }[] = [];
     for (const due of dues) {
       for (const lead of leads) {
         const fireAt = new Date(due.date);
         fireAt.setDate(fireAt.getDate() - lead);
         if (fireAt.getTime() <= Date.now()) continue; // never schedule in the past
-
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: lead === 0 ? 'Bill due today' : 'Bill coming up',
-            body: bodyFor(mode, due.name, due.amount, lead),
-            ...(Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {}),
-          },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: fireAt,
-          },
+        planned.push({
+          fireAt,
+          title: titleFor(lead),
+          body: bodyFor(mode, due.name, due.amount, lead),
         });
       }
+    }
+    planned.sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime());
+
+    for (const p of planned.slice(0, MAX_SCHEDULED)) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: p.title,
+          body: p.body,
+          ...(Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {}),
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: p.fireAt,
+        },
+      });
     }
   } catch (e) {
     console.warn('[notifications] rescheduleAll failed:', e);
