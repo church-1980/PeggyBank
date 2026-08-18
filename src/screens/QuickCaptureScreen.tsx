@@ -9,6 +9,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import { saveAcceptedImage, deleteTempImage } from '../lib/receiptStorage';
 import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
+import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
 
 /**
  * QuickCaptureScreen — PeggyBank Smart Quick Capture.
@@ -23,6 +24,18 @@ import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 
 type Stage = 'camera' | 'preview' | 'reading' | 'review';
 
+/**
+ * Plain-language summary of what the app already knows about this vendor,
+ * shown on the review screen so a prefill never looks like magic.
+ */
+function knownSummary(m: MerchantMemory): string {
+  const times = m.timesSeen === 1 ? "once" : m.timesSeen + " times";
+  let out = "You have saved " + m.displayName + " " + times + " before";
+  if (m.avgAmount) out += ", usually $" + m.avgAmount.toFixed(2);
+  if (m.docType === "bill" && m.dueDay) out += ", due on day " + m.dueDay;
+  return out + ". Filled in from your history.";
+}
+
 export default function QuickCaptureScreen({ navigation }: any) {
   const C = useColors();
   const insets = useSafeAreaInsets();
@@ -36,6 +49,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const [ownedUri, setOwnedUri] = useState<string | null>(null); // persisted copy
   const [result, setResult] = useState<RecognitionResult | null>(null);
   const [chosenType, setChosenType] = useState<DocType>('unknown');
+  const [known, setKnown] = useState<MerchantMemory | null>(null);
   const [flash, setFlash] = useState<FlashMode>('off');
   const [facing] = useState<CameraType>('back');
   const [busy, setBusy] = useState(false);
@@ -96,7 +110,15 @@ export default function QuickCaptureScreen({ navigation }: any) {
       setOwnedUri(owned);
       const r = await recognizer.recognize(owned);
       setResult(r);
-      setChosenType(r.ok && r.docType !== 'unknown' ? r.docType : 'unknown');
+
+      // What have we learned about this vendor before? Memory beats guesswork:
+      // it covers vendors the built-in list has never heard of, and it knows
+      // how YOU file them.
+      const memory = await recallMerchant(r.merchant);
+      setKnown(memory);
+
+      const detected = r.ok && r.docType !== 'unknown' ? r.docType : 'unknown';
+      setChosenType(memory ? memory.docType : detected);
       setStage('review');
     } catch {
       Alert.alert('Could not process image', 'Please try again.');
@@ -108,21 +130,24 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const goToForm = (type: DocType, prefill: boolean) => {
     if (!ownedUri || type === 'unknown') return;
     const r = prefill ? result : null;
+    const m = prefill ? known : null;
     if (type === 'expense') {
       navigation.replace('AddExpense', {
         capturedPhoto: ownedUri,
-        amount: r?.amount,
-        category: r?.category,
-        note: r?.merchant,
+        // Read the amount off the document, falling back to what this vendor
+        // usually costs. Category comes from memory first, then the guess.
+        amount: r?.amount ?? m?.lastAmount,
+        category: m?.category ?? r?.category,
+        note: m?.displayName ?? r?.merchant,
       });
     } else {
-      const dueDay = r?.dueDate ? parseInt(r.dueDate.split('-')[2], 10) : undefined;
+      const ocrDueDay = r?.dueDate ? parseInt(r.dueDate.split('-')[2], 10) : undefined;
       navigation.replace('Bills', {
         autoOpen: true,
         capturedPhoto: ownedUri,
-        billName: r?.merchant,
-        billAmount: r?.amount,
-        billDueDay: dueDay,
+        billName: m?.displayName ?? r?.merchant,
+        billAmount: r?.amount ?? m?.lastAmount,
+        billDueDay: ocrDueDay ?? m?.dueDay,
       });
     }
   };
@@ -191,6 +216,18 @@ export default function QuickCaptureScreen({ navigation }: any) {
         )}
 
         {ok && <Text style={[Typography.cardTitle, { color: C.textPrimary }]}>{summary}</Text>}
+
+        {/* What we already know about this vendor from previous saves — the
+            difference between recognising a few big billers and recognising
+            the vendors you actually use. */}
+        {known && (
+          <View style={[styles.noticeCard, { backgroundColor: C.income + '18' }]}>
+            <Ionicons name="sparkles-outline" size={18} color={C.income} />
+            <Text style={[Typography.helper, { color: C.textPrimary, flex: 1 }]}>
+              {knownSummary(known)}
+            </Text>
+          </View>
+        )}
 
         {/* Type choice */}
         <Text style={styles.sectionLabel}>THIS IS A</Text>

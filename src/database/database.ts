@@ -114,6 +114,23 @@ export async function setupDatabase(): Promise<void> {
       uri TEXT NOT NULL,
       updated_at INTEGER
     );
+
+    -- What the camera has LEARNED about a vendor. Every time a photographed
+    -- document is saved the merchant is recorded here with how it was filed,
+    -- so the next photo of that vendor fills itself in — including vendors
+    -- the built-in list has never heard of.
+    CREATE TABLE IF NOT EXISTS merchant_memory (
+      name_key      TEXT PRIMARY KEY,
+      display_name  TEXT NOT NULL,
+      doc_type      TEXT NOT NULL,
+      category      TEXT,
+      recurring     INTEGER DEFAULT 0,
+      last_amount   REAL,
+      avg_amount    REAL,
+      due_day       INTEGER,
+      times_seen    INTEGER DEFAULT 1,
+      last_seen     TEXT
+    );
   `);
 
   // Safe migrations — silently skip if column already exists
@@ -169,6 +186,7 @@ export async function setupDatabase(): Promise<void> {
 const ALL_TABLES = [
   'expenses', 'income', 'bills', 'savings_goals',
   'debts', 'subscriptions', 'calendar_reminders', 'settings', 'custom_logos',
+  'merchant_memory',
 ];
 
 /**

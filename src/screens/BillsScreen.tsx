@@ -17,6 +17,7 @@ import { categoryIconKey } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
 import { getNotificationMode, rescheduleAll } from '../lib/notifications';
+import { rememberMerchant } from '../lib/merchantMemory';
 
 interface Subscription {
   id?: number;
@@ -172,6 +173,15 @@ export default function BillsScreen({ navigation, route }: any) {
             [name.trim(), parsed, frequency, dueDay, dueWeekday, route?.params?.capturedPhoto ?? null]
           );
         }
+        // Remember this biller — recurring by definition — with what it costs
+        // and when it falls due, so the next photo of it is recognised.
+        await rememberMerchant({
+          name: name.trim(),
+          docType: 'bill',
+          recurring: true,
+          amount: parsed,
+          dueDay: dueDay ?? undefined,
+        });
       } else {
         if (editingSub?.id) {
           await db.runAsync(

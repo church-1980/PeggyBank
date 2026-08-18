@@ -14,6 +14,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { categoryIconKey } from '../data/iconRegistry';
+import { rememberMerchant } from '../lib/merchantMemory';
 import IconBadge from '../components/IconBadge';
 
 const VALID_CATEGORIES = Object.keys(CATEGORIES) as Category[];
@@ -77,6 +78,17 @@ export default function AddExpenseScreen({ navigation, route }: any) {
           `INSERT INTO expenses (amount, category, note, date, photo_uri, is_recurring) VALUES (?, ?, ?, ?, ?, ?)`,
           [parsedAmount, category, note.trim(), getTodayString(), photoUri ?? null, isRecurring ? 1 : 0]
         );
+      }
+      // Learn this vendor from what was actually confirmed, so the next photo
+      // of it fills itself in. Only when there is a name to key on.
+      if (note.trim()) {
+        await rememberMerchant({
+          name: note.trim(),
+          docType: 'expense',
+          category,
+          recurring: isRecurring,
+          amount: parsedAmount,
+        });
       }
       if (returnTo) navigation.navigate('Home', { screen: returnTo });
       else if (navigation.canGoBack()) navigation.goBack();
