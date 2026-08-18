@@ -1,9 +1,12 @@
 import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { Recognizer, RecognitionResult, EMPTY_CONFIDENCE } from './types';
 import { parseDocument } from './parse';
+import { enhanceFields } from './enhance';
 
 export * from './types';
 export { parseDocument } from './parse';
+export { setEnhancer, activeEnhancerName } from './enhance';
+export type { RecognitionEnhancer } from './enhance';
 
 function failed(): RecognitionResult {
   return { ok: false, rawTextLength: 0, docType: 'unknown', confidence: { ...EMPTY_CONFIDENCE } };
@@ -21,7 +24,10 @@ export const mlkitRecognizer: Recognizer = {
       const text = res?.text ?? '';
       if (!text.trim()) return failed();
       const fields = parseDocument(text);
-      return { ok: true, rawTextLength: text.length, ...fields };
+      // Give a smarter classifier a chance to improve on the keyword guess.
+      // Falls straight through until one is installed (see ./enhance).
+      const refined = await enhanceFields(text, fields);
+      return { ok: true, rawTextLength: text.length, ...refined };
     } catch {
       return failed();
     }

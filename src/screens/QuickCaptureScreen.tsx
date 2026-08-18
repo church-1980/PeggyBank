@@ -10,6 +10,8 @@ import { formatCurrency, formatDate } from '../utils/helpers';
 import { saveAcceptedImage, deleteTempImage } from '../lib/receiptStorage';
 import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
+import { CATEGORIES } from '../data/categories';
+import PeggyPushButton from '../components/peggy/PeggyPushButton';
 
 /**
  * QuickCaptureScreen — PeggyBank Smart Quick Capture.
@@ -23,6 +25,19 @@ import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
  */
 
 type Stage = 'camera' | 'preview' | 'reading' | 'review';
+
+/**
+ * The question the app asks before filing anything: plain language, naming
+ * the category and the amount it believes it read.
+ */
+function confirmQuestion(type: DocType, category?: string, amount?: number): string | null {
+  if (type === 'unknown' || amount == null) return null;
+  const money = formatCurrency(amount);
+  if (type === 'bill') return 'Add ' + money + ' as a bill?';
+  const label = category ? (CATEGORIES as any)[category]?.label ?? category : null;
+  return label ? 'Put ' + money + ' in your ' + label + ' expenses?' : 'Add ' + money + ' as an expense?';
+}
+
 
 /**
  * Plain-language summary of what the app already knows about this vendor,
@@ -50,6 +65,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const [result, setResult] = useState<RecognitionResult | null>(null);
   const [chosenType, setChosenType] = useState<DocType>('unknown');
   const [known, setKnown] = useState<MerchantMemory | null>(null);
+  const [questionDismissed, setQuestionDismissed] = useState(false);
   const [flash, setFlash] = useState<FlashMode>('off');
   const [facing] = useState<CameraType>('back');
   const [busy, setBusy] = useState(false);
@@ -200,6 +216,9 @@ export default function QuickCaptureScreen({ navigation }: any) {
   // ── Review stage ───────────────────────────────────────────────────
   const ok = !!result?.ok;
   const summary = buildSummary(result, chosenType);
+  const question = questionDismissed
+    ? null
+    : confirmQuestion(chosenType, known?.category ?? result?.category, result?.amount);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
@@ -225,6 +244,34 @@ export default function QuickCaptureScreen({ navigation }: any) {
             <Ionicons name="sparkles-outline" size={18} color={C.income} />
             <Text style={[Typography.helper, { color: C.textPrimary, flex: 1 }]}>
               {knownSummary(known)}
+            </Text>
+          </View>
+        )}
+
+        {/* The confirmation, as real buttons — a decision worth pushing. */}
+        {question && (
+          <View style={styles.confirmCard}>
+            <Text style={[Typography.cardTitle, { color: C.textPrimary, textAlign: 'center' }]}>
+              {question}
+            </Text>
+            <View style={styles.confirmButtons}>
+              <PeggyPushButton
+                label="Yes"
+                icon="checkmark"
+                tone="confirm"
+                style={{ flex: 1 }}
+                onPress={() => goToForm(chosenType, true)}
+              />
+              <PeggyPushButton
+                label="No"
+                icon="close"
+                tone="neutral"
+                style={{ flex: 1 }}
+                onPress={() => setQuestionDismissed(true)}
+              />
+            </View>
+            <Text style={[Typography.helper, { color: C.textSecondary, textAlign: 'center', marginTop: 6 }]}>
+              Yes opens it filled in, ready to save.
             </Text>
           </View>
         )}
@@ -333,6 +380,11 @@ function makeStyles(C: ColorPalette) {
     noticeCard: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', borderRadius: Radius.md, padding: 12, marginBottom: Spacing.md },
     sectionLabel: { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: Spacing.lg, marginBottom: Spacing.sm },
     typeRow: { flexDirection: 'row', gap: 10 },
+    confirmCard: {
+      backgroundColor: C.bgCard, borderRadius: Radius.lg, padding: Spacing.lg,
+      marginTop: Spacing.md, borderWidth: 1, borderColor: C.border,
+    },
+    confirmButtons: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md },
     card: { backgroundColor: C.bgCard, borderRadius: Radius.lg, paddingHorizontal: Spacing.md },
     continueBtn: { height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.lg },
     reviewActions: { flexDirection: 'row', justifyContent: 'space-around', marginTop: Spacing.md },

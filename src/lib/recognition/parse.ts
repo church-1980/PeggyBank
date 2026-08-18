@@ -24,14 +24,14 @@ const BILL_PAYEES: { name: string; re: RegExp; category: Category; recurring: bo
 
 // ── Merchant → category keywords (expense receipts) ───────────────────────────
 const CATEGORY_KEYWORDS: { re: RegExp; category: Category }[] = [
-  { re: /\b(grocery|groceries|supermarket|market|walmart|costco|loblaws|metro|sobeys|no ?frills|food ?basics|iga)\b/i, category: 'groceries' },
-  { re: /\b(gas|fuel|petro|esso|shell|husky|ultramar|chevron)\b/i, category: 'gas' },
-  { re: /\b(restaurant|cafe|caf[eé]|coffee|starbucks|tim ?hortons|mcdonald|pizza|sushi|diner|bar ?&|grill)\b/i, category: 'restaurant' },
-  { re: /\b(pharmacy|drug ?mart|shoppers|jean ?coutu|clinic|dental|medical|health)\b/i, category: 'health' },
-  { re: /\b(pet|petsmart|petland|veterinar)\b/i, category: 'pets' },
-  { re: /\b(cinema|movie|game|steam|playstation|xbox|netflix|spotify|entertain)\b/i, category: 'fun' },
-  { re: /\b(amazon|best ?buy|clothing|shoes|mall|store|retail)\b/i, category: 'shopping' },
-  { re: /\b(hotel|airbnb|flight|air ?canada|westjet|expedia|booking)\b/i, category: 'travel' },
+  { re: /\b(grocery|groceries|supermarket|market|walmart|costco|loblaws|metro|sobeys|no ?frills|food ?basics|iga|maxi|provigo|super ?c|farm ?boy|freshco|giant ?tiger|bulk ?barn|save ?on ?foods|safeway|whole ?foods|epicerie)\b/i, category: 'groceries' },
+  { re: /\b(gas|fuel|petro|petro[- ]?canada|esso|shell|husky|ultramar|chevron|pioneer|irving|mobil|couche[- ]?tard)\b/i, category: 'gas' },
+  { re: /\b(restaurant|cafe|coffee|starbucks|tim ?hortons|mcdonald|pizza|sushi|diner|bistro|grill|subway|harvey|swiss ?chalet|boston ?pizza|st[- ]?hubert|dairy ?queen|wendy|burger ?king|kfc|taco|poutine|brasserie)\b/i, category: 'restaurant' },
+  { re: /\b(pharmacy|pharmacie|drug ?mart|shoppers|jean ?coutu|rexall|pharmaprix|uniprix|familiprix|clinic|clinique|dental|dentist|medical|health|hospital|physio|optometr|chiropract|prescription)\b/i, category: 'health' },
+  { re: /\b(pet|petsmart|petland|mondou|veterinar|animal ?hospital)\b/i, category: 'pets' },
+  { re: /\b(cinema|movie|theatre|game|steam|playstation|xbox|nintendo|netflix|spotify|disney|crave|entertain|concert|bowling)\b/i, category: 'fun' },
+  { re: /\b(amazon|best ?buy|clothing|shoes|mall|retail|dollarama|winners|marshalls|ikea|staples|indigo|sportchek|simons)\b/i, category: 'shopping' },
+  { re: /\b(hotel|motel|airbnb|flight|air ?canada|westjet|porter|expedia|booking|via ?rail|car ?rental)\b/i, category: 'travel' },
 ];
 
 // ── Amount ────────────────────────────────────────────────────────────────────
