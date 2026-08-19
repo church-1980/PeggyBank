@@ -41,3 +41,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Generated independent-test packages (rebuildable, large binaries)
+PeggyBank-*-Test-Package-*.zip
+PeggyBank-Web-Test-*.zip
