@@ -23,8 +23,8 @@
     "maestro:theme": "maestro test maestro/05_theme_switch.yaml",
     "maestro:nav": "maestro test maestro/06_navigation.yaml",
     "maestro:all": "maestro test maestro/",
-    "ship": "node scripts/ship.js",
-    "verify": "node scripts/ship.js --verify-only"
+    "ship": "bash scripts/ship.sh",
+    "verify": "bash scripts/ship.sh --verify"
   },
   "jest": {
     "preset": "jest-expo",

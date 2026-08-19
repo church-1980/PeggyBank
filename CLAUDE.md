@@ -120,3 +120,33 @@ Do not add to its allow-list to make a violation pass — fix the screen instead
 No new features, screens, or visual experiments until the screen migration
 (Design Bible Phase 7) is complete and approved. Migration order and acceptance
 standard live in `docs/PEGGYBANK_DESIGN_BIBLE_V2.md`.
+
+---
+
+## BUILD & SHIP (use these — do not hand-run the steps)
+
+```bash
+bash scripts/ship.sh            # typecheck → tests → APK → identity gate → OneDrive
+bash scripts/ship.sh --fast     # skip tests (assets-only change)
+bash scripts/ship.sh --verify   # checks only, no build
+npx expo export --platform web  # web build into dist/
+```
+
+`ship.sh` refuses to stage anything whose applicationId is not
+`com.spall.peggybank.dev`, so the production app can never be overwritten.
+
+**Run gradle through bash, never `npm run` or a Node `spawn`.** Both mangle the
+environment on this machine and fail with *"The filename, directory name, or
+volume label syntax is incorrect"* while the identical bash command succeeds.
+
+### Things that have bitten us
+- **Editing files with escaped regex**: writing `\b` through a shell/Node string
+  can land a literal backspace (0x08) in the source. That silently broke every
+  receipt category once. Edit via a script file, then grep the result for stray
+  control characters.
+- **Line endings**: git checkout rewrites files as CRLF, so `\n`-based string
+  matching stops working. Normalise before patching.
+- **Icon assets**: keep them at 256×256 (`node scripts/resize-icons.js`). At
+  1254×1254 they cost 59 MB and make the web build unusable.
+- **`app.config.js` must exist on the working branch** — it supplies the `.dev`
+  identity. Without it a prebuild produces a PRODUCTION-package APK.
