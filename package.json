@@ -22,7 +22,9 @@
     "maestro:pin": "maestro test maestro/04_pin_unpin_goal.yaml",
     "maestro:theme": "maestro test maestro/05_theme_switch.yaml",
     "maestro:nav": "maestro test maestro/06_navigation.yaml",
-    "maestro:all": "maestro test maestro/"
+    "maestro:all": "maestro test maestro/",
+    "ship": "node scripts/ship.js",
+    "verify": "node scripts/ship.js --verify-only"
   },
   "jest": {
     "preset": "jest-expo",
