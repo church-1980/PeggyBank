@@ -1,0 +1,15 @@
+# Required for the web build to work at all.
+#
+# expo-sqlite runs SQLite in the browser through wa-sqlite, and its worker
+# channel allocates a SharedArrayBuffer. Browsers only expose SharedArrayBuffer
+# to CROSS-ORIGIN ISOLATED pages, which means the server must send both headers
+# below. Served without them, the database layer throws on startup — the build
+# succeeding tells you nothing about this.
+#
+# This file is the Netlify / Cloudflare Pages format and is copied into dist/ by
+# `expo export`. Other hosts need the same two headers configured their own way;
+# `npx serve` and `python -m http.server` do NOT send them, so local testing of
+# persistence needs a server that does.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
