@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen } from '../components/peggy';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { IconKey } from '../data/iconRegistry';
 
@@ -50,7 +51,7 @@ export default function MoreScreen({ navigation }: any) {
   const styles = useMemo(() => makeStyles(C), [C]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <PeggyScreen>
       <Text style={styles.title}>More</Text>
       <Text style={styles.subtitle}>All your tools, in one calm place.</Text>
 
@@ -77,7 +78,7 @@ export default function MoreScreen({ navigation }: any) {
           );
         })}
       </View>
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 

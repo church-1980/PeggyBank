@@ -10,6 +10,7 @@ import { getDatabase, wipeAllLocalData } from '../database/database';
 import { wipeAllReceipts, saveAcceptedImage, deleteReceiptImage, isOwnedReceipt } from '../lib/receiptStorage';
 import { wipeAllLogos } from '../lib/customLogos';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen } from '../components/peggy';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 
 /**
@@ -113,7 +114,7 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: Spacing.lg, paddingTop: insets.top + Spacing.md, paddingBottom: insets.bottom + 40 }}>
+    <PeggyScreen>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Ionicons name="chevron-down" size={26} color={C.textSecondary} />
@@ -222,7 +223,7 @@ export default function ProfileScreen({ navigation }: any) {
           )}
         </View>
       )}
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 

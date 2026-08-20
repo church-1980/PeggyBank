@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen } from '../components/peggy';
 
 const SHARE_URL = 'https://peggybank.app';
 const SHARE_MESSAGE = `PeggyBank — calm, private budgeting that lives entirely on your phone.\n\nNo accounts. No internet. No stress.\n\n${SHARE_URL}`;
@@ -21,10 +22,7 @@ export default function ShareScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: insets.top }]}
-      contentContainerStyle={styles.content}
-    >
+    <PeggyScreen>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
@@ -72,7 +70,7 @@ export default function ShareScreen({ navigation }: any) {
       </View>
 
       <View style={{ height: insets.bottom + 20 }} />
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 
