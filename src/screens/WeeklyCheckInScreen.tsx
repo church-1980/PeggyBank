@@ -12,6 +12,7 @@ import { CATEGORIES } from '../data/categories';
 import { Category, Bill } from '../types';
 import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen, PeggyHeader } from '../components/peggy';
 
 interface WeekData {
   thisWeekTotal: number;
@@ -189,17 +190,10 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
   const message = data ? encouragementMessage(data) : '';
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+    <PeggyScreen>
+      <PeggyHeader title="Weekly Check-In" onBack={() => navigation.goBack()} />
 
-      <Text style={styles.title}>Weekly Check-In</Text>
+      
       <Text style={styles.subtitle}>A gentle look at your week.</Text>
 
       <View style={styles.mainCard}>
@@ -346,14 +340,12 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
           <Ionicons name="chevron-forward" size={16} color={C.textHint} />
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:    { flex: 1, backgroundColor: C.bg },
-    content:      { paddingHorizontal: Spacing.md },
 
     backRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.lg, gap: 4 },
     backText:     { ...Typography.small, color: C.textSecondary },

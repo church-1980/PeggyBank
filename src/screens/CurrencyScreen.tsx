@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen, PeggyHeader } from '../components/peggy';
 
 interface CurrencyRate {
   code: string;
@@ -290,12 +291,8 @@ export default function CurrencyScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
-        <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
+    <PeggyScreen>
+        <PeggyHeader title="Currency" onBack={() => navigation.goBack()} />
         <Text style={styles.title}>Currency Calculator</Text>
         <View style={styles.subtitleRow}>
           <Text style={styles.subtitle}>Works offline. Tap any rate to edit manually.</Text>
@@ -399,7 +396,6 @@ export default function CurrencyScreen({ navigation }: any) {
             </TouchableOpacity>
           ))}
         </View>
-      </ScrollView>
 
       {pickingFrom && <CurrencyPicker rates={rates} current={fromCode} onSelect={(c) => { setFromCode(c); setResult(null); }} onClose={() => setPickingFrom(false)} styles={styles} />}
       {pickingTo && <CurrencyPicker rates={rates} current={toCode} onSelect={(c) => { setToCode(c); setResult(null); }} onClose={() => setPickingTo(false)} styles={styles} />}
@@ -440,13 +436,12 @@ export default function CurrencyScreen({ navigation }: any) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:       { flex: 1, backgroundColor: C.bg },
     content:         { padding: Spacing.md, paddingTop: Spacing.md },
 
     backRow:         { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.lg, gap: 4 },

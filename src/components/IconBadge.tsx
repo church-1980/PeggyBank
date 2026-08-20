@@ -1,74 +1,46 @@
 import React from 'react';
-import { View, Image, StyleProp, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import {
-  Radius, IconSize, IconBadgeSize,
-  CONCEPT_ICON, CONCEPT_ICON_INLINE, CONCEPT_ICON_TIER_THRESHOLD, CONCEPT_ICON_FILL,
-} from '../theme';
-import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
+import { StyleProp, ViewStyle } from 'react-native';
+import PeggyIconFrame from './peggy/PeggyIconFrame';
+import { IconKey } from '../data/iconRegistry';
 
 /**
- * IconBadge — THE single standard container for a category/concept icon.
+ * DEPRECATED — kept only so existing call sites keep compiling.
  *
- * One shape everywhere: a soft rounded square tinted with the concept color.
- * Resolves its artwork from the icon registry by `iconKey`, so it renders the
- * premium PNG the moment one exists for that bucket, and the Ionicon fallback
- * until then — no call site changes when the PNGs land.
+ * This used to be a SECOND, independent implementation of the concept-icon
+ * container, competing with PeggyIconFrame: its own box, its own radius, its own
+ * tint maths, its own artwork sizing. Two implementations meant two appearances
+ * for the same idea, which is why icons drifted between screens.
  *
- * Use this for every category/goal concept icon. Do not build ad-hoc icon
- * wrappers on individual screens.
+ * It is now a thin adapter over PeggyIconFrame, so there is exactly ONE
+ * implementation of concept-icon framing in the app. Nothing here decides how an
+ * icon looks any more.
+ *
+ * Do not use in new code. Use PeggyIconFrame directly:
+ *     <PeggyIconFrame iconKey="bills" size="card" shape="tile" />
  */
 
 interface Props {
   iconKey: IconKey;
   color: string;
-  size?: number;      // container size (default = IconBadgeSize)
-  iconSize?: number;  // glyph size (default = IconSize.sm) — use only IconSize.*
-  tinted?: boolean;   // tinted background (default true)
-  overrideSource?: any;   // user-attached custom logo — overrides the concept icon
+  size?: number;
+  iconSize?: number;      // ignored: artwork scale is owned by PeggyIconFrame
+  tinted?: boolean;
+  overrideSource?: any;
   style?: StyleProp<ViewStyle>;
 }
 
 export default function IconBadge({
-  iconKey,
-  color,
-  size = IconBadgeSize,
-  iconSize = IconSize.sm,
-  tinted = true,
-  overrideSource,
-  style,
+  iconKey, color, size, tinted = true, overrideSource, style,
 }: Props) {
-  const entry = ICON_REGISTRY[iconKey] ?? ICON_REGISTRY.other;
-  // Snap to one of two uniform tiers so icons match everywhere in the same
-  // context: inline (chips/tabs/toggles) or standard (tiles/rows/cards).
-  const box = size < CONCEPT_ICON_TIER_THRESHOLD ? CONCEPT_ICON_INLINE : CONCEPT_ICON;
-  const img = Math.round(box * CONCEPT_ICON_FILL);
-  const glyph = Math.round(box * 0.62);
   return (
-    <View
-      style={[
-        {
-          width: box,
-          height: box,
-          borderRadius: Radius.sm,
-          backgroundColor: overrideSource ? '#FFFFFF' : tinted ? color + '18' : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-        },
-        style,
-      ]}
-    >
-      {overrideSource ? (
-        <Image source={overrideSource} style={{ width: box, height: box, resizeMode: 'cover' }} />
-      ) : entry.image ? (
-        <Image
-          source={entry.image}
-          style={{ width: img, height: img, resizeMode: 'contain' }}
-        />
-      ) : (
-        <Ionicons name={entry.ionicon} size={glyph} color={color} />
-      )}
-    </View>
+    <PeggyIconFrame
+      iconKey={iconKey}
+      tone={color}
+      size={size}
+      shape="tile"
+      tinted={tinted}
+      overrideSource={overrideSource}
+      style={style}
+    />
   );
 }

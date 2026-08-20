@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen, PeggyHeader } from '../components/peggy';
 import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
 import PeggyAvatar from '../components/peggy/PeggyAvatar';
 import {
@@ -158,16 +159,10 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
-    >
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+    <PeggyScreen>
+      <PeggyHeader title="Settings" onBack={() => navigation.goBack()} />
 
-      <Text style={styles.title}>Settings</Text>
+      
 
       <Text style={styles.sectionLabel}>APP</Text>
       <View style={styles.section}>
@@ -253,14 +248,12 @@ export default function SettingsScreen({ navigation }: any) {
           and intellectual property law. Unauthorized reproduction or distribution is prohibited.
         </Text>
       </View>
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:    { flex: 1, backgroundColor: C.bg },
-    content:      { paddingHorizontal: Spacing.md },
 
     backRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.lg, gap: 4 },
     backText:     { ...Typography.small, color: C.textSecondary },

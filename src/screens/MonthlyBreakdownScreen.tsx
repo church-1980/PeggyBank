@@ -10,6 +10,7 @@ import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen, PeggyHeader } from '../components/peggy';
 import IconBadge from '../components/IconBadge';
 
 interface CategoryTotal {
@@ -88,14 +89,8 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
   const leftover = (data?.totalIncome ?? 0) - (data?.totalSpending ?? 0);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
-    >
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+    <PeggyScreen>
+      <PeggyHeader onBack={() => navigation.goBack()} />
 
       {/* Month navigation */}
       <View style={styles.monthNav}>
@@ -202,14 +197,12 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
         <Text style={styles.closeBtnText}>Close</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:     { flex: 1, backgroundColor: C.bg },
-    content:       { paddingHorizontal: Spacing.md },
 
     backRow:       { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md, gap: 4 },
     backText:      { ...Typography.small, color: C.textSecondary },

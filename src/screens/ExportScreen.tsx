@@ -11,6 +11,7 @@ import {
 import { exportBackup, importBackup } from '../lib/backup';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { PeggyScreen, PeggyHeader } from '../components/peggy';
 
 interface ExportDef {
   label: string;
@@ -75,16 +76,10 @@ export default function ExportScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
-    >
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+    <PeggyScreen>
+      <PeggyHeader title="Export & Backup" onBack={() => navigation.goBack()} />
 
-      <Text style={styles.title}>Export & Backup</Text>
+      
       <Text style={styles.subtitle}>Everything stays on your phone. Share files to save them elsewhere.</Text>
 
       <Text style={styles.sectionLabel}>FULL BACKUP</Text>
@@ -188,14 +183,12 @@ export default function ExportScreen({ navigation }: any) {
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
         <Text style={styles.closeBtnText}>Close</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:      { flex: 1, backgroundColor: C.bg },
-    content:        { paddingHorizontal: Spacing.md },
 
     backRow:        { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.lg, gap: 4 },
     backText:       { ...Typography.small, color: C.textSecondary },

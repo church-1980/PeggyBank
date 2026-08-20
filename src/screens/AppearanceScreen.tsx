@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useColors, AppearanceMode } from '../context/ThemeContext';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
+import { PeggyScreen, PeggyHeader } from '../components/peggy';
 
 interface Option {
   mode:  AppearanceMode;
@@ -27,16 +28,10 @@ export default function AppearanceScreen({ navigation }: any) {
   const styles = useMemo(() => makeStyles(C), [C]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}
-    >
-      <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-        <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
-        <Text style={styles.backText}>Back</Text>
-      </TouchableOpacity>
+    <PeggyScreen>
+      <PeggyHeader title="Appearance" onBack={() => navigation.goBack()} />
 
-      <Text style={styles.title}>Appearance</Text>
+      
       <Text style={styles.subtitle}>
         Choose how PeggyBank looks. Both modes are designed to feel calm and easy to read.
       </Text>
@@ -77,14 +72,12 @@ export default function AppearanceScreen({ navigation }: any) {
           Your choice is saved on this phone and never shared.
         </Text>
       </View>
-    </ScrollView>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: C.bg },
-    content:   { paddingHorizontal: Spacing.md },
 
     backRow:   { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: Spacing.lg },
     backText:  { ...Typography.small, color: C.textSecondary },
