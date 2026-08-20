@@ -1,3 +1,4 @@
+import { localDateString } from '../core/datetime';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -15,7 +16,7 @@ export async function exportBackup(): Promise<void> {
   const backup = await buildBackup(db);
 
   const json = JSON.stringify(backup, null, 2);
-  const filename = `peggybank_backup_${new Date().toISOString().split('T')[0]}.json`;
+  const filename = `peggybank_backup_${localDateString(new Date())}.json`;
   const uri = FileSystem.documentDirectory + filename;
   await FileSystem.writeAsStringAsync(uri, json, {
     encoding: FileSystem.EncodingType.UTF8,

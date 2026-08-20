@@ -1,3 +1,6 @@
+import { localDateString, localMonthRange } from '../core/datetime';
+import { loadFinanceSummary } from '../lib/financeSummary';
+import { unpaidBillsForCurrentCycles } from '../lib/billCycles';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
@@ -64,8 +67,8 @@ function getWeekBounds(offsetWeeks = 0): { start: string; end: string } {
   const end = new Date(startOfThisWeek);
   end.setDate(startOfThisWeek.getDate() + 6);
   return {
-    start: startOfThisWeek.toISOString().split('T')[0],
-    end: end.toISOString().split('T')[0],
+    start: localDateString(startOfThisWeek),
+    end: localDateString(end),
   };
 }
 
@@ -146,8 +149,7 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
       const thisWeek = getWeekBounds(0);
       const lastWeek = getWeekBounds(-1);
       const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      const { start: monthStart, end: monthEnd } = localMonthRange(now);
 
       const [
         thisWeekResult, lastWeekResult, topCatResult,
@@ -161,11 +163,17 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
         db.getAllAsync<Bill>(`SELECT * FROM bills ORDER BY due_day ASC`),
       ]);
 
-      const monthIncome = monthIncomeResult?.total ?? 0;
-      const monthSpending = monthSpendResult?.total ?? 0;
-      const unpaidBillsTotal = billsResult.filter(b => !b.is_paid).reduce((s, b) => s + b.amount, 0);
-      const safeToSpend = Math.max(0, monthIncome - monthSpending - unpaidBillsTotal);
-      const daysLeftInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+      // The month's figures come from the ONE shared engine, so this screen can
+      // never disagree with the Dashboard. It used to work them out itself and
+      // got three things wrong: it read the old is_paid flag (so paying a bill
+      // once marked it paid forever), it ignored subscriptions, and it ignored
+      // money already committed to savings goals.
+      const summary = await loadFinanceSummary(db, now);
+      const { monthIncome, monthSpending, safeToSpend, daysLeftInMonth } = summary;
+
+      // Which specific bills are still owed THIS cycle, for the "coming up" list.
+      const unpaidNow = await unpaidBillsForCurrentCycles(db);
+      const unpaidIds = new Set(unpaidNow.map(b => b.id));
 
       setData({
         thisWeekTotal: thisWeekResult?.total ?? 0,
@@ -173,8 +181,8 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
         monthIncome,
         monthSpending,
         topCategory: topCatResult ?? null,
-        upcomingBills: billsResult.filter(b => !b.is_paid).slice(0, 2),
-        paidBillsCount: billsResult.filter(b => b.is_paid).length,
+        upcomingBills: billsResult.filter(b => b.id != null && unpaidIds.has(b.id)).slice(0, 2),
+        paidBillsCount: billsResult.filter(b => b.id != null && !unpaidIds.has(b.id)).length,
         totalBillsCount: billsResult.length,
         daysLeftInMonth,
         safeToSpend,

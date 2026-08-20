@@ -1,3 +1,4 @@
+import { localDateString } from '../core/datetime';
 import { getDatabase } from '../database/database';
 
 /**
@@ -90,7 +91,7 @@ export async function rememberMerchant(input: {
   if (!key) return;
   try {
     const db = await getDatabase();
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateString(new Date());
     const prev = await db.getFirstAsync<any>(
       `SELECT times_seen, avg_amount FROM merchant_memory WHERE name_key = ?`, [key]
     );

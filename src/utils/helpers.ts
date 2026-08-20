@@ -1,20 +1,16 @@
+import { localDateString, localMonthRange } from '../core/datetime';
 export function formatCurrency(amount: number): string {
   return '$' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+// Today's date in the user's OWN timezone. Delegates to the canonical helper:
+// reading it in UTC put every evening entry on the following day.
 export function getTodayString(): string {
-  return new Date().toISOString().split('T')[0];
+  return localDateString(new Date());
 }
 
 export function getMonthRange(): { start: string; end: string } {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1)
-    .toISOString()
-    .split('T')[0];
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    .toISOString()
-    .split('T')[0];
-  return { start, end };
+  return localMonthRange(new Date());
 }
 
 // Days until a specific day-of-month (e.g. the 15th)

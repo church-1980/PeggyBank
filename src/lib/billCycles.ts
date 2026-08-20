@@ -1,3 +1,4 @@
+import { localDateString, parseLocalDate } from '../core/datetime';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 /**
@@ -24,7 +25,7 @@ export interface CycleBill {
   billing_day?: number | null;
 }
 
-const iso = (d: Date) => d.toISOString().split('T')[0];
+const iso = (d: Date) => localDateString(d);
 
 /**
  * The date of the occurrence currently in play — the most recent due date that
@@ -49,7 +50,11 @@ export function currentCycleDate(bill: CycleBill, ref: Date = new Date()): strin
 
 /** The occurrence after the current one — used for "next due". */
 export function nextCycleDate(bill: CycleBill, ref: Date = new Date()): string {
-  const current = new Date(currentCycleDate(bill, ref));
+  // parseLocalDate, NOT new Date(string): a bare "YYYY-MM-DD" is parsed as UTC
+  // midnight, which in Toronto is 8pm the PREVIOUS day. That used to be masked
+  // by formatting the result back through UTC -- two bugs cancelling out, but
+  // only in negative-offset timezones.
+  const current = parseLocalDate(currentCycleDate(bill, ref));
   if (bill.frequency === 'weekly' && bill.due_weekday != null) {
     current.setDate(current.getDate() + 7);
   } else {
@@ -130,6 +135,29 @@ export async function unpaidTotalForCurrentCycles(
   }
 
   return total;
+}
+
+/**
+ * WHICH bills are still owed for their current occurrence.
+ *
+ * The sibling of unpaidTotalForCurrentCycles, for screens that need to list the
+ * bills rather than just add them up. Both walk the same cycle logic, so a
+ * screen's "coming up" list can never contradict the total it sits next to.
+ */
+export async function unpaidBillsForCurrentCycles(
+  db: SQLiteDatabase, ref: Date = new Date()
+): Promise<{ id: number; amount: number }[]> {
+  const out: { id: number; amount: number }[] = [];
+
+  const bills = await db.getAllAsync<CycleBill & { amount: number }>(
+    `SELECT id, amount, frequency, due_day, due_weekday FROM bills`
+  );
+  const paidBills = await paidCyclesFor(db, 'bill');
+  for (const b of bills) {
+    if (!paidBills.get(b.id)?.has(currentCycleDate(b, ref))) out.push({ id: b.id, amount: b.amount });
+  }
+
+  return out;
 }
 
 /** Occurrences paid within a date range — for Monthly Breakdown. */

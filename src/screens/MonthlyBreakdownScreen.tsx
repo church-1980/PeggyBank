@@ -1,3 +1,4 @@
+import { localMonthRange } from '../core/datetime';
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -39,8 +40,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       const db = await getDatabase();
       const now = new Date();
       const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-      const start = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1).toISOString().split('T')[0];
-      const end = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).toISOString().split('T')[0];
+      const { start, end } = localMonthRange(targetDate);
 
       const [incomeResult, expenseResult, categoryResult, billsResult] = await Promise.all([
         db.getFirstAsync<{ total: number }>(`SELECT COALESCE(SUM(amount),0) as total FROM income WHERE date>=? AND date<=?`, [start, end]),

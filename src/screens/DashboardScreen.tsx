@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
 import { unpaidTotalForCurrentCycles, currentCycleDate, paidCyclesFor } from '../lib/billCycles';
+import { loadFinanceSummary } from '../lib/financeSummary';
 import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
 import { SavingsGoal, Bill, Category } from '../types';
 import { Spacing, Typography, IconSize } from '../theme';
@@ -77,17 +78,11 @@ export default function DashboardScreen({ navigation }: any) {
       setProfileName(nameRow?.value?.trim() ?? '');
       setProfilePhoto(photoRow?.value ? photoRow.value : null);
 
-      const incomeResult = await db.getFirstAsync<{ total: number }>(
-        `SELECT COALESCE(SUM(amount), 0) as total FROM income WHERE date >= ? AND date <= ?`,
-        [start, end]
-      );
-      const expenseResult = await db.getFirstAsync<{ total: number }>(
-        `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE date >= ? AND date <= ?`,
-        [start, end]
-      );
-
-      const totalIncome = incomeResult?.total ?? 0;
-      const totalSpending = expenseResult?.total ?? 0;
+      // Every figure on this screen comes from the ONE shared engine, so the
+      // Dashboard and the Weekly Check-In can never show different amounts.
+      const finance = await loadFinanceSummary(db);
+      const totalIncome = finance.monthIncome;
+      const totalSpending = finance.monthSpending;
 
       const pinnedGoalsResult = await db.getAllAsync<SavingsGoal>(
         `SELECT * FROM savings_goals WHERE pinned = 1 ORDER BY created_at ASC`
@@ -104,15 +99,12 @@ export default function DashboardScreen({ navigation }: any) {
         (b) => !paidBillCycles.get(b.id as number)?.has(currentCycleDate(b as any))
       );
 
-      const goalsResult = await db.getAllAsync<SavingsGoal>(
-        `SELECT * FROM savings_goals ORDER BY created_at DESC LIMIT 3`
-      );
-      const goalsSavingsNeeded = goalsResult.reduce((sum, g) => {
-        return sum + Math.max(0, g.target_amount - g.current_amount) / 12;
-      }, 0);
-
-      const moneyLeft = totalIncome - totalSpending;
-      const safeToSpend = Math.max(0, moneyLeft - unpaidTotal - goalsSavingsNeeded);
+      // NOTE: this used to read only the three most recent goals (LIMIT 3), so a
+      // person with four or more goals had the rest silently left out of Safe to
+      // Spend, and was told more was safe than really was. The shared engine
+      // counts every goal.
+      const moneyLeft = finance.moneyLeft;
+      const safeToSpend = finance.safeToSpend;
 
       setSummary({ totalIncome, totalSpending, moneyLeft, safeToSpend });
 
@@ -120,6 +112,13 @@ export default function DashboardScreen({ navigation }: any) {
         (a, b) => getDaysUntil(a.due_day ?? 1) - getDaysUntil(b.due_day ?? 1)
       );
       setUpcomingBills(sortedBills.slice(0, 3));
+
+      // A few goal names, only so the suggestion below can mention one.
+      // DISPLAY ONLY: Safe to Spend counts every goal via the shared engine,
+      // never this shortened list.
+      const goalsResult = await db.getAllAsync<SavingsGoal>(
+        `SELECT * FROM savings_goals ORDER BY created_at DESC LIMIT 3`
+      );
 
       if (safeToSpend > 50 && totalIncome > 0) {
         const extra = Math.round(safeToSpend * 0.2);

@@ -1,3 +1,4 @@
+import { localDateString } from "../core/datetime";
 import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase | null = null;
@@ -177,7 +178,7 @@ export async function setupDatabase(): Promise<void> {
     );
     if (!migrated) {
       const now = new Date();
-      const isoDay = (d: Date) => d.toISOString().split("T")[0];
+      const isoDay = (d: Date) => localDateString(d);
       const monthly = (day: number | null) =>
         isoDay(new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(day ?? 1, 1), 28)));
       const weekly = (wd: number) => {
@@ -253,10 +254,16 @@ export async function setupDatabase(): Promise<void> {
 }
 
 // Every PeggyBank-owned table. Used by the destructive wipe.
+// Every table Delete All Data must empty. Kept in step with
+// src/lib/tableClassification.ts, which a test enforces -- currency_rates and
+// conversion_history are created inside CurrencyScreen rather than here, and
+// were missing from this list, so a user who asked for their data to be deleted
+// kept their conversion history.
 const ALL_TABLES = [
   'expenses', 'income', 'bills', 'savings_goals',
   'debts', 'subscriptions', 'calendar_reminders', 'settings', 'custom_logos',
   'merchant_memory', 'bill_payments',
+  'currency_rates', 'conversion_history',
 ];
 
 /**
