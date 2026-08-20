@@ -131,6 +131,21 @@ export async function setupDatabase(): Promise<void> {
       times_seen    INTEGER DEFAULT 1,
       last_seen     TEXT
     );
+
+    -- ONE BILLING OCCURRENCE being paid. Payment state belongs here, not on
+    -- the bill: is_paid on the bill itself is permanent, so paying August
+    -- also marked September paid. Keyed by the date the occurrence fell due,
+    -- so months and weeks are independent and history stays true.
+    CREATE TABLE IF NOT EXISTS bill_payments (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      bill_id    INTEGER NOT NULL,
+      source     TEXT NOT NULL,          -- 'bill' | 'subscription'
+      cycle_date TEXT NOT NULL,          -- due date of THIS occurrence
+      paid       INTEGER DEFAULT 1,
+      paid_at    TEXT,
+      amount     REAL,
+      UNIQUE(source, bill_id, cycle_date)
+    );
   `);
 
   // Safe migrations — silently skip if column already exists
@@ -149,6 +164,61 @@ export async function setupDatabase(): Promise<void> {
     try { await database.execAsync(sql + ';'); } catch {}
   }
 
+  // ── ONE-TIME MIGRATION: is_paid -> per-cycle occurrences ───────────────────
+  // Existing is_paid=1 means "paid", but carries no date. The only defensible
+  // reading is that the user paid the occurrence that is CURRENT right now, so
+  // each flagged bill/subscription gets exactly one bill_payments row for its
+  // current cycle. Nothing is deleted: the bills and subscriptions rows, and
+  // their is_paid columns, are left untouched so this is reversible and no
+  // definition is lost. Guarded by a flag so it runs once.
+  try {
+    const migrated = await database.getFirstAsync<{ value: string }>(
+      `SELECT value FROM settings WHERE key = 'bill_cycles_migrated_v1'`
+    );
+    if (!migrated) {
+      const now = new Date();
+      const isoDay = (d: Date) => d.toISOString().split("T")[0];
+      const monthly = (day: number | null) =>
+        isoDay(new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(day ?? 1, 1), 28)));
+      const weekly = (wd: number) => {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        d.setDate(d.getDate() - ((d.getDay() - wd + 7) % 7));
+        return isoDay(d);
+      };
+
+      const paidBills = await database.getAllAsync<any>(
+        `SELECT id, amount, frequency, due_day, due_weekday FROM bills WHERE is_paid = 1`
+      ).catch(() => []);
+      for (const b of paidBills) {
+        const cycle = b.frequency === "weekly" && b.due_weekday != null
+          ? weekly(b.due_weekday) : monthly(b.due_day);
+        await database.runAsync(
+          `INSERT OR IGNORE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount)
+           VALUES (?, 'bill', ?, 1, ?, ?)`,
+          [b.id, cycle, new Date().toISOString(), b.amount ?? null]
+        );
+      }
+
+      const paidSubs = await database.getAllAsync<any>(
+        `SELECT id, amount, billing_day FROM subscriptions WHERE is_paid = 1`
+      ).catch(() => []);
+      for (const sub of paidSubs) {
+        await database.runAsync(
+          `INSERT OR IGNORE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount)
+           VALUES (?, 'subscription', ?, 1, ?, ?)`,
+          [sub.id, monthly(sub.billing_day), new Date().toISOString(), sub.amount ?? null]
+        );
+      }
+
+      await database.runAsync(
+        `INSERT OR REPLACE INTO settings (key, value) VALUES ('bill_cycles_migrated_v1', 'done')`
+      );
+      const n = paidBills.length + paidSubs.length;
+      if (n > 0) console.log(`[db] migrated ${n} paid flag(s) to per-cycle occurrences`);
+    }
+  } catch (e) {
+    console.warn('[db] bill cycle migration skipped:', e);
+  }
   // ── ONE-TIME CLEANUP: duplicate paychecks ──────────────────────────────────
   // The Payday Planner used to INSERT a new 'Paycheck' income row on every save,
   // so re-saving a plan stacked several rows for the same day and inflated
@@ -186,7 +256,7 @@ export async function setupDatabase(): Promise<void> {
 const ALL_TABLES = [
   'expenses', 'income', 'bills', 'savings_goals',
   'debts', 'subscriptions', 'calendar_reminders', 'settings', 'custom_logos',
-  'merchant_memory',
+  'merchant_memory', 'bill_payments',
 ];
 
 /**

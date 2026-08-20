@@ -18,6 +18,7 @@ import { useCustomLogos } from '../context/CustomLogoContext';
 import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
 import { getNotificationMode, rescheduleAll } from '../lib/notifications';
 import { rememberMerchant } from '../lib/merchantMemory';
+import { currentCycleDate, setCyclePaid, paidCyclesFor } from '../lib/billCycles';
 
 interface Subscription {
   id?: number;
@@ -71,6 +72,8 @@ export default function BillsScreen({ navigation, route }: any) {
   const styles = useMemo(() => makeStyles(C), [C]);
 
   const [bills, setBills] = useState<Bill[]>([]);
+  const [paidBills, setPaidBills] = useState<Map<number, Set<string>>>(new Map());
+  const [paidSubs, setPaidSubs] = useState<Map<number, Set<string>>>(new Map());
   const [subs, setSubs] = useState<Subscription[]>([]);
 
   // Unified modal state
@@ -87,17 +90,28 @@ export default function BillsScreen({ navigation, route }: any) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
+  /** Is THIS bill's current occurrence paid? */
+  const billPaid = (b: Bill) =>
+    !!paidBills.get(b.id as number)?.has(currentCycleDate(b as any));
+  const subPaid = (sub: Subscription) =>
+    !!paidSubs.get(sub.id as number)?.has(currentCycleDate({ id: sub.id as number, billing_day: sub.billing_day }));
+
   const loadAll = useCallback(async () => {
     try {
       const db = await getDatabase();
       const billsResult = await db.getAllAsync<Bill>(
-        `SELECT * FROM bills ORDER BY is_paid ASC, due_day ASC`
+        `SELECT * FROM bills ORDER BY due_day ASC`
       );
       setBills(billsResult ?? []);
       const subsResult = await db.getAllAsync<Subscription>(
-        `SELECT * FROM subscriptions ORDER BY is_paid ASC, billing_day ASC`
+        `SELECT * FROM subscriptions ORDER BY billing_day ASC`
       );
       setSubs(subsResult ?? []);
+
+      // Payment state comes from the OCCURRENCE table, not the bill row, so
+      // last month's payment does not mark this month paid.
+      setPaidBills(await paidCyclesFor(db, 'bill'));
+      setPaidSubs(await paidCyclesFor(db, 'subscription'));
 
       // Keep due-date reminders in step with what's actually on this screen —
       // loadAll runs after every add/edit/delete/mark-paid.
@@ -209,7 +223,7 @@ export default function BillsScreen({ navigation, route }: any) {
     if (bill.id == null) return;
     try {
       const db = await getDatabase();
-      await db.runAsync(`UPDATE bills SET is_paid=? WHERE id=?`, [bill.is_paid ? 0 : 1, bill.id]);
+      await setCyclePaid(db, 'bill', bill.id, currentCycleDate(bill as any), !billPaid(bill), bill.amount);
       loadAll();
     } catch (e) {
       console.error('[Bills] togglePaid error:', e);
@@ -238,7 +252,7 @@ export default function BillsScreen({ navigation, route }: any) {
     if (sub.id == null) return;
     try {
       const db = await getDatabase();
-      await db.runAsync(`UPDATE subscriptions SET is_paid=? WHERE id=?`, [sub.is_paid ? 0 : 1, sub.id]);
+      await setCyclePaid(db, 'subscription', sub.id, currentCycleDate({ id: sub.id, billing_day: sub.billing_day }), !subPaid(sub), sub.amount);
       loadAll();
     } catch (e) {
       console.error('[Subscriptions] togglePaid error:', e);
@@ -265,8 +279,8 @@ export default function BillsScreen({ navigation, route }: any) {
   // ── Totals ────────────────────────────────────────────────────────────────
   const billsTotal  = bills.reduce((s, b) => s + b.amount, 0);
   const subsTotal   = subs.reduce((s, b) => s + b.amount, 0);
-  const billsPaid   = bills.filter((b) => b.is_paid).reduce((s, b) => s + b.amount, 0);
-  const subsPaid    = subs.filter((b) => b.is_paid).reduce((s, b) => s + b.amount, 0);
+  const billsPaid   = bills.filter(billPaid).reduce((s, b) => s + b.amount, 0);
+  const subsPaid    = subs.filter(subPaid).reduce((s, b) => s + b.amount, 0);
   const unpaidTotal = (billsTotal - billsPaid) + (subsTotal - subsPaid);
 
   const accentColor = modalType === 'subscription' ? C.subs : C.bills;
@@ -326,8 +340,9 @@ export default function BillsScreen({ navigation, route }: any) {
         ) : (
           bills.map((item) => {
             const daysLeft = billDaysLeft(item);
-            const urgent = daysLeft <= 3 && !item.is_paid;
-            const color = item.is_paid ? C.income : urgent ? C.spending : C.bills;
+            const paid = billPaid(item);
+            const urgent = daysLeft <= 3 && !paid;
+            const color = paid ? C.income : urgent ? C.spending : C.bills;
             return (
               <TouchableOpacity
                 key={item.id}
@@ -337,20 +352,20 @@ export default function BillsScreen({ navigation, route }: any) {
               >
                 <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
-                  <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
+                  <Text style={[styles.cardName, paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
-                    {item.is_paid ? 'Paid this cycle' : billDueLabel(item)}
+                    {paid ? 'Paid this cycle' : billDueLabel(item)}
                   </Text>
                 </View>
-                <Text style={[styles.cardAmount, { color }, !!item.is_paid && styles.paidText]}>
+                <Text style={[styles.cardAmount, { color }, paid && styles.paidText]}>
                   {formatCurrency(item.amount)}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: item.is_paid ? color + '20' : 'transparent' }]}
+                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
                   onPress={() => toggleBillPaid(item)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  {item.is_paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
+                  {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -373,8 +388,9 @@ export default function BillsScreen({ navigation, route }: any) {
         ) : (
           subs.map((item) => {
             const days = getDaysUntil(item.billing_day);
-            const urgent = days <= 3 && !item.is_paid;
-            const color = item.is_paid ? C.income : urgent ? C.spending : C.subs;
+            const paid = subPaid(item);
+            const urgent = days <= 3 && !paid;
+            const color = paid ? C.income : urgent ? C.spending : C.subs;
             return (
               <TouchableOpacity
                 key={item.id}
@@ -384,25 +400,25 @@ export default function BillsScreen({ navigation, route }: any) {
               >
                 <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
-                  <Text style={[styles.cardName, !!item.is_paid && styles.paidText]}>{item.name}</Text>
+                  <Text style={[styles.cardName, paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
-                    {item.is_paid
+                    {paid
                       ? 'Paid this cycle'
                       : days === 0 ? 'Charges today'
                       : days === 1 ? 'Charges tomorrow'
                       : `Charges in ${days} days`}
-                    {!item.is_paid ? ` · ${ordinal(item.billing_day)} of month` : ''}
+                    {!paid ? ` · ${ordinal(item.billing_day)} of month` : ''}
                   </Text>
                 </View>
-                <Text style={[styles.cardAmount, { color }, !!item.is_paid && styles.paidText]}>
+                <Text style={[styles.cardAmount, { color }, paid && styles.paidText]}>
                   {formatCurrency(item.amount)}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: item.is_paid ? color + '20' : 'transparent' }]}
+                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
                   onPress={() => toggleSubPaid(item)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  {item.is_paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
+                  {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
                 </TouchableOpacity>
               </TouchableOpacity>
             );

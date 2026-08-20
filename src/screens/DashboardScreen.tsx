@@ -3,6 +3,7 @@ import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
+import { unpaidTotalForCurrentCycles, currentCycleDate, paidCyclesFor } from '../lib/billCycles';
 import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
 import { SavingsGoal, Bill, Category } from '../types';
 import { Spacing, Typography, IconSize } from '../theme';
@@ -94,8 +95,14 @@ export default function DashboardScreen({ navigation }: any) {
       setPinnedGoals(pinnedGoalsResult);
 
       const bills = await db.getAllAsync<Bill>(`SELECT * FROM bills`);
-      const unpaidBills = bills.filter((b) => !b.is_paid);
-      const unpaidTotal = unpaidBills.reduce((sum, b) => sum + b.amount, 0);
+      // Only what is still owed for the CURRENT occurrence. Reading is_paid off
+      // the bill meant last month's payment silently reduced this month's total,
+      // and hid the bill from Coming Up forever.
+      const unpaidTotal = await unpaidTotalForCurrentCycles(db);
+      const paidBillCycles = await paidCyclesFor(db, 'bill');
+      const unpaidBills = bills.filter(
+        (b) => !paidBillCycles.get(b.id as number)?.has(currentCycleDate(b as any))
+      );
 
       const goalsResult = await db.getAllAsync<SavingsGoal>(
         `SELECT * FROM savings_goals ORDER BY created_at DESC LIMIT 3`

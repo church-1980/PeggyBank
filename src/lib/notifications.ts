@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { getDatabase } from '../database/database';
+import { currentCycleDate, paidCyclesFor } from './billCycles';
 
 export type NotificationMode = 'off' | 'minimal' | 'standard' | 'detailed' | 'aggressive';
 
@@ -149,24 +150,29 @@ export async function rescheduleAll(mode: NotificationMode): Promise<void> {
     type Due = { name: string; amount: number; date: Date };
     const dues: Due[] = [];
 
+    // Suppress only the occurrence that was actually paid — reading is_paid off
+    // the bill silenced every future reminder for that bill, permanently.
+    const paidBillCycles = await paidCyclesFor(db, 'bill');
+    const paidSubCycles = await paidCyclesFor(db, 'subscription');
+
     const bills = await db.getAllAsync<{
-      name: string; amount: number; frequency: string;
-      due_day: number | null; due_weekday: number | null; is_paid: number;
-    }>(`SELECT name, amount, frequency, due_day, due_weekday, is_paid FROM bills`);
+      id: number; name: string; amount: number; frequency: string;
+      due_day: number | null; due_weekday: number | null;
+    }>(`SELECT id, name, amount, frequency, due_day, due_weekday FROM bills`);
 
     for (const b of bills) {
-      if (b.is_paid) continue; // already handled this cycle
+      if (paidBillCycles.get(b.id)?.has(currentCycleDate(b, now))) continue;
       const date = b.frequency === 'weekly' && b.due_weekday != null
         ? nextWeeklyDue(b.due_weekday, now)
         : nextMonthlyDue(b.due_day ?? 1, now);
       dues.push({ name: b.name, amount: b.amount, date });
     }
 
-    const subs = await db.getAllAsync<{ name: string; amount: number; billing_day: number; is_paid: number }>(
-      `SELECT name, amount, billing_day, is_paid FROM subscriptions`
+    const subs = await db.getAllAsync<{ id: number; name: string; amount: number; billing_day: number }>(
+      `SELECT id, name, amount, billing_day FROM subscriptions`
     );
     for (const s of subs) {
-      if (s.is_paid) continue;
+      if (paidSubCycles.get(s.id)?.has(currentCycleDate(s, now))) continue;
       dues.push({ name: s.name, amount: s.amount, date: nextMonthlyDue(s.billing_day, now) });
     }
 

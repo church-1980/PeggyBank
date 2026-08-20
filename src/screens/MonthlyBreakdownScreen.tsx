@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
+import { currentCycleDate, paidCyclesFor } from '../lib/billCycles';
 import { formatCurrency } from '../utils/helpers';
 import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
@@ -44,16 +45,23 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         db.getFirstAsync<{ total: number }>(`SELECT COALESCE(SUM(amount),0) as total FROM income WHERE date>=? AND date<=?`, [start, end]),
         db.getFirstAsync<{ total: number }>(`SELECT COALESCE(SUM(amount),0) as total FROM expenses WHERE date>=? AND date<=?`, [start, end]),
         db.getAllAsync<CategoryTotal>(`SELECT category, SUM(amount) as total FROM expenses WHERE date>=? AND date<=? GROUP BY category ORDER BY total DESC`, [start, end]),
-        db.getAllAsync<{ is_paid: number; amount: number }>(`SELECT is_paid, amount FROM bills`),
+        db.getAllAsync<any>(`SELECT id, amount, frequency, due_day, due_weekday FROM bills`),
       ]);
+
+      // Which bills are paid for the occurrence falling in the month being viewed.
+      const paidMap = await paidCyclesFor(db, 'bill');
+      const ref = new Date(targetDate.getFullYear(), targetDate.getMonth(), 15);
+      const paidRows = billsResult.filter((b: any) =>
+        paidMap.get(b.id)?.has(currentCycleDate(b, ref))
+      );
 
       setData({
         totalIncome: incomeResult?.total ?? 0,
         totalSpending: expenseResult?.total ?? 0,
         categoryTotals: categoryResult,
-        billsPaid: billsResult.filter((b) => b.is_paid).length,
-        billsUnpaid: billsResult.filter((b) => !b.is_paid).length,
-        billsPaidAmount: billsResult.filter((b) => b.is_paid).reduce((s, b) => s + b.amount, 0),
+        billsPaid: paidRows.length,
+        billsUnpaid: billsResult.length - paidRows.length,
+        billsPaidAmount: paidRows.reduce((s: number, b: any) => s + b.amount, 0),
       });
     } catch {}
   }, [monthOffset]);
