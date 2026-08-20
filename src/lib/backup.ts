@@ -2,41 +2,17 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { getDatabase } from '../database/database';
+import { buildBackup, restoreBackup, RestoreReport } from './backupCore';
 
-interface BackupData {
-  version: number;
-  exportedAt: string;
-  expenses: unknown[];
-  income: unknown[];
-  bills: unknown[];
-  savings_goals: unknown[];
-  debts: unknown[];
-  subscriptions: unknown[];
-  settings: unknown[];
-}
+/**
+ * Export / restore, as the UI calls it. All database work lives in backupCore
+ * so it can be tested without a file picker; this file only handles picking,
+ * reading and sharing the file.
+ */
 
 export async function exportBackup(): Promise<void> {
   const db = await getDatabase();
-
-  const expenses = await db.getAllAsync(`SELECT * FROM expenses`);
-  const income = await db.getAllAsync(`SELECT * FROM income`);
-  const bills = await db.getAllAsync(`SELECT * FROM bills`);
-  const goals = await db.getAllAsync(`SELECT * FROM savings_goals`);
-  const debts = await db.getAllAsync(`SELECT * FROM debts`).catch(() => []);
-  const subs = await db.getAllAsync(`SELECT * FROM subscriptions`).catch(() => []);
-  const settings = await db.getAllAsync(`SELECT * FROM settings`);
-
-  const backup: BackupData = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    expenses,
-    income,
-    bills,
-    savings_goals: goals,
-    debts,
-    subscriptions: subs,
-    settings,
-  };
+  const backup = await buildBackup(db);
 
   const json = JSON.stringify(backup, null, 2);
   const filename = `peggybank_backup_${new Date().toISOString().split('T')[0]}.json`;
@@ -67,94 +43,29 @@ export async function importBackup(): Promise<{ success: boolean; message: strin
       return { success: false, message: 'No file selected.' };
     }
 
-    const fileUri = result.assets[0].uri;
-    const json = await FileSystem.readAsStringAsync(fileUri, {
+    const json = await FileSystem.readAsStringAsync(result.assets[0].uri, {
       encoding: FileSystem.EncodingType.UTF8,
     });
 
-    const backup = JSON.parse(json) as BackupData;
-
-    if (!backup.version || !backup.expenses) {
-      return { success: false, message: 'This file does not look like a PeggyBank backup.' };
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(json);
+    } catch {
+      // Nothing has been touched at this point — the user's data is untouched.
+      return { success: false, message: 'That file could not be read as a PeggyBank backup. Nothing was changed.' };
     }
 
     const db = await getDatabase();
+    const report: RestoreReport = await restoreBackup(db, parsed);
 
-    // Clear existing data
-    await db.execAsync(`
-      DELETE FROM expenses;
-      DELETE FROM income;
-      DELETE FROM bills;
-      DELETE FROM savings_goals;
-      DELETE FROM settings;
-    `);
-    await db.execAsync(`DELETE FROM debts;`).catch(() => {});
-    await db.execAsync(`DELETE FROM subscriptions;`).catch(() => {});
-
-    // Restore expenses
-    for (const row of backup.expenses as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO expenses (id, amount, category, note, date, photo_uri, is_recurring, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [row.id, row.amount, row.category, row.note, row.date, row.photo_uri, row.is_recurring, row.created_at]
-      );
+    let message = report.message;
+    if (report.success && report.missingImageRefs) {
+      message += ` ${report.missingImageRefs} photo${report.missingImageRefs === 1 ? '' : 's'} could not be recovered — images are not stored inside a backup file.`;
     }
-
-    // Restore income
-    for (const row of backup.income as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO income (id, amount, label, date, is_recurring, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [row.id, row.amount, row.label, row.date, row.is_recurring, row.created_at]
-      );
-    }
-
-    // Restore bills
-    for (const row of backup.bills as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO bills (id, name, amount, frequency, due_day, due_weekday, category, is_paid, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [row.id, row.name, row.amount, row.frequency, row.due_day, row.due_weekday, row.category, row.is_paid, row.created_at]
-      );
-    }
-
-    // Restore goals
-    for (const row of backup.savings_goals as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO savings_goals (id, name, target_amount, current_amount, deadline, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [row.id, row.name, row.target_amount, row.current_amount, row.deadline, row.created_at]
-      );
-    }
-
-    // Restore debts
-    for (const row of (backup.debts ?? []) as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO debts (id, name, total_amount, amount_paid, minimum_payment, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [row.id, row.name, row.total_amount, row.amount_paid, row.minimum_payment, row.created_at]
-      ).catch(() => {});
-    }
-
-    // Restore subscriptions
-    for (const row of (backup.subscriptions ?? []) as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO subscriptions (id, name, amount, billing_day, created_at)
-         VALUES (?, ?, ?, ?, ?)`,
-        [row.id, row.name, row.amount, row.billing_day, row.created_at]
-      ).catch(() => {});
-    }
-
-    // Restore settings
-    for (const row of backup.settings as Record<string, any>[]) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`,
-        [row.key, row.value]
-      );
-    }
-
-    return { success: true, message: `Backup restored from ${backup.exportedAt.split('T')[0]}.` };
+    return { success: report.success, message };
   } catch (e) {
-    return { success: false, message: `Could not restore backup. ${String(e)}` };
+    return { success: false, message: `Could not restore backup. Nothing was changed. ${String(e)}` };
   }
 }
+
+export { buildBackup, restoreBackup, validateBackup } from './backupCore';
