@@ -13,6 +13,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { PeggyScreen, PeggyHeader } from '../components/peggy';
 import IconBadge from '../components/IconBadge';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 interface CategoryTotal {
   category: string;
@@ -128,16 +129,16 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={styles.card}>
+      <PeggyCard style={styles.card}>
         <Text style={styles.cardLabel}>Money left over</Text>
         <Text style={[styles.leftover, { color: leftover >= 0 ? C.income : C.spending }]}>
           {formatCurrency(Math.abs(leftover))}
         </Text>
         {leftover < 0 && <Text style={styles.leftoverSub}>over budget this month</Text>}
-      </View>
+      </PeggyCard>
 
       {/* Bills summary */}
-      <View style={styles.card}>
+      <PeggyCard style={styles.card}>
         <Text style={styles.cardLabel}>Bills this month</Text>
         <View style={styles.statRow}>
           <View style={styles.statCell}>
@@ -160,11 +161,11 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
             <Text style={styles.statLabel}>Paid out</Text>
           </View>
         </View>
-      </View>
+      </PeggyCard>
 
       {/* Spending by category */}
       {(data?.categoryTotals.length ?? 0) > 0 ? (
-        <View style={styles.card}>
+        <PeggyCard style={styles.card}>
           <Text style={styles.cardLabel}>Where the money went</Text>
           {data!.categoryTotals.map((cat) => {
             const info = CATEGORIES[cat.category as Category] ?? CATEGORIES.other;
@@ -184,7 +185,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
               </View>
             );
           })}
-        </View>
+        </PeggyCard>
       ) : (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
@@ -226,11 +227,9 @@ function makeStyles(C: ColorPalette) {
     bigLabel:      { ...Typography.caption, color: C.textSecondary },
     bigNumber:     { ...Typography.h2, fontSize: 24 },
 
-    card: {
-      backgroundColor: C.bgCard, borderRadius: Radius.lg,
-      padding: Spacing.lg, marginBottom: Spacing.md,
-      borderWidth: 1, borderColor: C.border,
-    },
+    // PeggyCard supplies the surface, radius and shadow.
+    // Only this screen's roomier padding and spacing stay local.
+    card: { padding: Spacing.lg, marginBottom: Spacing.md },
     cardLabel:     { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
     leftover:      { ...Typography.hero, fontSize: 34 },
     leftoverSub:   { ...Typography.caption, color: C.spending, marginTop: 4 },

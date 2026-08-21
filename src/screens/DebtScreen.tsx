@@ -15,6 +15,7 @@ import { useColors } from '../context/ThemeContext';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 interface Debt {
   id?: number;
@@ -220,8 +221,7 @@ export default function DebtScreen({ navigation }: any) {
     const barColor = paid ? C.goals : pct >= 50 ? C.income : C.primary;
 
     return (
-      <TouchableOpacity
-        activeOpacity={1}
+      <PeggyCard
         style={[styles.card, paid && { borderLeftColor: C.goals }]}
       >
         <View style={styles.cardTop}>
@@ -302,7 +302,7 @@ export default function DebtScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         )}
-      </TouchableOpacity>
+      </PeggyCard>
     );
   };
 
@@ -339,9 +339,7 @@ export default function DebtScreen({ navigation }: any) {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <View style={styles.emptyIcon}>
-              <Ionicons name="trending-down-outline" size={34} color={C.textHint} />
-            </View>
+            <PeggyIconFrame iconKey="debt" size="feature" shape="circle" style={styles.emptyIcon} />
             <Text style={styles.emptyText}>No debts tracked</Text>
             <Text style={styles.emptySubText}>
               Add a debt and the app will calculate your payoff timeline and help you find faster paths forward.
@@ -484,9 +482,10 @@ function makeStyles(C: ColorPalette) {
     backBtn:    { width: 36, height: 36, borderRadius: 18, backgroundColor: C.bgElevated, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.border },
 
     list:        { padding: Spacing.md, paddingBottom: 100 },
+    // PeggyCard owns the surface, radius, padding and shadow.
+    // The left rail stays: it turns green when a debt is cleared.
     card: {
-      backgroundColor: C.bgCard, borderRadius: Radius.lg,
-      padding: Spacing.md, marginBottom: Spacing.md,
+      marginBottom: Spacing.md,
       borderWidth: 1, borderColor: C.border,
       borderLeftWidth: 3, borderLeftColor: C.primary,
     },
@@ -520,7 +519,8 @@ function makeStyles(C: ColorPalette) {
     payBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: C.primary, borderRadius: Radius.md, paddingVertical: 10 },
     payBtnText:  { ...Typography.smallBold, color: C.textOnPrimary },
     empty:        { alignItems: 'center', padding: Spacing.xl, marginTop: 60 },
-    emptyIcon:    { width: 64, height: 64, borderRadius: 32, backgroundColor: C.bgElevated, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg, borderWidth: 1, borderColor: C.border },
+    // PeggyIconFrame owns the circle, fill and border. Only spacing is local.
+    emptyIcon:    { marginBottom: Spacing.lg },
     emptyText:    { ...Typography.h3, color: C.textPrimary, textAlign: 'center', marginBottom: Spacing.sm },
     emptySubText: { ...Typography.small, color: C.textSecondary, textAlign: 'center', lineHeight: 24 },
     emptyCta: {

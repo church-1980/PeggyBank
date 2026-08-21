@@ -17,6 +17,7 @@ import IconBadge from '../components/IconBadge';
 import { goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; borderColor: string }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -191,10 +192,9 @@ export default function GoalsScreen({ navigation, route }: any) {
     const accent   = ICON_REGISTRY[gKey].color;
 
     return (
-      <TouchableOpacity
+      <PeggyCard
         style={[styles.card, { borderColor: accent + '30' }]}
         onPress={() => setActionGoal(item)}
-        activeOpacity={0.85}
       >
         <View style={styles.cardTop}>
           {/* Goal type icon — specific to type, not generic flag */}
@@ -245,7 +245,7 @@ export default function GoalsScreen({ navigation, route }: any) {
           </TouchableOpacity>
         )}
 
-      </TouchableOpacity>
+      </PeggyCard>
     );
   };
 
@@ -498,10 +498,9 @@ function makeStyles(C: ColorPalette) {
 
     list: { padding: Spacing.md, paddingBottom: 110 },
 
+    // PeggyCard owns the surface, radius, padding and shadow.
+    // The border stays: it is tinted with each goal's own colour.
     card: {
-      backgroundColor: C.bgCard,
-      borderRadius: Radius.lg,
-      padding: Spacing.md,
       marginBottom: Spacing.md,
       borderWidth: 1.5,
     },

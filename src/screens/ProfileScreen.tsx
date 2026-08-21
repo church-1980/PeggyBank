@@ -12,6 +12,7 @@ import { wipeAllLogos } from '../lib/customLogos';
 import { useColors } from '../context/ThemeContext';
 import { PeggyScreen } from '../components/peggy';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 /**
  * ProfileScreen — local-only. PeggyBank has no accounts/billing, so this screen
@@ -162,25 +163,25 @@ export default function ProfileScreen({ navigation }: any) {
 
       {/* ── Preferences ── */}
       <Text style={styles.sectionLabel}>PREFERENCES</Text>
-      <View style={styles.card}>
+      <PeggyCard style={styles.card}>
         <Row C={C} icon="color-palette-outline" label="Appearance" onPress={() => navigation.navigate('Appearance')} />
         <Divider C={C} />
         <Row C={C} icon="settings-outline" label="Settings" onPress={() => navigation.navigate('Settings')} />
-      </View>
+      </PeggyCard>
 
       {/* ── Data & Privacy ── */}
       <Text style={styles.sectionLabel}>DATA & PRIVACY</Text>
       <Text style={styles.privacyNote}>
         PeggyBank stores all your data locally on this device. There is no account and nothing is uploaded.
       </Text>
-      <View style={styles.card}>
+      <PeggyCard style={styles.card}>
         <Row C={C} icon="cloud-download-outline" label="Backup / Restore" onPress={() => navigation.navigate('Export')} />
-      </View>
+      </PeggyCard>
 
       {/* ── Destructive ── */}
-      <View style={[styles.card, { marginTop: Spacing.md, borderColor: C.danger + '40', borderWidth: 1 }]}>
+      <PeggyCard style={[styles.card, { marginTop: Spacing.md, borderColor: C.danger + '40', borderWidth: 1 }]}>
         <Row C={C} icon="trash-outline" label="Delete all PeggyBank data from this device" danger onPress={() => { setConfirmText(''); setDeleteStage('warn'); }} />
-      </View>
+      </PeggyCard>
 
       {/* ── Delete flow ── */}
       {deleteStage !== 'none' && (
@@ -251,7 +252,9 @@ function makeStyles(C: ColorPalette) {
     saveNameBtn: { borderRadius: Radius.md, paddingHorizontal: 18, height: 46, alignItems: 'center', justifyContent: 'center' },
     sectionLabel: { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: Spacing.lg, marginBottom: Spacing.sm },
     privacyNote: { ...Typography.helper, color: C.textSecondary, marginBottom: Spacing.sm },
-    card: { backgroundColor: C.bgCard, borderRadius: Radius.lg, paddingHorizontal: Spacing.md },
+    // PeggyCard supplies the surface, radius and shadow. These cards hold full-width
+    // rows that provide their own vertical padding, so vertical padding is zeroed.
+    card: { paddingVertical: 0, paddingHorizontal: Spacing.md },
     deleteBox: { marginTop: Spacing.md, borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md, backgroundColor: C.bgCard },
     deleteBtnRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: Spacing.md },
     cancelBtn: { paddingHorizontal: 16, paddingVertical: 12 },

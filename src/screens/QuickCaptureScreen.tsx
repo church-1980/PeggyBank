@@ -15,6 +15,7 @@ import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
 import { CATEGORIES } from '../data/categories';
 import PeggyPushButton from '../components/peggy/PeggyPushButton';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 /**
  * QuickCaptureScreen — PeggyBank Smart Quick Capture.
@@ -289,7 +290,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
 
         {/* Detected fields (honest confidence) */}
         <Text style={styles.sectionLabel}>DETECTED</Text>
-        <View style={styles.card}>
+        <PeggyCard style={styles.card}>
           <Field C={C} label={chosenType === 'bill' ? 'Payee' : 'Merchant'} value={result?.merchant} conf={result?.confidence.merchant} />
           <Divider C={C} />
           <Field C={C} label="Amount" value={result?.amount != null ? formatCurrency(result.amount) : undefined} conf={result?.confidence.amount} />
@@ -298,7 +299,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
           {chosenType === 'bill' && (<><Divider C={C} /><Field C={C} label="Due date" value={result?.dueDate ? formatDate(result.dueDate) : undefined} conf={result?.confidence.dueDate} /></>)}
           <Divider C={C} />
           <Field C={C} label="Category" value={result?.category} conf={result?.confidence.category} />
-        </View>
+        </PeggyCard>
 
         <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 10 }]}>
           You&apos;ll review and correct every field on the next screen before saving.
@@ -388,7 +389,9 @@ function makeStyles(C: ColorPalette) {
       marginTop: Spacing.md, borderWidth: 1, borderColor: C.border,
     },
     confirmButtons: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.md },
-    card: { backgroundColor: C.bgCard, borderRadius: Radius.lg, paddingHorizontal: Spacing.md },
+    // PeggyCard supplies the surface, radius and shadow. The rows inside bring
+    // their own vertical padding, so vertical padding is zeroed here.
+    card: { paddingVertical: 0, paddingHorizontal: Spacing.md },
     continueBtn: { height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.lg },
     reviewActions: { flexDirection: 'row', justifyContent: 'space-around', marginTop: Spacing.md },
     reviewAction: { ...Typography.helper, color: C.textSecondary, fontWeight: '600' },

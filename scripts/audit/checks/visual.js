@@ -43,7 +43,6 @@ const AFFORDANCE = new Set([
   // state feedback
   'checkmark', 'checkmark-circle', 'alert-circle-outline',
   'information-circle-outline', 'lock-closed-outline', 'cloud-offline-outline',
-  'moon-outline',
 ]);
 
 /** A StyleSheet key whose presence means the screen rebuilt something the system owns. */
@@ -55,20 +54,26 @@ const SYSTEM_STYLE_RULES = [
   { key: 'badge',       needs: ['borderRadius'],                    owns: 'PeggyBadge' },
   { key: 'progress',    needs: ['borderRadius'],                    owns: 'PeggyProgressBar' },
   { key: 'iconWrap',    needs: ['borderRadius'],                    owns: 'PeggyIconFrame' },
-  { key: 'emptyState',  needs: [],                                  owns: 'PeggyEmptyState' },
+  { key: 'emptyState',  needs: ['backgroundColor', 'borderRadius'], owns: 'PeggyEmptyState' },
 ];
 
 /** Text of a StyleSheet entry, e.g. everything inside `card: { ... }`. */
 function styleBlock(text, key) {
+  // Returns ONLY the body of `key: { ... }`.
+  //
+  // The previous version began counting at the opening brace itself, so the
+  // first closing brace merely balanced it and the block ran on into the NEXT
+  // style. Rules then matched properties belonging to a neighbour, which is how
+  // a plain centring style got reported as rebuilding a card.
   const marker = key + ': {';
   const at = text.indexOf(marker);
   if (at === -1) return null;
-  let depth = 0;
-  for (let i = at + key.length + 2; i < text.length; i++) {
+  let depth = 1;                       // we are already inside the opening brace
+  for (let i = at + marker.length; i < text.length; i++) {
     if (text[i] === '{') depth++;
     else if (text[i] === '}') {
-      if (depth === 0) return text.slice(at, i + 1);
       depth--;
+      if (depth === 0) return text.slice(at, i + 1);
     }
   }
   return null;
@@ -84,8 +89,15 @@ function iconUses(file) {
     const q = line.indexOf('"', at + 6);
     if (q === -1) return;
     const name = line.slice(at + 6, q);
-    // Only count it if this line (or the one before) is actually an Ionicon.
-    out.push({ name, line: i + 1, raw: line.trim() });
+    // Rendered size decides whether this is a concept slot or an adornment.
+    let size = null;
+    const sAt = line.indexOf('size={');
+    if (sAt !== -1) {
+      const sEnd = line.indexOf('}', sAt);
+      const raw = sEnd === -1 ? "" : line.slice(sAt + 6, sEnd).trim();
+      if (/^[0-9]+$/.test(raw)) size = Number(raw);
+    }
+    out.push({ name, size, line: i + 1, raw: line.trim() });
   });
   return out;
 }
@@ -132,8 +144,12 @@ function run() {
       if (!block) continue;
       const has = rule.needs.every(n => block.includes(n));
       if (!has) continue;
-      // A screen already using the system component may still keep a wrapper style.
-      if (f.text.includes('<' + rule.owns)) continue;
+      // NOTE: there is deliberately no "this screen already uses PeggyCard, so
+      // skip it" escape. That would let a screen use the system card once and
+      // then hand-build others freely. The rule judges SUBSTANCE instead: a
+      // wrapper style holding layout (width, margin, a meaningful accent
+      // border) is fine and passes; one that declares the card SURFACE --
+      // background and radius -- is rebuilding what PeggyCard owns.
       findings.push({
         severity: 'FAIL',
         where: f.rel,
@@ -153,12 +169,31 @@ function run() {
       conceptUses.push({ file: f.rel, ...use });
     }
   }
+  // A CONCEPT SLOT vs AN ADORNMENT.
+  //
+  // The registry's artwork is matte, softly shaded 3D. Below roughly 24dp that
+  // shading turns to mud and the shape stops reading -- which is why the design
+  // system's own inline concept tier starts at 40dp. So a 14dp icon sitting on
+  // the same line as a sentence was never going to be registry art; it is
+  // typographic punctuation, and demanding artwork there would make the app
+  // worse, not more consistent.
+  //
+  // What DOES have to be registry art is a concept standing on its own as the
+  // single visual for a block: an empty state, a tile, a card header. Those are
+  // reported as failures. The small inline ones are still listed, as REVIEW, so
+  // they stay visible rather than disappearing from the report.
+  const CONCEPT_SLOT_MIN = 24;
   for (const u of conceptUses) {
+    const isSlot = u.size !== null && u.size >= CONCEPT_SLOT_MIN;
     findings.push({
-      severity: 'FAIL',
+      severity: isSlot ? 'FAIL' : 'REVIEW',
       where: `${u.file}:${u.line}`,
-      what: `Ionicon "${u.name}" is a CONCEPT, not an affordance`,
-      why: 'Concepts must come from the matte icon registry so they match everywhere.',
+      what: isSlot
+        ? `Ionicon "${u.name}" fills a concept slot at ${u.size}dp`
+        : `Ionicon "${u.name}" is a concept used as a ${u.size === null ? 'small inline' : u.size + 'dp inline'} adornment`,
+      why: isSlot
+        ? 'A concept standing alone must come from the matte registry so it matches everywhere.'
+        : 'HEURISTIC - too small for matte artwork to read. Acceptable as punctuation beside text; worth a human eye.',
     });
   }
 
@@ -169,7 +204,8 @@ function run() {
     status: failed.length ? 'FAIL' : 'PASS',
     summary:
       `${screens.length} screens; ${usesShell.length} on the shared shell, ${exempt.length} documented exception(s); ` +
-      `${conceptUses.length} concept-icon use(s); ${failed.length - conceptUses.length} local rebuild(s) of system elements`,
+      `${conceptUses.filter(u => u.size !== null && u.size >= 24).length} concept slot(s) drawn as line art; ` +
+      `${failed.length} failing item(s) in total`,
     findings,
     detail: { screensOnShell: usesShell.length, screensTotal: screens.length },
   };

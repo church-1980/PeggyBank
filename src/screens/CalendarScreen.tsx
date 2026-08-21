@@ -13,6 +13,7 @@ import { Expense, Bill, SavingsGoal } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -152,7 +153,7 @@ function EventList({ date, events, onAddReminder, styles, C }: EventListProps) {
 
       {events.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="moon-outline" size={32} color={C.textHint} />
+          <PeggyIconFrame iconKey="calendar" size="standard" shape="circle" />
           <Text style={styles.emptyTitle}>A calm day</Text>
           <Text style={styles.emptyText}>No financial events here.</Text>
         </View>

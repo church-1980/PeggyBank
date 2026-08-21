@@ -20,6 +20,7 @@ import { getNotificationMode, rescheduleAll } from '../lib/notifications';
 import { rememberMerchant } from '../lib/merchantMemory';
 import { currentCycleDate, setCyclePaid, paidCyclesFor } from '../lib/billCycles';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 interface Subscription {
   id?: number;
@@ -345,11 +346,10 @@ export default function BillsScreen({ navigation, route }: any) {
             const urgent = daysLeft <= 3 && !paid;
             const color = paid ? C.income : urgent ? C.spending : C.bills;
             return (
-              <TouchableOpacity
+              <PeggyCard
                 key={item.id}
                 style={[styles.card, { borderLeftColor: color }]}
                 onPress={() => openEditBill(item)}
-                activeOpacity={0.75}
               >
                 <PeggyIconFrame iconKey={categoryIconKey((item as any).category)} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
@@ -368,7 +368,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 >
                   {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </PeggyCard>
             );
           })
         )}
@@ -393,11 +393,10 @@ export default function BillsScreen({ navigation, route }: any) {
             const urgent = days <= 3 && !paid;
             const color = paid ? C.income : urgent ? C.spending : C.subs;
             return (
-              <TouchableOpacity
+              <PeggyCard
                 key={item.id}
                 style={[styles.card, { borderLeftColor: color }]}
                 onPress={() => openEditSub(item)}
-                activeOpacity={0.75}
               >
                 <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
@@ -421,7 +420,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 >
                   {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </PeggyCard>
             );
           })
         )}
@@ -707,10 +706,11 @@ function makeStyles(C: ColorPalette) {
     },
     emptyRowText:   { ...Typography.small, color: C.textHint },
 
+    // PeggyCard owns the surface, radius, padding and shadow.
+    // The border stays: its left edge is coloured by the bill's status.
     card: {
       flexDirection: 'row', alignItems: 'center',
-      backgroundColor: C.bgCard, borderRadius: Radius.lg,
-      padding: Spacing.md, marginBottom: 10,
+      marginBottom: 10,
       borderWidth: 1, borderColor: C.border,
     },
     checkbox: {

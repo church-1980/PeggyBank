@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Spacing, Radius, Typography, ColorPalette } from '../theme';
+import { View, Text, StyleSheet } from 'react-native';
+import { Spacing, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { PeggyScreen } from '../components/peggy';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { IconKey } from '../data/iconRegistry';
+import PeggyCard from '../components/peggy/PeggyCard';
 
 /**
  * MoreScreen — reproduces the approved visual spec. Content tools carry their
@@ -16,8 +16,7 @@ import { IconKey } from '../data/iconRegistry';
 interface ToolItem {
   label: string;
   description: string;
-  iconKey?: IconKey;                               // matte concept art (content tools)
-  icon?: keyof typeof Ionicons.glyphMap;           // line affordance (system/chrome tools)
+  iconKey: IconKey;                                // matte concept art, always from the registry
   colorKey: 'goals' | 'primary' | 'subs' | 'debt' | 'income' | 'bills' | 'primaryLight' | 'textSecondary' | 'spending';
   screen: string;
   params?: object;
@@ -57,24 +56,16 @@ export default function MoreScreen({ navigation }: any) {
 
       <View style={styles.grid}>
         {TOOLS.map((item) => {
-          const color = C[item.colorKey];
           return (
-            <TouchableOpacity
+            <PeggyCard
               key={item.label}
               style={styles.card}
               onPress={() => navigation.navigate(item.screen, item.params)}
-              activeOpacity={0.7}
             >
-              {item.iconKey ? (
-                <PeggyIconFrame iconKey={item.iconKey} size="card" shape="tile" style={styles.iconSlot} />
-              ) : (
-                <View style={[styles.iconWrap, { backgroundColor: color + '18' }]}>
-                  <Ionicons name={item.icon!} size={24} color={color} />
-                </View>
-              )}
+              <PeggyIconFrame iconKey={item.iconKey} size="card" shape="tile" style={styles.iconSlot} />
               <Text style={styles.cardLabel}>{item.label}</Text>
               <Text style={styles.cardDesc}>{item.description}</Text>
-            </TouchableOpacity>
+            </PeggyCard>
           );
         })}
       </View>
@@ -89,23 +80,12 @@ function makeStyles(C: ColorPalette) {
     title:      { ...Typography.h1, color: C.textPrimary, marginBottom: Spacing.xs },
     subtitle:   { ...Typography.small, color: C.textSecondary, marginBottom: Spacing.lg },
     grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    // PeggyCard owns the surface, radius, padding and shadow.
+    // Only the two-column grid width is this screen's own business.
     card: {
       width: '47%',
-      backgroundColor: C.bgCard,
-      borderRadius: Radius.lg,
-      padding: Spacing.md,
-      borderWidth: 1,
-      borderColor: C.border,
     },
     iconSlot: { marginBottom: Spacing.sm },
-    iconWrap: {
-      width: 48,
-      height: 48,
-      borderRadius: Radius.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: Spacing.sm,
-    },
     cardLabel: { ...Typography.bodyBold, color: C.textPrimary, marginBottom: 4 },
     cardDesc:  { ...Typography.caption, color: C.textSecondary, lineHeight: 16 },
   });

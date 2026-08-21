@@ -16,6 +16,7 @@ import { Category, Bill } from '../types';
 import { Spacing, Radius, Typography, Shadow, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { PeggyScreen, PeggyHeader } from '../components/peggy';
+import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 
 interface WeekData {
   thisWeekTotal: number;
@@ -317,7 +318,7 @@ export default function WeeklyCheckInScreen({ navigation }: any) {
 
       {data && data.monthIncome === 0 && data.thisWeekTotal === 0 && (
         <View style={styles.emptyCard}>
-          <Ionicons name="leaf-outline" size={28} color={C.textHint} />
+          <PeggyIconFrame iconKey="check-in" size="feature" shape="circle" />
           <Text style={styles.emptyTitle}>Nothing recorded yet</Text>
           <Text style={styles.emptyText}>
             Add some income or expenses and come back here to see how your week is going.
