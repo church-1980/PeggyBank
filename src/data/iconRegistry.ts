@@ -105,6 +105,30 @@ export function iconLabel(key: IconKey): string {
 // edits, no layout change (Charter: Placeholder Rule).
 const PENDING_ART = require('../../assets/peggy-icons/_placeholder.png');
 
+/**
+ * DECLARED ALIASES — concepts that deliberately share one piece of artwork.
+ *
+ * The registry's rule is one concept, one picture, so that two different things
+ * never look the same. But some pairs are not two different things: "Add
+ * Expense" is the act of recording something Spent. Showing the same picture
+ * there helps a person connect the button to the idea; it is not the drift the
+ * rule exists to prevent.
+ *
+ * An alias must be written down here with a reason. The audit accepts a shared
+ * image only when it is declared; two concepts that quietly end up on the same
+ * file still fail, which is what caught this pair in the first place.
+ */
+export const ICON_ALIASES: Record<string, { of: IconKey; why: string }> = {
+  'add-expense': {
+    of: 'spent',
+    why: 'Adding an expense IS recording something spent — the same idea, as an action.',
+  },
+  'add-income': {
+    of: 'income',
+    why: 'Adding income IS recording income — the same idea, as an action.',
+  },
+};
+
 export const ICON_REGISTRY: Record<IconKey, IconEntry> = {
   travel:           { label: 'Travel',         ionicon: 'airplane-outline',            color: '#25C2A0', status: 'ready', image: require('../../assets/peggy-icons/travel.png') },
   vehicle:          { label: 'Vehicle',        ionicon: 'car-outline',                 color: '#4B9BFF', status: 'ready', image: require('../../assets/peggy-icons/vehicle.png') },

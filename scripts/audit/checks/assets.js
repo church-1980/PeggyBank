@@ -126,13 +126,53 @@ function run() {
     byFile.get(norm).push(img.key);
   }
 
-  // 2. two concepts sharing one picture
+  // 2. Two concepts sharing one picture.
+  //
+  // Allowed ONLY when declared in ICON_ALIASES with a reason, and only when the
+  // alias names one of the very keys it is sharing with. Anything else is the
+  // drift the registry exists to stop: two different things that look identical,
+  // which is exactly the complaint that started this work.
+  const aliasBlock = reg.text.slice(reg.text.indexOf('ICON_ALIASES'));
+  const declaredAliases = new Map();
+  {
+    const stop = aliasBlock.indexOf('};');
+    const body = stop === -1 ? aliasBlock : aliasBlock.slice(0, stop);
+    // Scanned without a regex on purpose: escape sequences have repeatedly
+    // failed to survive editing here, and a broken pattern would silently
+    // report every alias as undeclared.
+    for (const chunk of body.split("of:")) {
+      const q = chunk.indexOf("'");
+      if (q === -1) continue;
+      const q2 = chunk.indexOf("'", q + 1);
+      if (q2 === -1) continue;
+      const target = chunk.slice(q + 1, q2);
+      // the alias key is the last quoted name BEFORE this "of:"
+      const before = body.slice(0, body.indexOf(chunk) + 1);
+      const keys = before.split("'");
+      const key = keys.length >= 2 ? keys[keys.length - 2] : null;
+      if (key && /^[a-z0-9-]+$/.test(key) && /^[a-z0-9-]+$/.test(target)) {
+        declaredAliases.set(key, target);
+      }
+    }
+  }
   for (const [file, sharedKeys] of byFile) {
-    if (sharedKeys.length > 1) {
+    if (sharedKeys.length < 2) continue;
+    const undeclared = sharedKeys.filter(k => {
+      const target = declaredAliases.get(k);
+      return !target || !sharedKeys.includes(target);
+    });
+    if (undeclared.length > 1) {
       findings.push({
         severity: 'FAIL', where: path.relative(ROOT, file).split(path.sep).join('/'),
-        what: `used for ${sharedKeys.length} different concepts: ${sharedKeys.join(', ')}`,
-        why: 'The user cannot tell these apart at a glance.',
+        what: `used for ${undeclared.length} concepts that are NOT declared aliases: ${undeclared.join(', ')}`,
+        why: 'The user cannot tell these apart. Either give one its own artwork, or declare the alias in ICON_ALIASES with a reason.',
+      });
+    } else {
+      const aliased = sharedKeys.filter(k => declaredAliases.has(k));
+      findings.push({
+        severity: 'INFO', where: path.relative(ROOT, file).split(path.sep).join('/'),
+        what: `shared by declared alias(es): ${aliased.join(', ')}`,
+        why: 'Deliberate: the same idea shown in two roles.',
       });
     }
   }
