@@ -13,6 +13,15 @@
 const { parseDump, screenText, findTappable, unlabelledControls, smallTargets } =
   require('../../scripts/androidtest/ui.js');
 
+/** One node from a uiautomator dump. The harness is plain JS; this names its shape. */
+interface UiNode {
+  text: string;
+  desc: string;
+  cls: string;
+  clickable: boolean;
+  box: { left: number; top: number; right: number; bottom: number; cx: number; cy: number; w: number; h: number } | null;
+}
+
 const DUMP = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<hierarchy rotation="0">',
@@ -27,7 +36,7 @@ const DUMP = [
 ].join('\n');
 
 describe('Parsing a uiautomator dump', () => {
-  const nodes = parseDump(DUMP);
+  const nodes: UiNode[] = parseDump(DUMP);
 
   it('finds every node', () => {
     expect(nodes).toHaveLength(7);
@@ -39,23 +48,23 @@ describe('Parsing a uiautomator dump', () => {
   });
 
   it('reads content-desc, which is what a screen reader announces', () => {
-    const descs = nodes.map(n => n.desc).filter(Boolean);
+    const descs = nodes.map((n: UiNode) => n.desc).filter(Boolean);
     expect(descs).toContain('Go back');
     expect(descs).toContain('Notifications and settings');
   });
 
   it('turns bounds into a tappable point', () => {
-    const back = findTappable(nodes, 'Go back');
-    expect(back.box.cx).toBe(92);
-    expect(back.box.cy).toBe(152);
+    const back: UiNode = findTappable(nodes, 'Go back');
+    expect(back.box!.cx).toBe(92);
+    expect(back.box!.cy).toBe(152);
   });
 
   it('taps the BUTTON, not the label inside it', () => {
     // "Add Expense" is a text node; the clickable container wraps it.
-    const target = findTappable(nodes, 'Add Expense');
+    const target: UiNode = findTappable(nodes, 'Add Expense');
     expect(target.clickable).toBe(true);
-    expect(target.box.left).toBe(40);
-    expect(target.box.right).toBe(320);
+    expect(target.box!.left).toBe(40);
+    expect(target.box!.right).toBe(320);
   });
 
   it('returns null rather than guessing when nothing matches', () => {
@@ -64,23 +73,23 @@ describe('Parsing a uiautomator dump', () => {
 
   it('spots a control a screen reader would announce as nothing', () => {
     // The 60x60 node has neither text nor description: TalkBack says "button".
-    const bad = unlabelledControls(nodes);
+    const bad: UiNode[] = unlabelledControls(nodes);
     expect(bad).toHaveLength(1);
-    expect(bad[0].box.left).toBe(500);
+    expect(bad[0].box!.left).toBe(500);
   });
 
   it('does not flag a control that has a description', () => {
-    expect(unlabelledControls(nodes).some(n => n.desc === 'Go back')).toBe(false);
+    expect(unlabelledControls(nodes).some((n: UiNode) => n.desc === 'Go back')).toBe(false);
   });
 
   it('measures touch targets against the 48dp guidance', () => {
     // A dump is in PIXELS, so the 48dp minimum has to be scaled by the screen
     // density before it means anything. On a 3x phone 48dp is 144px: the 144px
     // buttons are exactly on the line, the 60px icon is well under it.
-    const small = smallTargets(nodes, 3);
-    const widths = small.map(n => n.box.w);
+    const small: UiNode[] = smallTargets(nodes, 3);
+    const widths = small.map((n: UiNode) => n.box!.w);
     expect(widths).toContain(60);
-    expect(small.some(n => n.desc === 'Go back')).toBe(false);   // 144px, on the line
+    expect(small.some((n: UiNode) => n.desc === 'Go back')).toBe(false);   // 144px, on the line
   });
 
   it('survives an empty or malformed dump instead of throwing', () => {
