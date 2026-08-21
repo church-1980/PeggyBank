@@ -138,6 +138,7 @@ function run() {
     const xml = fs.readFileSync(manifestPath, 'utf8');
     const seen = new Set();
     const blocked = new Set();
+    const vendor = new Set();
     // A line carrying tools:node="remove" is a permission the app REFUSES.
     // Expo emits these from blockedPermissions, and they are how a permission a
     // library declares in its own manifest is kept out of the merged result --
@@ -166,11 +167,30 @@ function run() {
       const e = el.indexOf('"', s);
       if (e === -1) continue;
       const name = el.slice(s, e);
-      if (!name.startsWith('android.permission.')) continue;  // OEM launcher extras
+      // Vendor and third-party permissions were previously skipped outright as
+      // "OEM launcher extras". That was a blind spot: the built APK carries 17 of
+      // them (Samsung, Huawei, OPPO, HTC, Sony and others) for launcher badge
+      // counts, plus a Google push-messaging one, and none of it was ever
+      // reported. They are benign, but they are visible to anyone reading the
+      // app's permission list, and silence is not the same as approval.
+      if (!name.startsWith('android.permission.')) { vendor.add(name); continue; }
       if (el.includes('tools:node="remove"')) blocked.add(name);
       else seen.add(name);
     }
     perms = [...seen].sort();
+    if (vendor.size) {
+      const badge = [...vendor].filter(v => /badge|launcher|shortcut/i.test(v));
+      const other = [...vendor].filter(v => !/badge|launcher|shortcut/i.test(v));
+      findings.push({
+        severity: 'REVIEW',
+        where: 'AndroidManifest.xml',
+        what: vendor.size + ' vendor/third-party permission(s): ' + badge.length +
+              ' launcher badge-count (' + (badge[0] || '') + ' etc), ' + other.length + ' other (' + other.join(', ') + ')',
+        why: 'Pulled in by ShortcutBadger and firebase-messaging via expo-notifications, to show ' +
+             'the unread count on the launcher icon. Harmless, but they appear in the permission ' +
+             'list a user reads, and PeggyBank sends only LOCAL notifications - it has no push server.',
+      });
+    }
     if (blocked.size) {
       findings.push({
         severity: 'INFO', where: 'AndroidManifest.xml',
@@ -196,8 +216,8 @@ function run() {
     title: 'Android identity and permissions',
     status: failed.length ? 'FAIL' : 'PASS',
     summary:
-      `identity separation checked; ${perms.length} permissions declared, ` +
-      `${findings.filter(f => f.severity === 'REVIEW').length} unjustified; ` +
+      `identity separation checked; ${perms.length} Android permissions, ` +
+      `${findings.filter(f => f.severity === 'REVIEW' && f.what.startsWith('requests ')).length} unjustified; ` +
       `${apksSeen} built APK(s) present. No device was touched.`,
     findings,
   };

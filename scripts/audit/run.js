@@ -115,7 +115,7 @@ try {
 }
 
 // -- 5+. Static architecture checks --------------------------------------------
-const CHECKS = ['platformContract', 'visual', 'accessibility', 'navigation', 'assets', 'webGate', 'androidGate', 'personas'];
+const CHECKS = ['platformContract', 'visual', 'accessibility', 'navigation', 'assets', 'webGate', 'androidGate', 'androidRuntime', 'personas'];
 for (const name of CHECKS) {
   record(require(path.join(__dirname, 'checks', name + '.js')).run());
 }

@@ -28,7 +28,9 @@
     "audit:all": "node scripts/audit/run.js",
     "audit:parity": "jest --config jest.parity.config.js && node scripts/audit/parity-compare.js",
     "web:build": "expo export --platform web --output-dir dist-web",
-    "audit:web": "node scripts/webtest/run.js"
+    "audit:web": "node scripts/webtest/run.js",
+    "audit:android": "node scripts/androidtest/run.js",
+    "android:build": "bash -c \"cd android && ANDROID_HOME=$ANDROID_HOME ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon\""
   },
   "jest": {
     "preset": "jest-expo",
