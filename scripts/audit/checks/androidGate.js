@@ -38,7 +38,28 @@ const JUSTIFIED = {
   'android.permission.READ_MEDIA_VISUAL_USER_SELECTED': 'partial photo access on Android 14+',
   'android.permission.READ_EXTERNAL_STORAGE': 'choosing a receipt photo on older Android',
   'android.permission.WRITE_EXTERNAL_STORAGE': 'saving a backup file the user asked for',
+  // Merged in by libraries rather than declared by PeggyBank. Traced with the
+  // manifest merger's own blame report, not guessed at.
+  'android.permission.RECEIVE_BOOT_COMPLETED': 'expo-notifications: re-arms bill reminders after the phone restarts',
+  'android.permission.WAKE_LOCK': 'firebase-messaging (via expo-notifications): delivers a reminder while the screen is off',
+  'android.permission.ACCESS_NETWORK_STATE': 'expo-image: checks connectivity before fetching a remote image',
+  'android.permission.READ_APP_BADGE': 'ShortcutBadger (via expo-notifications): shows the count on the launcher icon',
+  'android.permission.BIND_JOB_SERVICE': 'Android itself, to run the scheduled-reminder job',
 };
+
+/**
+ * The merged manifest, when a build has produced one, is what ACTUALLY ships:
+ * it includes everything every library merges in, which the hand-written source
+ * manifest does not show. Preferring it turns this from "the config looks right"
+ * into "this is what the built app asks for".
+ */
+function manifestToRead(root) {
+  const merged = path.join(root, 'android/app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml');
+  if (fs.existsSync(merged)) return { file: merged, kind: 'merged release manifest (what ships)' };
+  const src = path.join(root, 'android/app/src/main/AndroidManifest.xml');
+  if (fs.existsSync(src)) return { file: src, kind: 'source manifest only - no build has merged library permissions yet' };
+  return null;
+}
 
 function run() {
   const findings = [];
@@ -103,20 +124,60 @@ function run() {
   }
 
   // --- 3. permissions ---
-  const manifestPath = path.join(ROOT, 'android/app/src/main/AndroidManifest.xml');
+  const chosen = manifestToRead(ROOT);
+  const manifestPath = chosen ? chosen.file : '';
   let perms = [];
-  if (fs.existsSync(manifestPath)) {
+  if (chosen) {
+    findings.push({
+      severity: 'INFO', where: path.relative(ROOT, chosen.file).split(path.sep).join('/'),
+      what: 'permissions read from the ' + chosen.kind,
+      why: chosen.kind.startsWith('source')
+        ? 'Run a release build to see what libraries actually merge in.'
+        : 'Includes every permission merged in by a dependency.',
+    });
     const xml = fs.readFileSync(manifestPath, 'utf8');
     const seen = new Set();
-    const marker = 'android:name="android.permission.';
-    let i = 0;
-    while ((i = xml.indexOf(marker, i)) !== -1) {
-      const s = i + 'android:name="'.length;
-      const e = xml.indexOf('"', s);
-      i = e;
-      if (e !== -1) seen.add(xml.slice(s, e));
+    const blocked = new Set();
+    // A line carrying tools:node="remove" is a permission the app REFUSES.
+    // Expo emits these from blockedPermissions, and they are how a permission a
+    // library declares in its own manifest is kept out of the merged result --
+    // simply deleting the line would let the merger put it straight back.
+    // Parsed ELEMENT by element, not line by line. The merged manifest wraps
+    // longer declarations across lines:
+    //     <uses-permission
+    //         android:name="android.permission.READ_EXTERNAL_STORAGE"
+    //         android:maxSdkVersion="32" />
+    // A line-based scan silently missed every one of those, which is exactly
+    // where an unwanted permission would hide.
+    //
+    // Only <uses-permission> counts as a request. An android:permission="..."
+    // attribute on a component does the opposite job: it RESTRICTS who may
+    // call that component.
+    let p = 0;
+    while ((p = xml.indexOf('<uses-permission', p)) !== -1) {
+      const close = xml.indexOf('>', p);
+      if (close === -1) break;
+      const el = xml.slice(p, close);
+      p = close + 1;
+      const marker = 'android:name="';
+      const at = el.indexOf(marker);
+      if (at === -1) continue;
+      const s = at + marker.length;
+      const e = el.indexOf('"', s);
+      if (e === -1) continue;
+      const name = el.slice(s, e);
+      if (!name.startsWith('android.permission.')) continue;  // OEM launcher extras
+      if (el.includes('tools:node="remove"')) blocked.add(name);
+      else seen.add(name);
     }
     perms = [...seen].sort();
+    if (blocked.size) {
+      findings.push({
+        severity: 'INFO', where: 'AndroidManifest.xml',
+        what: blocked.size + ' permission(s) explicitly refused: ' + [...blocked].sort().join(', '),
+        why: 'Declared with tools:node="remove" so a library cannot merge them back in.',
+      });
+    }
     for (const p of perms) {
       if (JUSTIFIED[p]) continue;
       findings.push({

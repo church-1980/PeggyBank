@@ -61,7 +61,7 @@ export default function ProfileScreen({ navigation }: any) {
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Photo access needed', 'Please allow photo access.'); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
     if (!result.canceled && result.assets[0]?.uri) {
       // Copy into durable private storage so it survives cache eviction/restart.
       const owned = await saveAcceptedImage(result.assets[0].uri);

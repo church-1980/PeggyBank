@@ -25,8 +25,13 @@
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "web": {
@@ -48,7 +53,14 @@
       ],
       "expo-sqlite",
       "expo-notifications",
-      "expo-camera",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "PeggyBank uses your camera to photograph receipts.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-sharing",
       [
         "expo-image-picker",

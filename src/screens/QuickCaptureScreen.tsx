@@ -110,7 +110,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const pickFromGallery = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Gallery access needed', 'Please allow photo access.'); return; }
-    const r = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.7 });
     if (!r.canceled && r.assets[0]?.uri) { setTempUri(r.assets[0].uri); setStage('preview'); }
   };
 

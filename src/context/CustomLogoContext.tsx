@@ -39,7 +39,7 @@ export function CustomLogoProvider({ children }: { children: React.ReactNode }) 
     if (!logoKey(name)) { Alert.alert('Name it first', 'Give this item a name, then add a logo.'); return false; }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert('Photos access needed', 'Allow photo access to choose a logo.'); return false; }
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.8, allowsEditing: true, aspect: [1, 1] });
     if (result.canceled || !result.assets?.[0]?.uri) return false;
     const uri = await setCustomLogo(name, result.assets[0].uri);
     setLogos((prev) => ({ ...prev, [logoKey(name)]: uri }));
