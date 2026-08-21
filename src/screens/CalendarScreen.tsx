@@ -231,14 +231,14 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
     <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
       {/* Month nav */}
       <View style={styles.monthNav}>
-        <TouchableOpacity style={styles.navCircle} onPress={onPrev}>
+        <TouchableOpacity style={styles.navCircle} onPress={onPrev} accessibilityRole="button" accessibilityLabel="Previous month">
           <Ionicons name="chevron-back" size={18} color={C.primary} />
         </TouchableOpacity>
         <View style={styles.monthTitleBlock}>
           <Text style={styles.monthTitle}>{monthName}</Text>
           <Text style={styles.monthYear}>{year}</Text>
         </View>
-        <TouchableOpacity style={styles.navCircle} onPress={onNext}>
+        <TouchableOpacity style={styles.navCircle} onPress={onNext} accessibilityRole="button" accessibilityLabel="Next month">
           <Ionicons name="chevron-forward" size={18} color={C.primary} />
         </TouchableOpacity>
       </View>
@@ -338,11 +338,11 @@ function WeekView({ weekStart, today, eventMap, selectedDate, onDayPress, onPrev
     <View style={{ flex: 1 }}>
       {/* Week range nav */}
       <View style={styles.weekNav}>
-        <TouchableOpacity style={styles.navCircle} onPress={onPrevWeek}>
+        <TouchableOpacity style={styles.navCircle} onPress={onPrevWeek} accessibilityRole="button" accessibilityLabel="Previous week">
           <Ionicons name="chevron-back" size={18} color={C.primary} />
         </TouchableOpacity>
         <Text style={styles.weekRangeLabel}>{weekRangeLabel(weekStart)}</Text>
-        <TouchableOpacity style={styles.navCircle} onPress={onNextWeek}>
+        <TouchableOpacity style={styles.navCircle} onPress={onNextWeek} accessibilityRole="button" accessibilityLabel="Next week">
           <Ionicons name="chevron-forward" size={18} color={C.primary} />
         </TouchableOpacity>
       </View>
@@ -400,13 +400,13 @@ function DayView({ date, events, onPrev, onNext, onAddReminder, styles, C }: Day
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.dayNavBar}>
-        <TouchableOpacity style={styles.navCircle} onPress={onPrev}>
+        <TouchableOpacity style={styles.navCircle} onPress={onPrev} accessibilityRole="button" accessibilityLabel="Previous day">
           <Ionicons name="chevron-back" size={18} color={C.primary} />
         </TouchableOpacity>
         <Text style={styles.dayNavLabel}>
           {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </Text>
-        <TouchableOpacity style={styles.navCircle} onPress={onNext}>
+        <TouchableOpacity style={styles.navCircle} onPress={onNext} accessibilityRole="button" accessibilityLabel="Next day">
           <Ionicons name="chevron-forward" size={18} color={C.primary} />
         </TouchableOpacity>
       </View>
@@ -605,7 +605,7 @@ export default function CalendarScreen({ navigation }: any) {
 
       {/* ── Header ── */}
       <View style={styles.screenHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-down" size={22} color={C.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.screenTitle}>Calendar</Text>

@@ -291,14 +291,14 @@ export default function BillsScreen({ navigation, route }: any) {
   return (
     <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBack} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.headerBack} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Bills & Subscriptions</Text>
           <Text style={styles.headerSub}>{formatCurrency(unpaidTotal)} still due this cycle</Text>
         </View>
-        <TouchableOpacity style={styles.headerAdd} onPress={() => openAdd('bill')}>
+        <TouchableOpacity style={styles.headerAdd} onPress={() => openAdd('bill')} accessibilityRole="button" accessibilityLabel="Add a bill or subscription">
           <Ionicons name="add" size={22} color={C.textOnPrimary} />
         </TouchableOpacity>
       </View>
@@ -364,6 +364,9 @@ export default function BillsScreen({ navigation, route }: any) {
                 <TouchableOpacity
                   style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
                   onPress={() => toggleBillPaid(item)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: paid }}
+                  accessibilityLabel={paid ? `Mark ${item.name} as not paid` : `Mark ${item.name} as paid`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
@@ -416,6 +419,9 @@ export default function BillsScreen({ navigation, route }: any) {
                 <TouchableOpacity
                   style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
                   onPress={() => toggleSubPaid(item)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: paid }}
+                  accessibilityLabel={paid ? `Mark ${item.name} as not paid` : `Mark ${item.name} as paid`}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}

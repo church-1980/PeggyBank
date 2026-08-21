@@ -117,7 +117,12 @@ export default function ProfileScreen({ navigation }: any) {
   return (
     <PeggyScreen>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Ionicons name="chevron-down" size={26} color={C.textSecondary} />
         </TouchableOpacity>
         <Text style={[Typography.h2, { color: C.textPrimary }]}>Profile</Text>

@@ -144,7 +144,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
       <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Go back without saving">
           <Ionicons name="chevron-down" size={22} color={C.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>{editingId ? 'Edit Expense' : 'Add Expense'}</Text>
@@ -272,6 +272,8 @@ export default function AddExpenseScreen({ navigation, route }: any) {
               photoUri && { backgroundColor: C.primary + '14', borderColor: C.primary + '70' },
             ]}
             onPress={handleCameraPress}
+            accessibilityRole="button"
+            accessibilityLabel={photoUri ? 'Replace the receipt photo' : 'Take a photo of the receipt'}
             activeOpacity={0.75}
           >
             <Ionicons

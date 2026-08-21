@@ -95,7 +95,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
 
       {/* Month navigation */}
       <View style={styles.monthNav}>
-        <TouchableOpacity style={styles.navBtn} onPress={() => setMonthOffset((m) => m - 1)}>
+        <TouchableOpacity style={styles.navBtn} onPress={() => setMonthOffset((m) => m - 1)} accessibilityRole="button" accessibilityLabel="Previous month">
           <Ionicons name="chevron-back" size={22} color={C.primary} />
         </TouchableOpacity>
         <Text style={styles.monthLabel}>{monthLabel()}</Text>
@@ -103,7 +103,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           style={styles.navBtn}
           onPress={() => setMonthOffset((m) => Math.min(0, m + 1))}
           disabled={monthOffset === 0}
-        >
+         accessibilityRole="button" accessibilityLabel="Next month">
           <Ionicons name="chevron-forward" size={22} color={monthOffset === 0 ? C.border : C.primary} />
         </TouchableOpacity>
       </View>

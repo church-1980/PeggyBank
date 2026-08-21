@@ -33,7 +33,12 @@ export default function PeggySearchBar({ value, onChangeText, placeholder = 'Sea
         style={[Typography.body, { flex: 1, color: C.textPrimary, padding: 0 }]}
       />
       {value.length > 0 ? (
-        <TouchableOpacity onPress={() => { onChangeText(''); onClear?.(); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity
+          onPress={() => { onChangeText(''); onClear?.(); }}
+          accessibilityRole="button"
+          accessibilityLabel="Clear the search box"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Ionicons name="close-circle" size={IconSize.sm} color={C.textHint} />
         </TouchableOpacity>
       ) : null}

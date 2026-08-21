@@ -24,7 +24,12 @@ export default function ShareScreen({ navigation }: any) {
   return (
     <PeggyScreen>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>Share PeggyBank</Text>

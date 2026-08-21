@@ -325,7 +325,12 @@ export default function CurrencyScreen({ navigation }: any) {
               <Text style={styles.currencyName}>{fromRate?.name ?? ''}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.swapBtn} onPress={swap}>
+            <TouchableOpacity
+          style={styles.swapBtn}
+          onPress={swap}
+          accessibilityRole="button"
+          accessibilityLabel="Swap the two currencies around"
+        >
               <Ionicons name="swap-horizontal-outline" size={22} color={C.primary} />
             </TouchableOpacity>
 

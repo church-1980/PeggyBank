@@ -87,7 +87,12 @@ export default function AddIncomeScreen({ navigation }: any) {
       <PeggyScreen padded={false} contentStyle={styles.container} keyboardShouldPersistTaps="handled">
 
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Home')}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.navigate('Home')}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to the home screen"
+          >
             <Ionicons name="chevron-down" size={22} color={C.textSecondary} />
           </TouchableOpacity>
           <Text style={styles.title}>Add Income</Text>

@@ -325,7 +325,12 @@ export default function DebtScreen({ navigation }: any) {
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
           {navigation?.goBack && (
-            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
               <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
             </TouchableOpacity>
           )}

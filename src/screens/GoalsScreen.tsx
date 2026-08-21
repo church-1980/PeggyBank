@@ -252,11 +252,11 @@ export default function GoalsScreen({ navigation, route }: any) {
   return (
     <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
         </TouchableOpacity>
         <Text style={styles.title}>Savings Goals</Text>
-        <TouchableOpacity style={styles.addBtn2} onPress={openNewGoalModal}>
+        <TouchableOpacity style={styles.addBtn2} onPress={openNewGoalModal} accessibilityRole="button" accessibilityLabel="Add a savings goal">
           <Ionicons name="add" size={22} color={C.textOnPrimary} />
         </TouchableOpacity>
       </View>
