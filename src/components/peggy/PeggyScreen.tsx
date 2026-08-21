@@ -18,6 +18,9 @@ interface Props {
   padded?: boolean;             // horizontal screen padding (default true)
   contentStyle?: StyleProp<ViewStyle>;
   refreshControl?: React.ComponentProps<typeof ScrollView>['refreshControl']; // pull-to-refresh (scroll mode only)
+  // Form screens need this: without it, the first tap on a button while the
+  // keyboard is open only dismisses the keyboard, and the button never fires.
+  keyboardShouldPersistTaps?: React.ComponentProps<typeof ScrollView>['keyboardShouldPersistTaps'];
   testID?: string;
 }
 
@@ -27,6 +30,7 @@ export default function PeggyScreen({
   padded = true,
   contentStyle,
   refreshControl,
+  keyboardShouldPersistTaps,
   testID,
 }: Props) {
   const C = useColors();
@@ -53,6 +57,7 @@ export default function PeggyScreen({
       contentContainerStyle={[{ paddingTop: insets.top }, inner]}
       showsVerticalScrollIndicator={false}
       refreshControl={refreshControl}
+      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
     >
       {children}
     </ScrollView>

@@ -16,6 +16,7 @@ import { useCustomLogos } from '../context/CustomLogoContext';
 import { categoryIconKey } from '../data/iconRegistry';
 import { rememberMerchant } from '../lib/merchantMemory';
 import IconBadge from '../components/IconBadge';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 const VALID_CATEGORIES = Object.keys(CATEGORIES) as Category[];
 
@@ -137,9 +138,10 @@ export default function AddExpenseScreen({ navigation, route }: any) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { paddingTop: insets.top }]}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
@@ -281,13 +283,16 @@ export default function AddExpenseScreen({ navigation, route }: any) {
 
         </View>
       </ScrollView>
+      </PeggyScreen>
     </KeyboardAvoidingView>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    root:   { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen paints the background and owns the safe-area inset.
+    root:   { flex: 1 },
+    shell:  { flex: 1, paddingBottom: 0 },
     scroll: { flex: 1 },
 
     scrollContent: {

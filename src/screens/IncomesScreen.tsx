@@ -15,6 +15,7 @@ import { useColors } from '../context/ThemeContext';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import UndoToast from '../components/UndoToast';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 const QUICK_LABELS = ['Paycheck', 'Freelance', 'Cash', 'Gift', 'Side Job', 'Other'];
 
@@ -114,7 +115,7 @@ export default function IncomesScreen({ navigation }: any) {
   const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
@@ -284,13 +285,15 @@ export default function IncomesScreen({ navigation }: any) {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:   { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen owns the background and safe-area insets.
+    // paddingBottom is zeroed: this screen supplies its own.
+    shell:   { flex: 1, paddingBottom: 0 },
 
     header: {
       paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.lg,

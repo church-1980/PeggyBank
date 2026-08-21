@@ -11,6 +11,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import IconBadge from '../components/IconBadge';
 import { IconKey } from '../data/iconRegistry';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 // Income sources — each carries its own matte concept icon.
 const QUICK_SOURCES: { label: string; iconKey: IconKey }[] = [
@@ -80,10 +81,10 @@ export default function AddIncomeScreen({ navigation }: any) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { paddingTop: insets.top }]}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <PeggyScreen padded={false} contentStyle={styles.container} keyboardShouldPersistTaps="handled">
 
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Home')}>
@@ -206,14 +207,15 @@ export default function AddIncomeScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <View style={{ height: insets.bottom + 20 }} />
-      </ScrollView>
+      </PeggyScreen>
     </KeyboardAvoidingView>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    root:      { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen paints the background and owns the safe-area inset.
+    root:      { flex: 1 },
     container: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.xl },
 
     header: {

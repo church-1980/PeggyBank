@@ -19,6 +19,7 @@ import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
 import { getNotificationMode, rescheduleAll } from '../lib/notifications';
 import { rememberMerchant } from '../lib/merchantMemory';
 import { currentCycleDate, setCyclePaid, paidCyclesFor } from '../lib/billCycles';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 interface Subscription {
   id?: number;
@@ -287,7 +288,7 @@ export default function BillsScreen({ navigation, route }: any) {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerBack} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
@@ -653,13 +654,15 @@ export default function BillsScreen({ navigation, route }: any) {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:    { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen owns the background and safe-area insets.
+    // paddingBottom is zeroed: this screen supplies its own.
+    shell:    { flex: 1, paddingBottom: 0 },
 
     header: {
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',

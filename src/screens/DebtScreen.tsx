@@ -14,6 +14,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 interface Debt {
   id?: number;
@@ -306,7 +307,7 @@ export default function DebtScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Debt Payoff</Text>
@@ -457,13 +458,15 @@ export default function DebtScreen({ navigation }: any) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:   { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen owns the background and safe-area insets.
+    // paddingBottom is zeroed: this screen supplies its own.
+    shell:   { flex: 1, paddingBottom: 0 },
     header: {
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
       padding: Spacing.lg, paddingTop: Spacing.md,

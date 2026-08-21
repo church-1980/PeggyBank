@@ -11,6 +11,7 @@ import { formatCurrency, getTodayString, WEEKDAY_NAMES, WEEKDAY_SHORT } from '..
 import { Bill } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 interface Plan {
   bills: number;
@@ -170,8 +171,8 @@ export default function PaydayScreen({ navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }]}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <PeggyScreen padded={false} contentStyle={[styles.content, { paddingTop: 16, paddingBottom: insets.bottom + 40 }]}>
 
         <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
@@ -280,7 +281,7 @@ export default function PaydayScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
+      </PeggyScreen>
     </KeyboardAvoidingView>
   );
 }

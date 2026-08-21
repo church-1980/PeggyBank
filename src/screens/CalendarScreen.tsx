@@ -12,6 +12,7 @@ import { formatCurrency } from '../utils/helpers';
 import { Expense, Bill, SavingsGoal } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -599,7 +600,7 @@ export default function CalendarScreen({ navigation }: any) {
   const selEvents = eventMap[toDateStr(selectedDate)] ?? [];
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
 
       {/* ── Header ── */}
       <View style={styles.screenHeader}>
@@ -708,7 +709,7 @@ export default function CalendarScreen({ navigation }: any) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
@@ -717,7 +718,8 @@ export default function CalendarScreen({ navigation }: any) {
 // ─────────────────────────────────────────────
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen owns the background and safe-area inset.
+    shell: { flex: 1, paddingBottom: 0 },
 
     // Header
     screenHeader: {

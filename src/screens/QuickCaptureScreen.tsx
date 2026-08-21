@@ -1,3 +1,6 @@
+// PEGGY-SHELL-EXEMPT: the camera viewfinder fills the screen edge to edge.
+// CameraView is positioned with StyleSheet.absoluteFill and the controls float
+// over it, so a padded, scrolling shell would letterbox the live preview.
 import React, { useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType, FlashMode } from 'expo-camera';

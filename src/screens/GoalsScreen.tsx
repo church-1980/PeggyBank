@@ -16,6 +16,7 @@ import { useColors } from '../context/ThemeContext';
 import IconBadge from '../components/IconBadge';
 import { goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 
 function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; borderColor: string }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -249,7 +250,7 @@ export default function GoalsScreen({ navigation, route }: any) {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
@@ -468,13 +469,15 @@ export default function GoalsScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen owns the background and safe-area insets.
+    // paddingBottom is zeroed: this screen supplies its own.
+    shell: { flex: 1, paddingBottom: 0 },
 
     header: {
       flexDirection: 'row',

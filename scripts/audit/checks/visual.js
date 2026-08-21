@@ -96,9 +96,36 @@ function run() {
 
   // ---- design-system adoption per screen ----
   const usesShell = [];
+  const exempt = [];
   for (const f of screens) {
     const shell = /<PeggyScreen|<PeggyPage/.test(f.text);
     if (shell) usesShell.push(f.rel);
+
+    // A screen may sit outside the shell ONLY with a written reason at the top
+    // of the file. The marker alone is not enough -- an exemption without an
+    // explanation is just a way to switch the check off.
+    if (!shell) {
+      const marker = f.text.indexOf('PEGGY-SHELL-EXEMPT:');
+      const reason = marker === -1 ? '' : f.text.slice(marker + 'PEGGY-SHELL-EXEMPT:'.length).split(String.fromCharCode(10))[0].trim();
+      if (reason.length > 25) {
+        exempt.push(f.rel);
+        findings.push({
+          severity: 'INFO',
+          where: f.rel,
+          what: 'sits outside the shared shell by documented exception',
+          why: reason,
+        });
+      } else {
+        findings.push({
+          severity: 'FAIL',
+          where: f.rel,
+          what: 'does not use the shared PeggyScreen shell',
+          why: marker === -1
+            ? 'Every production screen builds on the shared shell so backgrounds, safe-area insets and rhythm match. If this screen genuinely cannot, add a PEGGY-SHELL-EXEMPT comment at the top of the file explaining why.'
+            : 'It is marked PEGGY-SHELL-EXEMPT but gives no real reason. State why this screen cannot use the shell.',
+        });
+      }
+    }
 
     for (const rule of SYSTEM_STYLE_RULES) {
       const block = styleBlock(f.text, rule.key);
@@ -141,7 +168,7 @@ function run() {
     title: 'Visual architecture',
     status: failed.length ? 'FAIL' : 'PASS',
     summary:
-      `${screens.length} screens; ${usesShell.length}/${screens.length} on the PeggyScreen shell; ` +
+      `${screens.length} screens; ${usesShell.length} on the shared shell, ${exempt.length} documented exception(s); ` +
       `${conceptUses.length} concept-icon use(s); ${failed.length - conceptUses.length} local rebuild(s) of system elements`,
     findings,
     detail: { screensOnShell: usesShell.length, screensTotal: screens.length },

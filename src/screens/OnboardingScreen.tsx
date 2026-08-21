@@ -1,3 +1,6 @@
+// PEGGY-SHELL-EXEMPT: a single full-height first-run panel, not a content screen.
+// The layout is space-between across the whole viewport with a fixed top offset;
+// making it scroll would let the welcome text drift away from the buttons.
 import React, { useMemo, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Animated, Image,

@@ -5,6 +5,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import PeggyScreen from '../components/peggy/PeggyScreen';
 import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
 import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
@@ -98,7 +99,7 @@ export default function ExpensesScreen({ navigation }: any) {
     : null;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.monthLabel}>{monthName}</Text>
@@ -206,13 +207,15 @@ export default function ExpensesScreen({ navigation }: any) {
           </View>
         )}
       </Modal>
-    </View>
+    </PeggyScreen>
   );
 }
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
-    container:    { flex: 1, backgroundColor: C.bg },
+    // PeggyScreen owns the screen background and safe-area insets.
+    // paddingBottom is zeroed because the FlatList supplies its own.
+    shell:        { flex: 1, paddingBottom: 0 },
     header: {
       paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.lg,
       backgroundColor: C.bgCard,
