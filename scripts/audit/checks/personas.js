@@ -4,6 +4,7 @@
  * Five people who will use PeggyBank. For each, the journey is listed step by
  * step, and every step is marked with what the audit ACTUALLY knows about it:
  *
+ *   RUNTIME    The real app was driven in a real runtime and did this.
  *   VERIFIED   An automated test asserts this works. Named, so it can be read.
  *   HEURISTIC  A static check looked at the source and formed an opinion. It
  *              has not run the app.
@@ -21,10 +22,10 @@ const PERSONAS = [
     name: 'Never used the app before',
     who: 'Opens PeggyBank for the first time. No data, no idea what to expect.',
     steps: [
-      { step: 'Opens the app and reaches onboarding',              status: 'HUMAN' },
+      { step: 'Opens the app and reaches onboarding',              status: 'RUNTIME', by: 'web runtime test: the app starts and renders onboarding in Chrome (WEB ONLY)' },
       { step: 'Sees empty screens that explain themselves',        status: 'HEURISTIC', by: 'visual audit checks PeggyEmptyState use' },
       { step: 'Every number reads 0, never NaN or a blank',        status: 'VERIFIED',  by: 'goldenFinance: handles an empty database' },
-      { step: 'Adds a first expense and sees it appear',           status: 'HUMAN' },
+      { step: 'Adds a first expense and sees it appear',           status: 'RUNTIME', by: 'web runtime test: writes an expense and reads it back in Chrome (WEB ONLY)' },
       { step: 'Understands what Safe to Spend means',              status: 'HUMAN' },
     ],
   },
@@ -83,11 +84,12 @@ const PERSONAS = [
 
 function run() {
   const findings = [];
-  let verified = 0, heuristic = 0, human = 0;
+  let verified = 0, runtime = 0, heuristic = 0, human = 0;
 
   for (const p of PERSONAS) {
     for (const s of p.steps) {
       if (s.status === 'VERIFIED') verified++;
+      else if (s.status === 'RUNTIME') runtime++;
       else if (s.status === 'HEURISTIC') heuristic++;
       else human++;
     }
@@ -102,16 +104,16 @@ function run() {
     }
   }
 
-  const total = verified + heuristic + human;
+  const total = verified + runtime + heuristic + human;
   return {
     id: 'personas',
     title: 'Five-persona coverage',
     status: 'INFO',
     summary:
-      `${total} journey steps: ${verified} verified by tests, ${heuristic} heuristic, ` +
-      `${human} need a person to check. Coverage is a fact here, not a grade.`,
+      `${total} journey steps: ${runtime} proven in a real runtime, ${verified} by tests, ` +
+      `${heuristic} heuristic, ${human} still need a person. Coverage is a fact here, not a grade.`,
     findings,
-    detail: { verified, heuristic, human, personas: PERSONAS },
+    detail: { runtime, verified, heuristic, human, personas: PERSONAS },
   };
 }
 
