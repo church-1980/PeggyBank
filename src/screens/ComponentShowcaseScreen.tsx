@@ -27,11 +27,31 @@ const SIZE_NAMES: IconFrameSizeName[] = ['compact', 'standard', 'card', 'feature
 const CONCEPTS: IconKey[] = ['travel', 'vehicle', 'home', 'food', 'health', 'debt', 'pet', 'shopping', 'gifts', 'education', 'investing', 'other'];
 // Demo image for photo/thumbnail slots — resolved THROUGH the registry (no
 // direct art import in a screen, even in the dev playground).
-const DEMO_IMG = Image.resolveAssetSource(ICON_REGISTRY.pet.image).uri;
+//
+// WHY THIS IS NOT JUST Image.resolveAssetSource(...).uri ANY MORE
+// ---------------------------------------------------------------
+// react-native-web has no resolveAssetSource. This line sat at MODULE level, so
+// it ran the moment the navigator imported this screen — which happens at
+// startup — and threw before React rendered anything. The whole web app was a
+// blank page, while the build reported success and every unit test passed.
+// A dev-only playground screen was taking the entire product down on one platform.
+//
+// The bundlers also disagree about what an image import IS: on web it is already
+// a URL string, on native it is an asset id that has to be resolved. Handle all
+// three shapes, and never throw — a demo thumbnail is not worth a blank app.
+function assetUri(asset: any): string {
+  if (!asset) return '';
+  if (typeof asset === 'string') return asset;              // web: already a URL
+  if (typeof asset === 'object' && asset.uri) return asset.uri;
+  const resolve = (Image as any).resolveAssetSource;        // native only
+  if (typeof resolve !== 'function') return '';
+  try { return resolve(asset)?.uri ?? ''; } catch { return ''; }
+}
 
 function money(n: number) { return '$' + n.toLocaleString('en-US'); }
 
 export default function ComponentShowcaseScreen({ navigation }: any) {
+  const DEMO_IMG = assetUri(ICON_REGISTRY.pet.image);
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [nav, setNav] = useState<NavKey>('home');

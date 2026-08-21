@@ -95,6 +95,38 @@ decision for the project owner to make.
 
 ---
 
+## The web runtime check
+
+```
+npm run web:build     # export the web bundle
+npm run audit:web     # drive real Chrome against it
+```
+
+This is not a smoke test. It starts a server that sends the cross-origin
+isolation headers, opens the exported build in real Chrome, and answers the only
+question that matters on web:
+
+> If someone types their money in and closes the tab, is it still there?
+
+It writes an expense, reads it back, **reloads the page**, opens a **brand new
+tab**, deletes the expense, reloads again, and checks the browser console is
+clean. On web the database is SQLite compiled to WebAssembly, so persistence is
+the part most likely to be quietly broken — and no unit test can see it, because
+jest runs against a native mock.
+
+**This check found a real one.** The web build compiled perfectly, every unit
+test passed, and the app was a **blank white page in a browser**. A dev-only
+showcase screen called `Image.resolveAssetSource` at module level; react-native-web
+has no such function, so it threw the moment the navigator imported the screen —
+before React rendered anything. Nothing else in the audit could have caught that.
+
+The result is recorded to `.audit/web-runtime.json` **with the commit it was
+measured on**. If that commit is not HEAD, the audit reports UNVERIFIED instead
+of reusing it: a result from different code is not evidence about this code, and
+a stale green is worse than an honest gap because it stops anyone looking again.
+
+---
+
 ## Turning `UNVERIFIED` into a real result
 
 **Web runtime** is currently `UNVERIFIED` because no browser automation is

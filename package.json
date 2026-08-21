@@ -26,7 +26,9 @@
     "ship": "bash scripts/ship.sh",
     "verify": "bash scripts/ship.sh --verify",
     "audit:all": "node scripts/audit/run.js",
-    "audit:parity": "jest --config jest.parity.config.js && node scripts/audit/parity-compare.js"
+    "audit:parity": "jest --config jest.parity.config.js && node scripts/audit/parity-compare.js",
+    "web:build": "expo export --platform web --output-dir dist-web",
+    "audit:web": "node scripts/webtest/run.js"
   },
   "jest": {
     "preset": "jest-expo",
@@ -97,6 +99,7 @@
     "expo-modules-core": "~55.0.25",
     "jest": "^29.7.0",
     "jest-expo": "~55.0.19",
+    "puppeteer-core": "^25.8.0",
     "react-test-renderer": "^19.2.0",
     "typescript": "~5.9.2"
   },

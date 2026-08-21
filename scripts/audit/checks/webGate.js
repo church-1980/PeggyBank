@@ -58,39 +58,63 @@ function run() {
     });
   }
 
-  // --- the honest part ---
-  if (!driver) {
+  // --- the recorded browser result ---
+  //
+  // A recording made on DIFFERENT code is not evidence about this code. If the
+  // commit does not match HEAD the result is treated as UNVERIFIED rather than
+  // reused, because a stale green is worse than an honest gap: it stops anyone
+  // looking again.
+  const recPath = path.join(ROOT, '.audit', 'web-runtime.json');
+  let rec = null;
+  if (fs.existsSync(recPath)) {
+    try { rec = JSON.parse(fs.readFileSync(recPath, 'utf8')); } catch { rec = null; }
+  }
+
+  let headSha = 'unknown';
+  try {
+    headSha = require('child_process')
+      .execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
+  } catch {}
+
+  if (!rec) {
     findings.push({
-      severity: 'UNVERIFIED',
-      where: 'web runtime',
+      severity: 'UNVERIFIED', where: 'web runtime',
       what: 'WEB RUNTIME — UNVERIFIED',
-      why:
-        'No browser automation is installed (none of: ' + DRIVERS.join(', ') + '), so nothing ' +
-        'in this audit has opened the web app, loaded a page, or read a number off the screen. ' +
-        'This is NOT a pass and NOT a failure. To turn it into a real result, install a driver ' +
-        'and add a test that loads the app, writes a row, reloads, and reads it back.',
+      why: 'Nothing has opened the web app. Run: npm run web:build && npm run audit:web',
     });
-    return {
-      id: 'web-gate',
-      title: 'Web runtime',
-      status: 'UNVERIFIED',
-      summary: 'no browser automation installed — the web app has not been run',
-      findings,
-    };
+    return { id: 'web-gate', title: 'Web runtime', status: 'UNVERIFIED',
+             summary: 'never run in a browser', findings };
+  }
+
+  if (rec.commit !== headSha) {
+    findings.push({
+      severity: 'UNVERIFIED', where: 'web runtime',
+      what: 'WEB RUNTIME — UNVERIFIED (the recorded result is from other code)',
+      why: 'Measured on ' + String(rec.commit).slice(0, 8) + ', HEAD is ' + headSha.slice(0, 8) +
+           '. Re-run: npm run web:build && npm run audit:web',
+    });
+    return { id: 'web-gate', title: 'Web runtime', status: 'UNVERIFIED',
+             summary: 'recorded result is stale (measured on ' + String(rec.commit).slice(0, 8) + ')', findings };
+  }
+
+  const counts = rec.checks ? rec.checks.passed + '/' + rec.checks.total + ' checks' : 'result recorded';
+  if (rec.status !== 'PASS') {
+    findings.push({
+      severity: 'FAIL', where: 'web runtime',
+      what: 'the web app failed its browser checks (' + counts + ')',
+      why: rec.detail || 'See npm run audit:web for the detail.',
+    });
+    return { id: 'web-gate', title: 'Web runtime', status: 'FAIL',
+             summary: counts + ' — measured in Chrome', findings };
   }
 
   findings.push({
     severity: 'INFO', where: 'web runtime',
-    what: `browser automation available (${driver})`,
-    why: 'A runtime test can be written. Availability alone still proves nothing.',
+    what: 'verified in Chrome: the app starts, stores an expense, and it survives a reload and a new tab',
+    why: 'Measured ' + String(rec.when).slice(0, 19).replace('T', ' ') + ' on this exact commit.',
   });
-  return {
-    id: 'web-gate',
-    title: 'Web runtime',
-    status: 'UNVERIFIED',
-    summary: `${driver} is installed, but no runtime test asserts the web app actually works`,
-    findings,
-  };
+  return { id: 'web-gate', title: 'Web runtime', status: 'PASS',
+           summary: counts + ' passed in real Chrome, including persistence across reload', findings };
 }
 
 module.exports = { run };
