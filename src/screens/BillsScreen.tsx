@@ -13,7 +13,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import IconBadge from '../components/IconBadge';
-import { categoryIconKey } from '../data/iconRegistry';
+import { categoryIconKey, subscriptionIconKey } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
 import { getNotificationMode, rescheduleAll } from '../lib/notifications';
@@ -401,7 +401,7 @@ export default function BillsScreen({ navigation, route }: any) {
                 style={[styles.card, { borderLeftColor: color }]}
                 onPress={() => openEditSub(item)}
               >
-                <PeggyIconFrame iconKey={categoryIconKey((item as any).category ?? 'fun')} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
+                <PeggyIconFrame iconKey={subscriptionIconKey((item as any).category)} size="card" shape="circle" overrideSource={logoFor(item.name) ? { uri: logoFor(item.name) } : undefined} style={{ marginRight: Spacing.sm + 2 }} />
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>

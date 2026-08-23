@@ -1,7 +1,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { pendingIncome, confirmIncome, type ExpectedIncome } from '../lib/incomeSchedules';
+import {
+  pendingIncome, confirmIncome, activeSchedules, updateSchedule, deactivateSchedule,
+  describeSchedule, nextOccurrence, type ExpectedIncome, type IncomeSchedule,
+} from '../lib/incomeSchedules';
+import { parseLocalDate, localDateString } from '../core/datetime';
 import PeggyCard from '../components/peggy/PeggyCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +34,13 @@ export default function IncomesScreen({ navigation }: any) {
   const [expected, setExpected] = useState<ExpectedIncome[]>([]);
   const [confirming, setConfirming] = useState<ExpectedIncome | null>(null);
   const [confirmAmount, setConfirmAmount] = useState('');
+
+  // The regular-income setup itself. Before this existed a schedule could be
+  // created and then never changed: a raise, a new payday or a typo meant
+  // starting over, which is what made income feel locked after setup.
+  const [schedules, setSchedules] = useState<IncomeSchedule[]>([]);
+  const [editingSchedule, setEditingSchedule] = useState<IncomeSchedule | null>(null);
+  const [schedAmount, setSchedAmount] = useState('');
   const [undoVisible, setUndoVisible] = useState(false);
   const undoData = useRef<Income | null>(null);
   const [actionIncome, setActionIncome] = useState<Income | null>(null);
@@ -51,8 +62,68 @@ export default function IncomesScreen({ navigation }: any) {
     try {
       const db = await getDatabase();
       setExpected(await pendingIncome(db));
-    } catch { setExpected([]); }
+      setSchedules(await activeSchedules(db));
+    } catch { setExpected([]); setSchedules([]); }
   }, []);
+
+  const openScheduleEdit = (s: IncomeSchedule) => {
+    setEditingSchedule(s);
+    setSchedAmount(String(s.amount));
+  };
+
+  /**
+   * Changes what is normally EXPECTED from here on. Deliberately separate from
+   * confirming a single pay: one short week is not a pay cut, so correcting a
+   * paycheck must never redefine normal pay.
+   */
+  const saveScheduleAmount = async () => {
+    if (!editingSchedule) return;
+    const parsed = parseFloat(schedAmount);
+    if (isNaN(parsed) || parsed <= 0) {
+      Alert.alert('How much is it normally?', 'Enter the amount you usually expect.');
+      return;
+    }
+    try {
+      const db = await getDatabase();
+      await updateSchedule(db, editingSchedule.id, { amount: parsed });
+      setEditingSchedule(null);
+      loadExpected();
+    } catch {
+      Alert.alert('Could not save', 'Something went wrong. Please try again.');
+    }
+  };
+
+  const stopSchedule = (s: IncomeSchedule) => {
+    Alert.alert(
+      'Stop expecting this?',
+      'We will stop forecasting ' + s.label + '. Pay you have already recorded is kept.',
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Stop',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const db = await getDatabase();
+              await deactivateSchedule(db, s.id);
+              setEditingSchedule(null);
+              loadExpected();
+            } catch { Alert.alert('Could not stop', 'Please try again.'); }
+          },
+        },
+      ]
+    );
+  };
+
+  /** "in 5 days", "today", "tomorrow" — how far off the next pay is. */
+  const daysAway = (iso: string) => {
+    const today = parseLocalDate(localDateString(new Date()));
+    const n = Math.round((parseLocalDate(iso).getTime() - today.getTime()) / 86400000);
+    if (n === 0) return 'today';
+    if (n === 1) return 'tomorrow';
+    if (n < 0) return 'overdue';
+    return 'in ' + n + ' days';
+  };
 
   useFocusEffect(useCallback(() => { loadIncomes(); loadExpected(); }, [loadIncomes, loadExpected]));
 
@@ -148,6 +219,27 @@ export default function IncomesScreen({ navigation }: any) {
         </View>
         <Ionicons name="chevron-forward" size={18} color={C.textHint} />
       </TouchableOpacity>
+
+      {schedules.length > 0 && (
+        <View style={styles.expectedWrap}>
+          <Text style={styles.expectedHeading}>Regular income</Text>
+          <Text style={styles.expectedSub}>What you normally expect. Tap to change it.</Text>
+          {schedules.map(s => (
+            <PeggyCard key={'sched' + s.id} style={styles.expectedCard} onPress={() => openScheduleEdit(s)}>
+              <View style={styles.expectedRow}>
+                <PeggyIconFrame iconKey="recurring" size="card" shape="circle" style={{ marginRight: 12 }} />
+                <View style={styles.itemMiddle}>
+                  <Text style={styles.itemLabel}>{s.label}</Text>
+                  <Text style={styles.itemDate}>
+                    {describeSchedule(s)} · Next pay {formatDate(nextOccurrence(s))} ({daysAway(nextOccurrence(s))})
+                  </Text>
+                </View>
+                <Text style={styles.expectedAmount}>~{formatCurrency(s.amount)}</Text>
+              </View>
+            </PeggyCard>
+          ))}
+        </View>
+      )}
 
       {expected.length > 0 && (
         <View style={styles.expectedWrap}>
@@ -293,6 +385,54 @@ export default function IncomesScreen({ navigation }: any) {
         </View>
       </Modal>
 
+      <Modal visible={!!editingSchedule} transparent animationType="slide" onRequestClose={() => setEditingSchedule(null)}>
+        <TouchableOpacity style={styles.actionOverlay} activeOpacity={1} onPress={() => setEditingSchedule(null)} />
+        <View style={styles.confirmSheet}>
+          <Text style={styles.confirmTitle}>{editingSchedule ? editingSchedule.label : ''}</Text>
+          <Text style={styles.confirmSub}>
+            {editingSchedule ? describeSchedule(editingSchedule) : ''}. This is what you NORMALLY expect —
+            changing it affects pays from now on, not ones you have already recorded.
+          </Text>
+          <View style={styles.confirmInputRow}>
+            <Text style={styles.confirmPrefix}>$</Text>
+            <TextInput
+              style={styles.confirmInput}
+              value={schedAmount}
+              onChangeText={setSchedAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={C.textHint}
+              selectTextOnFocus
+              accessibilityLabel="Amount you normally expect to be paid"
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.confirmSave}
+            onPress={saveScheduleAmount}
+            accessibilityRole="button"
+            accessibilityLabel="Save the normal pay amount"
+          >
+            <Text style={styles.confirmSaveText}>Update future pays</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.confirmCancel}
+            onPress={() => editingSchedule && stopSchedule(editingSchedule)}
+            accessibilityRole="button"
+            accessibilityLabel={'Stop expecting ' + (editingSchedule ? editingSchedule.label : 'this income')}
+          >
+            <Text style={styles.stopText}>Stop expecting this</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.confirmCancel}
+            onPress={() => setEditingSchedule(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Close without changing anything"
+          >
+            <Text style={styles.confirmCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
     </PeggyScreen>
   );
 }
@@ -341,6 +481,7 @@ function makeStyles(C: ColorPalette) {
     confirmSaveText: { ...Typography.bodyBold, color: C.textOnPrimary },
     confirmCancel:   { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs },
     confirmCancelText: { ...Typography.body, color: C.textSecondary },
+    stopText:          { ...Typography.body, color: C.danger, fontWeight: '600' },
 
     header: {
       paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.lg,

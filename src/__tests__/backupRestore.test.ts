@@ -60,7 +60,7 @@ const sampleBackup = () => ({
   merchant_memory: [{ name_key: 'bell', display_name: 'Bell', doc_type: 'bill', category: null, recurring: 1, last_amount: 95.42, avg_amount: 95.42, due_day: 5, times_seen: 3, last_seen: '2026-08-01' }],
   calendar_reminders: [{ id: 1, date: '2026-08-20', time: '09:00', title: 'Rent', created_at: 'x' }],
   bill_payments: [],
-  income_schedules: [{ id: 3, label: 'Pay', amount: 2200, frequency: 'weekly', day_of_month: null, weekday: 5, active: 1, created_at: 'x' }],
+  income_schedules: [{ id: 3, label: 'Pay', amount: 2200, frequency: 'weekly', day_of_month: null, weekday: 5, active: 1, created_at: 'x', anchor_date: '2026-08-14' }],
 });
 
 describe('backup coverage', () => {

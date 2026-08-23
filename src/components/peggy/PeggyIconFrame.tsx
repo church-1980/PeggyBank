@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import PeggyBrandMark from './PeggyBrandMark';
 import {
   Radius, IconFrameSize, IconFrameSizeName,
   CONCEPT_ICON, CONCEPT_ICON_INLINE, CONCEPT_ICON_TIER_THRESHOLD, CONCEPT_ICON_FILL,
@@ -57,9 +58,27 @@ export default function PeggyIconFrame({
   const color = tone ?? entry.color;
   const radius = shape === 'circle' ? px / 2 : Radius.tile;
 
-  const background = overrideSource
-    ? '#FFFFFF'
-    : bg ?? (selected ? color + '2E' : tinted ? color + '1A' : 'transparent');
+  const background = bg ?? (selected ? color + '2E' : tinted ? color + '1A' : 'transparent');
+
+  // A merchant's own logo is NOT PeggyBank artwork and must not be drawn like
+  // it. This frame crops to a circle, which is safe for our own square-drawn
+  // concept art and destructive for anyone else's mark -- a wide logo lost its
+  // ends to resizeMode "cover" and its corners to the circular mask. Brand
+  // marks are handed to PeggyBrandMark, which keeps their proportions inside
+  // the SAME footprint so list rows stay aligned.
+  if (overrideSource) {
+    return (
+      <PeggyBrandMark
+        source={overrideSource}
+        size={px}
+        style={style}
+        testID={testID}
+        // The merchant's name sits next to this in every current use, so the
+        // logo is decoration; naming it again would read the row out twice.
+        accessibilityLabel={undefined}
+      />
+    );
+  }
 
   return (
     <View
@@ -80,9 +99,7 @@ export default function PeggyIconFrame({
         style,
       ]}
     >
-      {overrideSource ? (
-        <Image source={overrideSource} style={{ width: px, height: px, resizeMode: 'cover' }} />
-      ) : entry.image ? (
+      {entry.image ? (
         <Image
           source={entry.image}
           style={{ width: px * CONCEPT_ICON_FILL, height: px * CONCEPT_ICON_FILL, resizeMode: 'contain' }}

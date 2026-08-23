@@ -173,6 +173,7 @@ export async function setupDatabase(): Promise<void> {
     `ALTER TABLE savings_goals ADD COLUMN custom_image_uri TEXT`,
     `ALTER TABLE income ADD COLUMN schedule_id INTEGER`,
     `ALTER TABLE income ADD COLUMN cycle_date TEXT`,
+    `ALTER TABLE income_schedules ADD COLUMN anchor_date TEXT`,
   ];
   for (const sql of migrations) {
     try { await database.execAsync(sql + ';'); } catch {}

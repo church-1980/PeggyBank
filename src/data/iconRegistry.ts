@@ -234,6 +234,28 @@ export const CATEGORY_ICON: Record<string, IconKey> = {
   other: 'other',
 };
 
+/**
+ * Registry bucket for a SUBSCRIPTION.
+ *
+ * Subscriptions used to fall back to the 'fun' bucket, whose artwork is a game
+ * controller. Since the subscriptions table stores no category at all, that
+ * fallback fired every single time: a gym membership, an audiobook plan and a
+ * cloud storage plan were all drawn as video games.
+ *
+ * A subscription is not a genre, it is a SHAPE of payment -- something that
+ * comes back every month whether it is a gym, a newspaper, software or music.
+ * So the generic bucket is 'recurring', whose artwork is the circular repeat
+ * mark, not any one industry's symbol. A television or play button would be
+ * just as wrong as a controller.
+ *
+ * A real category still wins when there is one, and a merchant's own logo wins
+ * over both -- that is handled by the caller passing overrideSource.
+ */
+export function subscriptionIconKey(category?: string): IconKey {
+  const named = category && category !== 'other' ? CATEGORY_ICON[category] : undefined;
+  return named ?? 'recurring';
+}
+
 /** Registry bucket key for a goal type. */
 export function goalTypeIconKey(goalType?: string): IconKey {
   return GOAL_TYPE_ICON[goalType ?? 'other'] ?? 'other';

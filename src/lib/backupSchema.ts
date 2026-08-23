@@ -93,7 +93,7 @@ export const BACKUP_TABLES: TableSpec[] = [
   },
   {
     table: 'income_schedules',
-    columns: ['id', 'label', 'amount', 'frequency', 'day_of_month', 'weekday', 'active', 'created_at'],
+    columns: ['id', 'label', 'amount', 'frequency', 'day_of_month', 'weekday', 'active', 'created_at', 'anchor_date'],
     primaryKey: 'id',
     // Not required: databases created before recurring income existed have none,
     // and an older backup must still restore rather than be rejected.

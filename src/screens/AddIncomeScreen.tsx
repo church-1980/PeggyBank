@@ -52,7 +52,7 @@ export default function AddIncomeScreen({ navigation, route }: any) {
   // How often this money arrives. 'once' means exactly that -- no forecast is
   // created. A repeat does NOT bank future money: it only makes the next ones
   // show up to be confirmed when they actually arrive.
-  const [repeat, setRepeat] = useState<'once' | 'weekly' | 'monthly'>('once');
+  const [repeat, setRepeat] = useState<'once' | 'weekly' | 'biweekly' | 'monthly'>('once');
   const [lowAmount, setLowAmount] = useState('');
   const [highAmount, setHighAmount] = useState('');
   const [label, setLabel] = useState(editingId ? String(editing.label ?? '') : '');
@@ -107,12 +107,15 @@ export default function AddIncomeScreen({ navigation, route }: any) {
           // for the ones after it. The schedule stores what to EXPECT; it never
           // creates income on its own -- each future payday has to be confirmed.
           const res = await db.runAsync(
-            `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, active)
-             VALUES (?, ?, ?, ?, ?, 1)`,
+            `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, anchor_date, active)
+             VALUES (?, ?, ?, ?, ?, ?, 1)`,
             [
               saveLabel, saveAmount, repeat,
               repeat === 'monthly' ? when.getDate() : null,
-              repeat === 'weekly' ? when.getDay() : null,
+              repeat === 'monthly' ? null : when.getDay(),
+              // Biweekly counts fortnights from this real payday; a weekday
+              // alone cannot say whether it is this Friday or the next one.
+              repeat === 'biweekly' ? date : null,
             ]
           );
           const scheduleId = (res as any)?.lastInsertRowId ?? null;
@@ -236,9 +239,10 @@ export default function AddIncomeScreen({ navigation, route }: any) {
             <Text style={styles.sectionLabel}>Does this come in regularly?</Text>
             <View style={styles.repeatRow}>
               {([
-                { key: 'once',    text: 'Just this once' },
-                { key: 'weekly',  text: 'Every week' },
-                { key: 'monthly', text: 'Every month' },
+                { key: 'once',     text: 'Just this once' },
+                { key: 'weekly',   text: 'Every week' },
+                { key: 'biweekly', text: 'Every 2 weeks' },
+                { key: 'monthly',  text: 'Every month' },
               ] as const).map(opt => (
                 <TouchableOpacity
                   key={opt.key}
@@ -257,6 +261,8 @@ export default function AddIncomeScreen({ navigation, route }: any) {
               <Text style={styles.repeatHint}>
                 {repeat === 'weekly'
                   ? `Every ${WEEKDAYS[parseLocalDate(date).getDay()]}, based on the date above.`
+                  : repeat === 'biweekly'
+                  ? `Every second ${WEEKDAYS[parseLocalDate(date).getDay()]}, counting from the date above.`
                   : `On the ${parseLocalDate(date).getDate()}${ordinalSuffix(parseLocalDate(date).getDate())} of each month, based on the date above.`}
               </Text>
               <Text style={styles.repeatHint}>

@@ -15,6 +15,7 @@ process.env.TZ = 'America/Toronto';
 import {
   occurrencesBetween, nextOccurrence, pendingIncome, confirmIncome, isConfirmed,
   type IncomeSchedule,
+  updateSchedule, describeSchedule,
 } from '../lib/incomeSchedules';
 
 const weeklyFriday: IncomeSchedule = { id: 1, label: 'Pay', amount: 2200, frequency: 'weekly', weekday: 5 };
@@ -244,5 +245,135 @@ describe('A new schedule does not invent past paydays', () => {
   it('a schedule with no creation date behaves as before', async () => {
     const db = makeDb([{ ...madeToday, created_at: null }]);
     expect((await pendingIncome(db, new Date(2026, 7, 23))).length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * ONE PAYCHECK IS NOT EVERY PAYCHECK.
+ *
+ * The distinction the whole feature turns on. Normal pay is about $850. One
+ * week it is $792.43 because of fewer hours. Recording that must NOT redefine
+ * normal pay as $792.43 -- otherwise a single short week quietly becomes the
+ * new expectation and every forecast after it is wrong.
+ *
+ * Equally, deliberately changing the normal figure must NOT rewrite what was
+ * already received. What arrived is a fact about the past.
+ */
+describe('Correcting one pay versus changing future pay', () => {
+  const usual: IncomeSchedule = {
+    id: 4, label: 'Pay', amount: 850, frequency: 'biweekly', weekday: 5,
+    anchor_date: '2026-08-07', created_at: '2026-06-01 09:00:00',
+  };
+
+  function scheduleDb(schedules: IncomeSchedule[]) {
+    const rows = schedules.map(s => ({ ...s }));
+    const income: any[] = [];
+    return {
+      rows, income,
+      getAllAsync: jest.fn(async (sql: string) =>
+        sql.includes('income_schedules') ? rows : income.filter(r => r.schedule_id != null)),
+      getFirstAsync: jest.fn(async (sql: string, args: any[]) =>
+        sql.includes('income_schedules')
+          ? rows.find(r => r.id === args[0]) ?? null
+          : { n: income.filter(r => r.schedule_id === args[0] && r.cycle_date === args[1]).length }),
+      runAsync: jest.fn(async (sql: string, args: any[]) => {
+        if (sql.includes('UPDATE income_schedules')) {
+          const row = rows.find(r => r.id === args[args.length - 1]);
+          const cols = sql.slice(sql.indexOf('SET ') + 4, sql.indexOf(' WHERE')).split(',').map(s => s.trim().split(' ')[0]);
+          cols.forEach((c, i) => { (row as any)[c] = args[i]; });
+        } else {
+          income.push({ amount: args[0], label: args[1], date: args[2], schedule_id: args[3], cycle_date: args[4] });
+        }
+        return { changes: 1 };
+      }),
+    } as any;
+  }
+
+  it('THE RULE: a short paycheck does not change what is normally expected', async () => {
+    const db = scheduleDb([usual]);
+    await confirmIncome(db, usual, '2026-08-21', 792.43);
+
+    expect(db.income[0].amount).toBe(792.43);       // what actually arrived
+    expect(db.rows[0].amount).toBe(850);            // what is still normal
+  });
+
+  it('a bigger paycheck does not raise the expectation either', async () => {
+    const db = scheduleDb([usual]);
+    await confirmIncome(db, usual, '2026-08-21', 914.18);
+    expect(db.rows[0].amount).toBe(850);
+  });
+
+  it('changing the normal amount deliberately DOES change future pay', async () => {
+    const db = scheduleDb([usual]);
+    await updateSchedule(db, 4, { amount: 900 });
+    expect(db.rows[0].amount).toBe(900);
+  });
+
+  it('changing the normal amount does not rewrite pay already received', async () => {
+    const db = scheduleDb([usual]);
+    await confirmIncome(db, usual, '2026-08-21', 792.43);
+    await updateSchedule(db, 4, { amount: 900 });
+    expect(db.income[0].amount).toBe(792.43);       // the past is a fact
+  });
+
+  it('EDITING PRESERVES FIELDS NOT ASKED ABOUT', async () => {
+    // The historical PeggyBank defect: an edit that silently dropped metadata.
+    const db = scheduleDb([usual]);
+    await updateSchedule(db, 4, { amount: 875 });
+    const after = db.rows[0];
+    expect(after.amount).toBe(875);
+    expect(after.label).toBe('Pay');
+    expect(after.frequency).toBe('biweekly');
+    expect(after.weekday).toBe(5);
+    expect(after.anchor_date).toBe('2026-08-07');
+    expect(after.created_at).toBe('2026-06-01 09:00:00');
+  });
+
+  it('an empty change touches nothing at all', async () => {
+    const db = scheduleDb([usual]);
+    await updateSchedule(db, 4, {});
+    expect(db.runAsync).not.toHaveBeenCalled();
+  });
+
+  it('the pay date can be moved for future pays without touching the past', async () => {
+    const db = scheduleDb([usual]);
+    await confirmIncome(db, usual, '2026-08-21', 850);
+    await updateSchedule(db, 4, { weekday: 4, anchor_date: '2026-09-03' });
+    expect(db.rows[0].weekday).toBe(4);
+    expect(db.income[0].cycle_date).toBe('2026-08-21');   // unchanged
+  });
+});
+
+describe('Every two weeks means every two weeks', () => {
+  const biweekly: IncomeSchedule = {
+    id: 5, label: 'Pay', amount: 850, frequency: 'biweekly', weekday: 5,
+    anchor_date: '2026-08-07', created_at: '2026-01-01 00:00:00',
+  };
+
+  it('lands a fortnight apart, not every week', () => {
+    expect(occurrencesBetween(biweekly, new Date(2026, 7, 1), new Date(2026, 8, 30)))
+      .toEqual(['2026-08-07', '2026-08-21', '2026-09-04', '2026-09-18']);
+  });
+
+  it('picks the RIGHT Friday, not merely a Friday', () => {
+    // Anchored on 7 Aug, so 14 Aug is a Friday this schedule skips.
+    const days = occurrencesBetween(biweekly, new Date(2026, 7, 1), new Date(2026, 7, 31));
+    expect(days).not.toContain('2026-08-14');
+    expect(days).toContain('2026-08-21');
+  });
+
+  it('keeps its rhythm across a month boundary', () => {
+    const days = occurrencesBetween(biweekly, new Date(2026, 8, 1), new Date(2026, 9, 31));
+    expect(days[0]).toBe('2026-09-04');
+    for (let i = 1; i < days.length; i++) {
+      const gap = (new Date(days[i] + 'T00:00:00').getTime() - new Date(days[i - 1] + 'T00:00:00').getTime()) / 86400000;
+      expect(gap).toBe(14);
+    }
+  });
+
+  it('reads back in plain language', () => {
+    expect(describeSchedule(biweekly)).toBe('Every second Friday');
+    expect(describeSchedule({ ...biweekly, frequency: 'weekly' })).toBe('Every Friday');
+    expect(describeSchedule({ id: 6, label: 'x', amount: 1, frequency: 'monthly', day_of_month: 15 })).toBe('On the 15th');
   });
 });
