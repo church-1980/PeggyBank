@@ -54,6 +54,17 @@ export async function setupDatabase(): Promise<void> {
       created_at TEXT DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS income_schedules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      label TEXT NOT NULL,
+      amount REAL NOT NULL,
+      frequency TEXT NOT NULL DEFAULT 'monthly',
+      day_of_month INTEGER,
+      weekday INTEGER,
+      active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS savings_goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -160,6 +171,8 @@ export async function setupDatabase(): Promise<void> {
     `ALTER TABLE savings_goals ADD COLUMN goal_type TEXT`,
     `ALTER TABLE savings_goals ADD COLUMN pinned INTEGER DEFAULT 0`,
     `ALTER TABLE savings_goals ADD COLUMN custom_image_uri TEXT`,
+    `ALTER TABLE income ADD COLUMN schedule_id INTEGER`,
+    `ALTER TABLE income ADD COLUMN cycle_date TEXT`,
   ];
   for (const sql of migrations) {
     try { await database.execAsync(sql + ';'); } catch {}
@@ -264,6 +277,7 @@ const ALL_TABLES = [
   'debts', 'subscriptions', 'calendar_reminders', 'settings', 'custom_logos',
   'merchant_memory', 'bill_payments',
   'currency_rates', 'conversion_history',
+  'income_schedules',
 ];
 
 /**

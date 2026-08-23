@@ -1,6 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { pendingIncome, confirmIncome, type ExpectedIncome } from '../lib/incomeSchedules';
+import PeggyCard from '../components/peggy/PeggyCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import IconBadge from '../components/IconBadge';
@@ -22,6 +24,12 @@ export default function IncomesScreen({ navigation }: any) {
   const styles = useMemo(() => makeStyles(C), [C]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [total, setTotal] = useState(0);
+
+  // Paydays the user told us to expect that have not been answered yet. These
+  // are NOT income and are not counted anywhere: they are questions.
+  const [expected, setExpected] = useState<ExpectedIncome[]>([]);
+  const [confirming, setConfirming] = useState<ExpectedIncome | null>(null);
+  const [confirmAmount, setConfirmAmount] = useState('');
   const [undoVisible, setUndoVisible] = useState(false);
   const undoData = useRef<Income | null>(null);
   const [actionIncome, setActionIncome] = useState<Income | null>(null);
@@ -39,7 +47,37 @@ export default function IncomesScreen({ navigation }: any) {
     } catch {}
   }, []);
 
-  useFocusEffect(useCallback(() => { loadIncomes(); }, [loadIncomes]));
+  const loadExpected = useCallback(async () => {
+    try {
+      const db = await getDatabase();
+      setExpected(await pendingIncome(db));
+    } catch { setExpected([]); }
+  }, []);
+
+  useFocusEffect(useCallback(() => { loadIncomes(); loadExpected(); }, [loadIncomes, loadExpected]));
+
+  const openConfirm = (item: ExpectedIncome) => {
+    setConfirming(item);
+    setConfirmAmount(String(item.expectedAmount));   // an estimate to correct, not an answer
+  };
+
+  const submitConfirm = async () => {
+    if (!confirming) return;
+    const parsed = parseFloat(confirmAmount);
+    if (isNaN(parsed) || parsed <= 0) {
+      Alert.alert('How much was it?', 'Enter the amount you were actually paid.');
+      return;
+    }
+    try {
+      const db = await getDatabase();
+      await confirmIncome(db, confirming.schedule, confirming.cycleDate, parsed);
+      setConfirming(null);
+      loadIncomes();
+      loadExpected();
+    } catch {
+      Alert.alert('Could not save', 'Something went wrong recording that. Please try again.');
+    }
+  };
 
   // Editing opens the SAME form used to add income, so every field is
   // available -- above all the date. The old inline modal could only change the
@@ -110,6 +148,37 @@ export default function IncomesScreen({ navigation }: any) {
         </View>
         <Ionicons name="chevron-forward" size={18} color={C.textHint} />
       </TouchableOpacity>
+
+      {expected.length > 0 && (
+        <View style={styles.expectedWrap}>
+          <Text style={styles.expectedHeading}>Expected</Text>
+          <Text style={styles.expectedSub}>Not counted yet — tell us when it arrives.</Text>
+          {expected.slice(0, 4).map(item => (
+            <PeggyCard key={item.schedule.id + '|' + item.cycleDate} style={styles.expectedCard}>
+              <View style={styles.expectedRow}>
+                <PeggyIconFrame iconKey="payday" size="card" shape="circle" style={{ marginRight: 12 }} />
+                <View style={styles.itemMiddle}>
+                  <Text style={styles.itemLabel}>{item.schedule.label}</Text>
+                  <Text style={styles.itemDate}>
+                    {item.due ? 'Was due ' : 'Coming '}{formatDate(item.cycleDate)}
+                  </Text>
+                </View>
+                <Text style={styles.expectedAmount}>~{formatCurrency(item.expectedAmount)}</Text>
+              </View>
+              {item.due ? (
+                <TouchableOpacity
+                  style={styles.confirmBtn}
+                  onPress={() => openConfirm(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={'Record that ' + item.schedule.label + ' arrived on ' + formatDate(item.cycleDate)}
+                >
+                  <Text style={styles.confirmBtnText}>Did this arrive?</Text>
+                </TouchableOpacity>
+              ) : null}
+            </PeggyCard>
+          ))}
+        </View>
+      )}
 
       {incomes.length === 0 ? (
         <View style={styles.empty}>
@@ -183,6 +252,47 @@ export default function IncomesScreen({ navigation }: any) {
         </View>
       </Modal>
 
+      <Modal visible={!!confirming} transparent animationType="slide" onRequestClose={() => setConfirming(null)}>
+        <TouchableOpacity style={styles.actionOverlay} activeOpacity={1} onPress={() => setConfirming(null)} />
+        <View style={styles.confirmSheet}>
+          <Text style={styles.confirmTitle}>
+            {confirming ? confirming.schedule.label : ''}
+          </Text>
+          <Text style={styles.confirmSub}>
+            How much did you actually get paid? Change it if it was different this time.
+          </Text>
+          <View style={styles.confirmInputRow}>
+            <Text style={styles.confirmPrefix}>$</Text>
+            <TextInput
+              style={styles.confirmInput}
+              value={confirmAmount}
+              onChangeText={setConfirmAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={C.textHint}
+              selectTextOnFocus
+              accessibilityLabel="Amount you were actually paid"
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.confirmSave}
+            onPress={submitConfirm}
+            accessibilityRole="button"
+            accessibilityLabel="Record this payment"
+          >
+            <Text style={styles.confirmSaveText}>Yes, I got paid</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.confirmCancel}
+            onPress={() => setConfirming(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Not yet, close this"
+          >
+            <Text style={styles.confirmCancelText}>Not yet</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
     </PeggyScreen>
   );
 }
@@ -192,6 +302,45 @@ function makeStyles(C: ColorPalette) {
     // PeggyScreen owns the background and safe-area insets.
     // paddingBottom is zeroed: this screen supplies its own.
     shell:   { flex: 1, paddingBottom: 0 },
+
+    // Expected income. PeggyCard owns the surface, radius and shadow; only
+    // layout and the tones that mark this as "not money yet" live here.
+    expectedWrap:    { paddingHorizontal: Spacing.md, paddingTop: Spacing.md },
+    expectedHeading: { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6 },
+    expectedSub:     { ...Typography.caption, color: C.textSecondary, marginTop: 2, marginBottom: Spacing.sm },
+    expectedCard:    { marginBottom: Spacing.sm },
+    expectedRow:     { flexDirection: 'row', alignItems: 'center' },
+    // Tilde and a softer tone: this is an estimate, not a balance.
+    expectedAmount:  { ...Typography.bodyBold, color: C.textSecondary },
+    confirmBtn: {
+      minHeight: 48, borderRadius: Radius.md, marginTop: Spacing.sm,
+      alignItems: 'center', justifyContent: 'center',
+      borderWidth: 1, borderColor: C.income,
+    },
+    confirmBtnText:  { ...Typography.body, color: C.income, fontWeight: '700' },
+
+    confirmSheet: {
+      position: 'absolute', left: 0, right: 0, bottom: 0,
+      backgroundColor: C.bgCard,
+      borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
+      padding: Spacing.lg,
+    },
+    confirmTitle:    { ...Typography.h3, color: C.textPrimary },
+    confirmSub:      { ...Typography.helper, color: C.textSecondary, marginTop: 4, marginBottom: Spacing.md, lineHeight: 19 },
+    confirmInputRow: {
+      flexDirection: 'row', alignItems: 'center',
+      borderWidth: 1, borderColor: C.border, borderRadius: Radius.md,
+      paddingHorizontal: Spacing.md, minHeight: 56,
+    },
+    confirmPrefix:   { ...Typography.h3, color: C.textSecondary, marginRight: 6 },
+    confirmInput:    { flex: 1, ...Typography.h3, color: C.textPrimary, paddingVertical: 8 },
+    confirmSave: {
+      minHeight: 56, borderRadius: Radius.md, backgroundColor: C.income,
+      alignItems: 'center', justifyContent: 'center', marginTop: Spacing.md,
+    },
+    confirmSaveText: { ...Typography.bodyBold, color: C.textOnPrimary },
+    confirmCancel:   { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs },
+    confirmCancelText: { ...Typography.body, color: C.textSecondary },
 
     header: {
       paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.lg,

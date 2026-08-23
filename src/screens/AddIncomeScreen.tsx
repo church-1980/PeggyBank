@@ -13,8 +13,17 @@ import IconBadge from '../components/IconBadge';
 import { IconKey } from '../data/iconRegistry';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyDateField from '../components/peggy/PeggyDateField';
+import { parseLocalDate } from '../core/datetime';
 
 // Income sources — each carries its own matte concept icon.
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** "st", "nd", "rd", "th" — so the hint reads like a person wrote it. */
+function ordinalSuffix(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+}
+
 const QUICK_SOURCES: { label: string; iconKey: IconKey }[] = [
   { label: 'Paycheck',  iconKey: 'paycheck' },
   { label: 'Freelance', iconKey: 'freelance' },
@@ -39,6 +48,11 @@ export default function AddIncomeScreen({ navigation, route }: any) {
   const [mode, setMode] = useState<'fixed' | 'variable'>('fixed');
   const [amount, setAmount] = useState(editingId ? String(editing.amount ?? '') : '');
   const [date, setDate] = useState<string>(editing.date ?? getTodayString());
+
+  // How often this money arrives. 'once' means exactly that -- no forecast is
+  // created. A repeat does NOT bank future money: it only makes the next ones
+  // show up to be confirmed when they actually arrive.
+  const [repeat, setRepeat] = useState<'once' | 'weekly' | 'monthly'>('once');
   const [lowAmount, setLowAmount] = useState('');
   const [highAmount, setHighAmount] = useState('');
   const [label, setLabel] = useState(editingId ? String(editing.label ?? '') : '');
@@ -82,10 +96,31 @@ export default function AddIncomeScreen({ navigation, route }: any) {
           [saveAmount, saveLabel, date, editingId]
         );
       } else {
-        await db.runAsync(
-          `INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`,
-          [saveAmount, saveLabel, date]
-        );
+        const when = parseLocalDate(date);
+        if (repeat === 'once') {
+          await db.runAsync(
+            `INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`,
+            [saveAmount, saveLabel, date]
+          );
+        } else {
+          // A repeating income records TODAY's payment and sets up the forecast
+          // for the ones after it. The schedule stores what to EXPECT; it never
+          // creates income on its own -- each future payday has to be confirmed.
+          const res = await db.runAsync(
+            `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, active)
+             VALUES (?, ?, ?, ?, ?, 1)`,
+            [
+              saveLabel, saveAmount, repeat,
+              repeat === 'monthly' ? when.getDate() : null,
+              repeat === 'weekly' ? when.getDay() : null,
+            ]
+          );
+          const scheduleId = (res as any)?.lastInsertRowId ?? null;
+          await db.runAsync(
+            `INSERT INTO income (amount, label, date, schedule_id, cycle_date) VALUES (?, ?, ?, ?, ?)`,
+            [saveAmount, saveLabel, date, scheduleId, date]
+          );
+        }
       }
       console.log('[AddIncome] saved $' + saveAmount + ' label=' + saveLabel);
       if (editingId) navigation.goBack(); else navigation.navigate('Home');
@@ -196,6 +231,42 @@ export default function AddIncomeScreen({ navigation, route }: any) {
           <PeggyDateField value={date} onChange={setDate} label="When did it arrive?" />
         </View>
 
+        {!editingId && (
+          <View style={styles.repeatBlock}>
+            <Text style={styles.sectionLabel}>Does this come in regularly?</Text>
+            <View style={styles.repeatRow}>
+              {([
+                { key: 'once',    text: 'Just this once' },
+                { key: 'weekly',  text: 'Every week' },
+                { key: 'monthly', text: 'Every month' },
+              ] as const).map(opt => (
+                <TouchableOpacity
+                  key={opt.key}
+                  style={[styles.repeatChip, repeat === opt.key && styles.repeatChipOn]}
+                  onPress={() => setRepeat(opt.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={opt.text}
+                  accessibilityState={{ selected: repeat === opt.key }}
+                >
+                  <Text style={[styles.repeatText, repeat === opt.key && styles.repeatTextOn]}>{opt.text}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {repeat !== 'once' && (
+              <View>
+              <Text style={styles.repeatHint}>
+                {repeat === 'weekly'
+                  ? `Every ${WEEKDAYS[parseLocalDate(date).getDay()]}, based on the date above.`
+                  : `On the ${parseLocalDate(date).getDate()}${ordinalSuffix(parseLocalDate(date).getDate())} of each month, based on the date above.`}
+              </Text>
+              <Text style={styles.repeatHint}>
+                We&apos;ll ask you to confirm each one when it arrives — nothing is counted until you do.
+              </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <Text style={styles.sectionLabel}>What is this from?</Text>
         <View style={styles.chipRow}>
           {QUICK_SOURCES.map(({ label: q, iconKey }) => (
@@ -295,6 +366,17 @@ function makeStyles(C: ColorPalette) {
     },
 
     dateBlock:    { marginTop: Spacing.lg },
+    repeatBlock:  { marginTop: Spacing.lg },
+    repeatRow:    { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    repeatChip: {
+      minHeight: 48, paddingHorizontal: 16, borderRadius: Radius.md,
+      borderWidth: 1, borderColor: C.border, backgroundColor: C.bgCard,
+      alignItems: 'center', justifyContent: 'center', flexGrow: 1,
+    },
+    repeatChipOn: { backgroundColor: C.income, borderColor: C.income },
+    repeatText:   { ...Typography.body, color: C.textSecondary },
+    repeatTextOn: { color: C.textOnPrimary, fontWeight: '700' },
+    repeatHint:   { ...Typography.caption, color: C.textSecondary, marginTop: Spacing.sm, lineHeight: 18 },
 
     sectionLabel: {
       ...Typography.label, color: C.textSecondary,

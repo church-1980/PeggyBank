@@ -50,7 +50,7 @@ const sampleBackup = () => ({
   version: BACKUP_VERSION,
   exportedAt: '2026-08-19T10:00:00.000Z',
   expenses: [{ id: 1, amount: 58, category: 'restaurant', note: 'Test Diner', date: '2026-08-01', photo_uri: 'file:///a.jpg', is_recurring: 0, created_at: 'x' }],
-  income: [{ id: 1, amount: 2400, label: 'Paycheck', date: '2026-08-15', is_recurring: 1, created_at: 'x' }],
+  income: [{ id: 1, amount: 2400, label: 'Paycheck', date: '2026-08-15', is_recurring: 1, created_at: 'x' , schedule_id: 3, cycle_date: '2026-08-14' }],
   bills: [{ id: 1, name: 'Bell', amount: 95.42, frequency: 'monthly', due_day: 5, due_weekday: null, category: 'bills', is_paid: 0, photo_uri: 'file:///bill.jpg', created_at: 'x' }],
   savings_goals: [{ id: 1, name: 'Vacation', target_amount: 2000, current_amount: 250, deadline: null, goal_type: 'vacation', pinned: 1, custom_image_uri: 'file:///g.jpg', created_at: 'x' }],
   debts: [{ id: 1, name: 'CIBC Visa', total_amount: 2500, amount_paid: 100, minimum_payment: 50, monthly_payment: 150, apr: 19.99, notes: 'card', created_at: 'x' }],
@@ -60,6 +60,7 @@ const sampleBackup = () => ({
   merchant_memory: [{ name_key: 'bell', display_name: 'Bell', doc_type: 'bill', category: null, recurring: 1, last_amount: 95.42, avg_amount: 95.42, due_day: 5, times_seen: 3, last_seen: '2026-08-01' }],
   calendar_reminders: [{ id: 1, date: '2026-08-20', time: '09:00', title: 'Rent', created_at: 'x' }],
   bill_payments: [],
+  income_schedules: [{ id: 3, label: 'Pay', amount: 2200, frequency: 'weekly', day_of_month: null, weekday: 5, active: 1, created_at: 'x' }],
 });
 
 describe('backup coverage', () => {

@@ -13,7 +13,7 @@
 export type TableName =
   | 'expenses' | 'income' | 'bills' | 'savings_goals' | 'debts'
   | 'subscriptions' | 'settings' | 'custom_logos' | 'merchant_memory'
-  | 'calendar_reminders' | 'bill_payments';
+  | 'calendar_reminders' | 'bill_payments' | 'income_schedules';
 
 export interface TableSpec {
   table: TableName;
@@ -33,7 +33,9 @@ export const BACKUP_TABLES: TableSpec[] = [
   },
   {
     table: 'income',
-    columns: ['id', 'amount', 'label', 'date', 'is_recurring', 'created_at'],
+    // schedule_id and cycle_date say WHICH expected payday a row settled.
+    // Without them a restore would leave every past payday looking unconfirmed.
+    columns: ['id', 'amount', 'label', 'date', 'is_recurring', 'created_at', 'schedule_id', 'cycle_date'],
     primaryKey: 'id', required: true,
   },
   {
@@ -88,6 +90,14 @@ export const BACKUP_TABLES: TableSpec[] = [
     table: 'bill_payments',
     columns: ['id', 'bill_id', 'source', 'cycle_date', 'paid', 'paid_at', 'amount'],
     primaryKey: 'id', required: false,
+  },
+  {
+    table: 'income_schedules',
+    columns: ['id', 'label', 'amount', 'frequency', 'day_of_month', 'weekday', 'active', 'created_at'],
+    primaryKey: 'id',
+    // Not required: databases created before recurring income existed have none,
+    // and an older backup must still restore rather than be rejected.
+    required: false,
   },
 ];
 
