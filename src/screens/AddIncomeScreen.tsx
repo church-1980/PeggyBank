@@ -12,6 +12,7 @@ import { useColors } from '../context/ThemeContext';
 import IconBadge from '../components/IconBadge';
 import { IconKey } from '../data/iconRegistry';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyDateField from '../components/peggy/PeggyDateField';
 
 // Income sources — each carries its own matte concept icon.
 const QUICK_SOURCES: { label: string; iconKey: IconKey }[] = [
@@ -23,15 +24,24 @@ const QUICK_SOURCES: { label: string; iconKey: IconKey }[] = [
   { label: 'Other',     iconKey: 'other' },
 ];
 
-export default function AddIncomeScreen({ navigation }: any) {
+export default function AddIncomeScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
+
+  // Editing an existing entry arrives as route params. Income used to be
+  // insert-only: a mistake could not be corrected, and the date could not be
+  // set at all -- it was stamped as "today" on the way in and was not part of
+  // the update, so pay entered late was filed on the wrong day for good.
+  const editing = route?.params ?? {};
+  const editingId: number | undefined = editing.id;
+
   const [mode, setMode] = useState<'fixed' | 'variable'>('fixed');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(editingId ? String(editing.amount ?? '') : '');
+  const [date, setDate] = useState<string>(editing.date ?? getTodayString());
   const [lowAmount, setLowAmount] = useState('');
   const [highAmount, setHighAmount] = useState('');
-  const [label, setLabel] = useState('');
+  const [label, setLabel] = useState(editingId ? String(editing.label ?? '') : '');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -65,12 +75,20 @@ export default function AddIncomeScreen({ navigation }: any) {
     setSaving(true);
     try {
       const db = await getDatabase();
-      await db.runAsync(
-        `INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`,
-        [saveAmount, saveLabel, getTodayString()]
-      );
+      if (editingId) {
+        // date is included deliberately: correcting the day is the whole point.
+        await db.runAsync(
+          `UPDATE income SET amount=?, label=?, date=? WHERE id=?`,
+          [saveAmount, saveLabel, date, editingId]
+        );
+      } else {
+        await db.runAsync(
+          `INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`,
+          [saveAmount, saveLabel, date]
+        );
+      }
       console.log('[AddIncome] saved $' + saveAmount + ' label=' + saveLabel);
-      navigation.navigate('Home');
+      if (editingId) navigation.goBack(); else navigation.navigate('Home');
     } catch (e) {
       console.error('[AddIncome] save error:', e);
       Alert.alert('Could not save', 'Something went wrong saving the income. Please try again.');
@@ -89,13 +107,13 @@ export default function AddIncomeScreen({ navigation }: any) {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backBtn}
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => (editingId ? navigation.goBack() : navigation.navigate('Home'))}
             accessibilityRole="button"
             accessibilityLabel="Go back to the home screen"
           >
             <Ionicons name="chevron-down" size={22} color={C.textSecondary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Add Income</Text>
+          <Text style={styles.title}>{editingId ? 'Edit Income' : 'Add Income'}</Text>
           <View style={{ width: 36 }} />
         </View>
 
@@ -174,6 +192,10 @@ export default function AddIncomeScreen({ navigation }: any) {
           </>
         )}
 
+        <View style={styles.dateBlock}>
+          <PeggyDateField value={date} onChange={setDate} label="When did it arrive?" />
+        </View>
+
         <Text style={styles.sectionLabel}>What is this from?</Text>
         <View style={styles.chipRow}>
           {QUICK_SOURCES.map(({ label: q, iconKey }) => (
@@ -204,10 +226,10 @@ export default function AddIncomeScreen({ navigation }: any) {
           activeOpacity={0.85}
         >
           <Ionicons name="arrow-down-circle-outline" size={20} color={C.textOnPrimary} />
-          <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save Income'}</Text>
+          <Text style={styles.saveButtonText}>{saving ? 'Saving...' : editingId ? 'Update Income' : 'Save Income'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => (editingId ? navigation.goBack() : navigation.navigate('Home'))}>
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
 
@@ -271,6 +293,8 @@ function makeStyles(C: ColorPalette) {
       ...Typography.smallBold, color: C.income,
       textAlign: 'center', marginBottom: Spacing.lg,
     },
+
+    dateBlock:    { marginTop: Spacing.lg },
 
     sectionLabel: {
       ...Typography.label, color: C.textSecondary,

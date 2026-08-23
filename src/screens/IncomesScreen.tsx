@@ -1,8 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Modal,
-  TextInput, KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,20 +14,14 @@ import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import UndoToast from '../components/UndoToast';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 
-const QUICK_LABELS = ['Paycheck', 'Freelance', 'Cash', 'Gift', 'Side Job', 'Other'];
 
 export default function IncomesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
-  const { logoFor, pickAndSetLogo, removeLogo, hasLogo } = useCustomLogos();
+  const { logoFor } = useCustomLogos();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [total, setTotal] = useState(0);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
-  const [amount, setAmount] = useState('');
-  const [label, setLabel] = useState('');
-  const [saving, setSaving] = useState(false);
   const [undoVisible, setUndoVisible] = useState(false);
   const undoData = useRef<Income | null>(null);
   const [actionIncome, setActionIncome] = useState<Income | null>(null);
@@ -50,36 +41,15 @@ export default function IncomesScreen({ navigation }: any) {
 
   useFocusEffect(useCallback(() => { loadIncomes(); }, [loadIncomes]));
 
+  // Editing opens the SAME form used to add income, so every field is
+  // available -- above all the date. The old inline modal could only change the
+  // amount and the label, which left a wrong date impossible to correct.
   const openEdit = (item: Income) => {
-    setEditingIncome(item);
-    setAmount(String(item.amount));
-    setLabel(item.label ?? '');
-    setModalVisible(true);
+    navigation.navigate('AddIncome', {
+      id: item.id, amount: item.amount, label: item.label ?? '', date: item.date,
+    });
   };
 
-  const handleSave = async () => {
-    const parsed = parseFloat(amount);
-    if (isNaN(parsed) || parsed <= 0) {
-      Alert.alert('Oops', 'Please enter a valid amount.');
-      return;
-    }
-    setSaving(true);
-    try {
-      const db = await getDatabase();
-      if (editingIncome?.id) {
-        await db.runAsync(
-          `UPDATE income SET amount=?, label=? WHERE id=?`,
-          [parsed, label.trim() || 'Income', editingIncome.id]
-        );
-      }
-      setModalVisible(false);
-      loadIncomes();
-    } catch {
-      Alert.alert('Something went wrong', 'Could not save. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const deleteIncome = async (item: Income) => {
     if (!item.id) return;
@@ -213,78 +183,6 @@ export default function IncomesScreen({ navigation }: any) {
         </View>
       </Modal>
 
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <View style={[styles.modalCard, { paddingBottom: insets.bottom + 32 }]}>
-              <View style={styles.modalHandle} />
-              <Text style={styles.modalTitle}>Edit Income</Text>
-
-              <Text style={styles.fieldLabel}>Amount</Text>
-              <View style={styles.amountRow}>
-                <Text style={styles.currencyPrefix}>$</Text>
-                <TextInput
-                  style={styles.amountInput}
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="decimal-pad"
-                  autoFocus
-                />
-              </View>
-
-              <Text style={styles.fieldLabel}>Label</Text>
-              <View style={styles.chipRow}>
-                {QUICK_LABELS.map((q) => (
-                  <TouchableOpacity
-                    key={q}
-                    style={[styles.chip, label === q && styles.chipActive]}
-                    onPress={() => setLabel(q)}
-                  >
-                    <Text style={[styles.chipText, label === q && styles.chipTextActive]}>{q}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <TextInput
-                style={styles.textInput}
-                value={label}
-                onChangeText={setLabel}
-                placeholder="Or type a custom label..."
-                placeholderTextColor={C.textHint}
-              />
-
-              <Text style={styles.fieldLabel}>Logo</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.md }}>
-                <PeggyIconFrame iconKey="investing" size="card" shape="circle" overrideSource={logoFor(label) ? { uri: logoFor(label) } : undefined} />
-                <TouchableOpacity
-                  onPress={() => (label.trim() ? pickAndSetLogo(label) : null)}
-                  style={{ backgroundColor: C.primary + '18', borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: 16, opacity: label.trim() ? 1 : 0.5 }}
-                >
-                  <Text style={{ color: C.primary, fontWeight: '700' }}>{hasLogo(label) ? 'Change logo' : 'Add a logo'}</Text>
-                </TouchableOpacity>
-                {hasLogo(label) ? (
-                  <TouchableOpacity onPress={() => removeLogo(label)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Text style={{ color: C.textSecondary, fontWeight: '600' }}>Remove</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-
-              <TouchableOpacity
-                style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Changes'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
     </PeggyScreen>
   );
 }
