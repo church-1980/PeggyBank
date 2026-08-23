@@ -98,3 +98,57 @@ export function clampDueDay(day: number): number {
 export function dueDayInMonth(day: number, year: number, monthIndex0: number): number {
   return Math.min(Math.max(1, Math.floor(day)), daysInMonth(year, monthIndex0));
 }
+
+/**
+ * The next date a MONTHLY item falls due, in local time.
+ *
+ * THE ONE PLACE THIS IS DECIDED. The Bills screen, the Dashboard, the Calendar
+ * and the notification scheduler all call this, so a bill cannot be described
+ * by two different dates in two different corners of the app.
+ *
+ * Why it exists: each of those had its own month-end arithmetic and they
+ * disagreed. The worst was the plain, obvious-looking version:
+ *
+ *     new Date(year, month, dueDay)
+ *
+ * JavaScript does not reject an impossible date, it rolls it forward. So a bill
+ * due on the 31st, viewed in February, silently became 3 March -- the Bills
+ * screen announced a date in the wrong MONTH while the Calendar showed the
+ * 28th. The notification scheduler had the opposite flaw: it clamped every due
+ * day to the 28th, so a bill due on the 31st of May was reminded three days early.
+ *
+ * The rule is min(due day, days in that month): the last day of the month when
+ * the requested day does not exist, and the requested day when it does.
+ *
+ * NOTE: this is the date the USER SEES. It is deliberately NOT the same thing as
+ * clampDueDay above, which produces the canonical key identifying an occurrence
+ * in bill_payments. That key must stay on the 28th or existing payment history
+ * would no longer match. Presentation and identity are different jobs.
+ */
+export function nextMonthlyOccurrence(dueDay: number, from: Date = new Date()): Date {
+  const wanted = Number.isFinite(dueDay) ? Math.max(1, Math.min(31, Math.floor(dueDay))) : 1;
+  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+
+  // This month, with the day pulled back to one the month actually has.
+  const thisMonth = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    dueDayInMonth(wanted, today.getFullYear(), today.getMonth())
+  );
+  if (thisMonth >= today) return thisMonth;
+
+  // Already past: the same question, asked of next month. Built from the first
+  // of next month so the clamp is applied to THAT month's length.
+  const y = today.getFullYear();
+  const m = today.getMonth() + 1;
+  const nextY = m > 11 ? y + 1 : y;
+  const nextM = m > 11 ? 0 : m;
+  return new Date(nextY, nextM, dueDayInMonth(wanted, nextY, nextM));
+}
+
+/** Whole days from `from` until a monthly item's next due date. 0 means today. */
+export function daysUntilMonthlyOccurrence(dueDay: number, from: Date = new Date()): number {
+  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const due = nextMonthlyOccurrence(dueDay, from);
+  return Math.round((due.getTime() - today.getTime()) / 86400000);
+}

@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { getDatabase } from '../database/database';
 import { currentCycleDate, paidCyclesFor } from './billCycles';
+import { nextMonthlyOccurrence } from '../core/datetime';
 
 export type NotificationMode = 'off' | 'minimal' | 'standard' | 'detailed' | 'aggressive';
 
@@ -86,10 +87,24 @@ export async function saveNotificationMode(mode: NotificationMode): Promise<void
 }
 
 /** Next calendar date a monthly item falls due, given its day-of-month. */
-function nextMonthlyDue(dueDay: number, from = new Date()): Date {
-  const day = Math.min(Math.max(dueDay, 1), 28); // keep valid in every month
-  const d = new Date(from.getFullYear(), from.getMonth(), day, REMIND_HOUR, 0, 0, 0);
-  if (d.getTime() <= from.getTime()) d.setMonth(d.getMonth() + 1);
+// Exported so the cross-system consistency test can check that the date a
+// reminder fires on matches the date the Bills screen and Calendar show.
+export function nextMonthlyDue(dueDay: number, from = new Date()): Date {
+  // This used to clamp every due day to the 28th "to keep it valid in every
+  // month". That made the reminder wrong in every month longer than February: a
+  // bill due on the 31st of May was announced on 28 May, three days early, and
+  // disagreed with the date the Calendar showed for the same bill.
+  //
+  // The shared helper gives the real effective date -- the 28th only when the
+  // month genuinely ends there.
+  const due = nextMonthlyOccurrence(dueDay, from);
+  const d = new Date(due.getFullYear(), due.getMonth(), due.getDate(), REMIND_HOUR, 0, 0, 0);
+  // If today IS the due day but the reminder hour has already gone by, the next
+  // one belongs to the following month.
+  if (d.getTime() <= from.getTime()) {
+    const next = nextMonthlyOccurrence(dueDay, new Date(due.getFullYear(), due.getMonth(), due.getDate() + 1));
+    return new Date(next.getFullYear(), next.getMonth(), next.getDate(), REMIND_HOUR, 0, 0, 0);
+  }
   return d;
 }
 

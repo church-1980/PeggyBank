@@ -110,9 +110,26 @@ describe('getTodayString', () => {
     expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it('matches the current date', () => {
-    const today = getTodayString();
-    const now = new Date().toISOString().split('T')[0];
-    expect(today).toBe(now);
+  it('matches the LOCAL calendar date, not the UTC one', () => {
+    // This test used to compare against new Date().toISOString(), which is the
+    // very bug getTodayString was fixed to stop doing. toISOString() converts to
+    // UTC first, so from 8pm Toronto onward it reports TOMORROW. The test
+    // therefore only passed between midnight and 8pm and quietly asserted the
+    // defect for the rest of the day.
+    //
+    // What matters to someone entering an expense at 10pm is the date on the
+    // wall behind them, so that is what is checked here.
+    const now = new Date();
+    const pad = (n: number) => (n < 10 ? '0' + n : String(n));
+    const localToday = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    expect(getTodayString()).toBe(localToday);
+  });
+
+  it('does not drift to UTC in the evening, whatever time the suite runs', () => {
+    // Guards the same defect at a pinned late hour rather than hoping the suite
+    // happens to run after 8pm.
+    const { localDateString } = require('../core/datetime');
+    expect(localDateString(new Date(2026, 7, 31, 23, 59))).toBe('2026-08-31');
+    expect(localDateString(new Date(2026, 7, 31, 20, 1))).toBe('2026-08-31');
   });
 });

@@ -14,6 +14,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
+import { dueDayInMonth } from '../core/datetime';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -471,14 +472,14 @@ export default function CalendarScreen({ navigation }: any) {
 
       // Payday
       const pd      = paydaySetting ? parseInt(paydaySetting.value, 10) : 1;
-      const safeDay = Math.min(pd, daysInMonth);
+      const safeDay = dueDayInMonth(pd, year, month);   // shared rule, not a local copy
       add(`${year}-${pad(month + 1)}-${pad(safeDay)}`,
         { key: 'payday', type: 'payday', title: 'Payday', colorHex: C.income });
 
       // Bills
       for (const bill of bills) {
         if (bill.frequency === 'monthly' && bill.due_day) {
-          const d = Math.min(bill.due_day, daysInMonth);
+          const d = dueDayInMonth(bill.due_day, year, month);   // shared rule, not a local copy
           add(`${year}-${pad(month + 1)}-${pad(d)}`,
             { key: `bill-${bill.id}`, type: 'bill', title: bill.name, amount: bill.amount, colorHex: C.bills });
         } else if (bill.frequency === 'weekly' && bill.due_weekday !== undefined) {
@@ -493,7 +494,7 @@ export default function CalendarScreen({ navigation }: any) {
 
       // Subscriptions
       for (const sub of subs) {
-        const d = Math.min(sub.billing_day, daysInMonth);
+        const d = dueDayInMonth(sub.billing_day, year, month);  // shared rule, not a local copy
         add(`${year}-${pad(month + 1)}-${pad(d)}`,
           { key: `sub-${sub.id}`, type: 'sub', title: sub.name, amount: sub.amount, colorHex: C.subs });
       }
