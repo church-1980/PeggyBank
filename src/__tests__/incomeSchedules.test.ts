@@ -204,3 +204,45 @@ describe('Expected income never reaches Safe to Spend', () => {
     expect(monthOf(rows).monthIncome).toBe(0);
   });
 });
+
+/**
+ * A schedule describes the future, not the past.
+ *
+ * Found by driving the real app in a browser: setting up "every Sunday" on 23
+ * August immediately produced four things to confirm, dated 12, 19 and 26 July
+ * and 2 August. Someone saying "my pay comes every Sunday" is telling the app
+ * what happens NEXT; being handed a month of back-paperwork reads as the app
+ * inventing history it was never told about, and every one of those would have
+ * been a chance to record income that never happened.
+ */
+describe('A new schedule does not invent past paydays', () => {
+  const madeToday: IncomeSchedule = {
+    id: 9, label: 'Pay', amount: 2200, frequency: 'weekly', weekday: 0,
+    created_at: '2026-08-23 14:00:00',
+  };
+
+  it('offers nothing from before the schedule was created', async () => {
+    const db = makeDb([madeToday]);
+    const pending = await pendingIncome(db, new Date(2026, 7, 23));
+    expect(pending.every(p => p.cycleDate >= '2026-08-23')).toBe(true);
+    expect(pending.find(p => p.cycleDate === '2026-07-12')).toBeUndefined();
+  });
+
+  it('still offers paydays from the day it was created onward', async () => {
+    const db = makeDb([madeToday]);
+    const pending = await pendingIncome(db, new Date(2026, 8, 6));   // two weeks later
+    expect(pending.map(p => p.cycleDate)).toContain('2026-08-30');
+  });
+
+  it('an older schedule is still asked about normally', async () => {
+    const old: IncomeSchedule = { ...madeToday, created_at: '2026-06-01 09:00:00' };
+    const db = makeDb([old]);
+    const pending = await pendingIncome(db, new Date(2026, 7, 23));
+    expect(pending.find(p => p.cycleDate === '2026-08-09')).toBeDefined();
+  });
+
+  it('a schedule with no creation date behaves as before', async () => {
+    const db = makeDb([{ ...madeToday, created_at: null }]);
+    expect((await pendingIncome(db, new Date(2026, 7, 23))).length).toBeGreaterThan(0);
+  });
+});

@@ -27,7 +27,7 @@
  */
 
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { localDateString, dueDayInMonth, nextMonthlyOccurrence } from '../core/datetime';
+import { localDateString, parseLocalDate, dueDayInMonth, nextMonthlyOccurrence } from '../core/datetime';
 
 export type IncomeFrequency = 'monthly' | 'weekly';
 
@@ -39,6 +39,8 @@ export interface IncomeSchedule {
   day_of_month?: number | null;
   weekday?: number | null;        // 0 = Sunday
   active?: number;
+  /** When the schedule was set up. Nothing before this is ever asked about. */
+  created_at?: string | null;
 }
 
 /** An expected payday: when it lands, and what the schedule says it should be. */
@@ -100,7 +102,7 @@ export function nextOccurrence(s: IncomeSchedule, from: Date = new Date()): stri
 /** Schedules the user still wants forecast. */
 export async function activeSchedules(db: SQLiteDatabase): Promise<IncomeSchedule[]> {
   return db.getAllAsync<IncomeSchedule>(
-    `SELECT id, label, amount, frequency, day_of_month, weekday, active
+    `SELECT id, label, amount, frequency, day_of_month, weekday, active, created_at
        FROM income_schedules WHERE active = 1 ORDER BY id ASC`
   ).catch(() => []);
 }
@@ -141,7 +143,15 @@ export async function pendingIncome(
 
   const out: ExpectedIncome[] = [];
   for (const s of schedules) {
-    for (const cycleDate of occurrencesBetween(s, start, end)) {
+    // Never ask about paydays from BEFORE the schedule was set up. Someone who
+    // says today "my pay comes every Friday" is describing what happens next,
+    // not volunteering to account for every Friday of the past six weeks. The
+    // first run of this offered four paydays from the previous month, which
+    // read as the app inventing history it was never told about.
+    const bornOn = (s.created_at || '').slice(0, 10);
+    const from = bornOn && bornOn > localDateString(start) ? parseLocalDate(bornOn) : start;
+
+    for (const cycleDate of occurrencesBetween(s, from, end)) {
       if (seen.has(s.id + '|' + cycleDate)) continue;
       out.push({ schedule: s, cycleDate, expectedAmount: s.amount, due: cycleDate <= todayIso });
     }
