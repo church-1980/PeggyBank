@@ -81,8 +81,14 @@ export default function ExpensesScreen({ navigation }: any) {
       >
         <IconBadge iconKey={catInfo.iconKey} color={catInfo.color} size={56} overrideSource={item.note && logoFor(item.note) ? { uri: logoFor(item.note) } : undefined} />
         <View style={styles.itemMiddle}>
-          <Text style={styles.itemCategory}>{catInfo.label}</Text>
-          {item.note ? <Text style={styles.itemNote}>{item.note}</Text> : null}
+          {item.note ? (
+            <>
+              <Text style={styles.itemCategory}>{item.note}</Text>
+              <Text style={styles.itemNote}>{catInfo.label}</Text>
+            </>
+          ) : (
+            <Text style={styles.itemCategory}>{catInfo.label}</Text>
+          )}
           <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
         </View>
         <Text style={styles.itemAmount}>{formatCurrency(item.amount)}</Text>

@@ -183,6 +183,22 @@ export default function AddExpenseScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
 
+        {/* ── Where ── */}
+        <Text style={styles.sectionLabel}>Where was it?</Text>
+        <TextInput
+          style={styles.whereInput}
+          value={note}
+          onChangeText={setNote}
+          placeholder="Dunn's, Shell, Metro…"
+          placeholderTextColor={C.textHint}
+          returnKeyType="done"
+          autoCapitalize="words"
+          accessibilityLabel="Where you spent this money"
+        />
+        <Text style={styles.whereHint}>
+          Helps you remember what a payment was for when you look back.
+        </Text>
+
         {/* ── Category ── */}
         <Text style={styles.sectionLabel}>Category</Text>
         <View style={styles.categoryGrid}>
@@ -238,16 +254,6 @@ export default function AddExpenseScreen({ navigation, route }: any) {
           >
             <IconBadge iconKey="recurring" color={isRecurring ? C.primary : C.textSecondary} size={26} iconSize={18} tinted={false} />
           </TouchableOpacity>
-
-          {/* Note */}
-          <TextInput
-            style={styles.noteInput}
-            value={note}
-            onChangeText={setNote}
-            placeholder="Add a note…"
-            placeholderTextColor={C.textHint}
-            returnKeyType="done"
-          />
 
           {/* Logo — attach a brand logo to this merchant (keyed by the note). */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm }}>
@@ -379,13 +385,16 @@ function makeStyles(C: ColorPalette) {
       borderWidth: 1.5, borderColor: C.border,
       alignItems: 'center', justifyContent: 'center',
     },
-    noteInput: {
-      flex: 1, height: 44,
-      backgroundColor: C.bgCard,
+    whereInput: {
+      minHeight: 56,
       borderRadius: Radius.md,
-      borderWidth: 1.5, borderColor: C.border,
-      paddingHorizontal: 12,
-      color: C.textPrimary, fontSize: 14,
+      borderWidth: 1,
+      borderColor: C.border,
+      backgroundColor: C.bgCard,
+      paddingHorizontal: Spacing.md,
+      ...Typography.body,
+      color: C.textPrimary,
     },
+    whereHint: { ...Typography.caption, color: C.textSecondary, marginTop: 6 },
   });
 }
