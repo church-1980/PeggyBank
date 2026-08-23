@@ -5,13 +5,13 @@ import {
   pendingIncome, confirmIncome, activeSchedules, updateSchedule, deactivateSchedule,
   describeSchedule, nextOccurrence, type ExpectedIncome, type IncomeSchedule,
 } from '../lib/incomeSchedules';
-import { parseLocalDate, localDateString } from '../core/datetime';
+import { parseLocalDate, localDateString, localMonthRange } from '../core/datetime';
 import PeggyCard from '../components/peggy/PeggyCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import IconBadge from '../components/IconBadge';
 import { getDatabase } from '../database/database';
-import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
+import { formatCurrency, formatDate} from '../utils/helpers';
 import { Income } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
@@ -45,10 +45,18 @@ export default function IncomesScreen({ navigation }: any) {
   const undoData = useRef<Income | null>(null);
   const [actionIncome, setActionIncome] = useState<Income | null>(null);
 
+  // Which month is on screen. This list used to query getMonthRange() -- always
+  // the CURRENT month -- so income from any earlier month was never loaded at
+  // all. It was not hidden behind a button; it was unreachable, which meant a
+  // pay recorded last month could never be corrected.
+  const [monthOffset, setMonthOffset] = useState(0);
+
   const loadIncomes = useCallback(async () => {
     try {
       const db = await getDatabase();
-      const { start, end } = getMonthRange();
+      const now = new Date();
+      const viewing = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+      const { start, end } = localMonthRange(viewing);
       const result = await db.getAllAsync<Income>(
         `SELECT * FROM income WHERE date >= ? AND date <= ? ORDER BY date DESC, id DESC`,
         [start, end]
@@ -56,7 +64,7 @@ export default function IncomesScreen({ navigation }: any) {
       setIncomes(result);
       setTotal(result.reduce((s, i) => s + i.amount, 0));
     } catch {}
-  }, []);
+  }, [monthOffset]);
 
   const loadExpected = useCallback(async () => {
     try {
@@ -191,7 +199,9 @@ export default function IncomesScreen({ navigation }: any) {
     setActionIncome(item);
   };
 
-  const monthName = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  // Names the month being VIEWED, which is not necessarily this one.
+  const viewedMonthName = new Date(new Date().getFullYear(), new Date().getMonth() + monthOffset, 1)
+    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <PeggyScreen scroll={false} padded={false} contentStyle={styles.shell}>
@@ -200,9 +210,31 @@ export default function IncomesScreen({ navigation }: any) {
           <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.monthLabel}>{monthName}</Text>
+        <View style={styles.monthNavRow}>
+          <TouchableOpacity
+            style={styles.monthNavBtn}
+            onPress={() => setMonthOffset(m => m - 1)}
+            accessibilityRole="button"
+            accessibilityLabel="Show the previous month"
+          >
+            <Ionicons name="chevron-back" size={20} color={C.income} />
+          </TouchableOpacity>
+          <Text style={styles.monthLabel}>{viewedMonthName}</Text>
+          <TouchableOpacity
+            style={styles.monthNavBtn}
+            onPress={() => setMonthOffset(m => Math.min(0, m + 1))}
+            disabled={monthOffset === 0}
+            accessibilityRole="button"
+            accessibilityLabel="Show the next month"
+            accessibilityState={{ disabled: monthOffset === 0 }}
+          >
+            <Ionicons name="chevron-forward" size={20} color={monthOffset === 0 ? C.border : C.income} />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.totalAmount}>{formatCurrency(total)}</Text>
-        <Text style={styles.totalLabel}>total income this month</Text>
+        <Text style={styles.totalLabel}>
+          {monthOffset === 0 ? 'total income this month' : 'total income that month'}
+        </Text>
       </View>
 
       {/* Payday Planner lives here — one home for "money coming in" instead of a
@@ -503,6 +535,8 @@ function makeStyles(C: ColorPalette) {
 
     backBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', marginBottom: Spacing.sm },
     backText:   { ...Typography.small, color: C.textSecondary },
+    monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
+    monthNavBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
     monthLabel: { ...Typography.label, color: C.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: Spacing.xs },
     totalAmount:{ ...Typography.hero, color: C.income },
     totalLabel: { ...Typography.small, color: C.textSecondary, marginTop: 4 },
