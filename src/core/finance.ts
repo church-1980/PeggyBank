@@ -38,9 +38,16 @@ export interface PaidCycle { bill_id: number; cycle_date: string }
 /** How goal saving is spread. A goal's remaining gap is saved over this many months. */
 export const GOAL_SPREAD_MONTHS = 12;
 
-/** Round to whole cents. Guards against float drift like 0.1+0.2 = 0.30000000000000004. */
+/**
+ * Round to whole cents. Guards against float drift like 0.1+0.2 = 0.30000000000000004.
+ *
+ * The trailing "+ 0" collapses negative zero. Math.round(-0.001 * 100) / 100 is
+ * -0, which is a real value in JavaScript and formats as "-$0.00" -- so a line
+ * of the Safe to Spend explanation with nothing in it would read "minus nothing".
+ * Adding zero leaves every other value untouched.
+ */
 export function cents(n: number): number {
-  return Math.round(n * 100) / 100;
+  return Math.round(n * 100) / 100 + 0;
 }
 
 /** Sum of a numeric field. Ignores non-finite values rather than producing NaN. */
@@ -202,4 +209,82 @@ export function debtTotalInterest(balance: number, apr: number, payment: number)
     bal = bal + int - payment;
   }
   return cents(Math.max(0, interest));
+}
+
+/**
+ * WHY IS THAT MY NUMBER?
+ *
+ * One line of the explanation shown when someone taps Safe to Spend.
+ * `amount` is signed: what you have is positive, what is set aside is negative.
+ */
+export interface SafeToSpendLine {
+  key: string;
+  label: string;
+  amount: number;
+  /** Optional breakdown, so "Bills you still owe" can name Bell and Hydro. */
+  detail?: { label: string; amount: number }[];
+}
+
+export interface SafeToSpendExplanation {
+  summary: FinanceSummary;
+  lines: SafeToSpendLine[];
+  /** What the lines add up to before clamping. Negative means a shortfall. */
+  rawTotal: number;
+  /** The figure actually shown, never below zero. */
+  safeToSpend: number;
+  /** True when the lines add up to less than zero and the total was clamped. */
+  shortfall: boolean;
+}
+
+/**
+ * Explain Safe to Spend using the SAME calculation that produced it.
+ *
+ * This deliberately calls computeFinanceSummary and reads its fields rather
+ * than working anything out again. If the explanation did its own arithmetic it
+ * would eventually disagree with the headline figure -- the app would show
+ * $1,143 and then explain $1,129, and neither number could be trusted again.
+ *
+ * A test asserts the lines reconcile exactly to the total.
+ */
+export function explainSafeToSpend(input: FinanceInput): SafeToSpendExplanation {
+  const summary = computeFinanceSummary(input);
+
+  const owed = unpaidBills(input.bills, input.paidCycles, input.today);
+  const billDetail = owed
+    .map(b => ({ label: b.name || 'Bill', amount: cents(b.amount) }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const goalDetail = input.goals
+    .map(g => ({ label: 'Goal', amount: cents(monthlyGoalContribution(g.target_amount, g.current_amount)) }))
+    .filter(d => d.amount > 0);
+
+  const lines: SafeToSpendLine[] = [
+    { key: 'income', label: 'Money in this month', amount: summary.monthIncome },
+    { key: 'spending', label: 'Already spent', amount: cents(-summary.monthSpending) },
+    {
+      key: 'bills',
+      label: 'Bills you still owe',
+      amount: cents(-summary.unpaidBillsTotal),
+      detail: billDetail.length ? billDetail : undefined,
+    },
+    {
+      key: 'goals',
+      label: 'Saving towards goals',
+      amount: cents(-summary.goalsSavingsNeeded),
+      detail: goalDetail.length ? goalDetail : undefined,
+    },
+  ];
+
+  // Read off the summary, never recomputed from the lines.
+  const rawTotal = cents(
+    summary.monthIncome - summary.monthSpending - summary.unpaidBillsTotal - summary.goalsSavingsNeeded
+  );
+
+  return {
+    summary,
+    lines,
+    rawTotal,
+    safeToSpend: summary.safeToSpend,
+    shortfall: rawTotal < 0,
+  };
 }
