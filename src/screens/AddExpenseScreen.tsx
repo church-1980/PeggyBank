@@ -17,6 +17,7 @@ import { categoryIconKey } from '../data/iconRegistry';
 import { rememberMerchant } from '../lib/merchantMemory';
 import IconBadge from '../components/IconBadge';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyDateField from '../components/peggy/PeggyDateField';
 
 const VALID_CATEGORIES = Object.keys(CATEGORIES) as Category[];
 
@@ -33,8 +34,14 @@ export default function AddExpenseScreen({ navigation, route }: any) {
   const [amount,        setAmount]        = useState(prefill.amount ? String(prefill.amount) : '');
   const [category,      setCategory]      = useState<Category>(prefill.category ?? 'groceries');
   const [note,          setNote]          = useState(prefill.note ?? '');
-  const [photoUri,      setPhotoUri]      = useState<string | null>(prefill.capturedPhoto ?? null);
-  const [isRecurring,   setIsRecurring]   = useState(false);
+  const [date,          setDate]          = useState<string>(prefill.date ?? getTodayString());
+  // photo_uri and is_recurring are read back when EDITING. They used not to be:
+  // the form started with no photo and recurring off, and the update wrote both
+  // of those blanks over the record. Correcting an amount therefore deleted the
+  // receipt photo attached to it and forgot that it repeated. Nothing warned.
+  const [photoUri,      setPhotoUri]      = useState<string | null>(
+    prefill.capturedPhoto ?? prefill.photo_uri ?? null);
+  const [isRecurring,   setIsRecurring]   = useState<boolean>(!!prefill.is_recurring);
   const [saving,        setSaving]        = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
 
@@ -71,13 +78,13 @@ export default function AddExpenseScreen({ navigation, route }: any) {
       );
       if (editingId) {
         await db.runAsync(
-          `UPDATE expenses SET amount=?, category=?, note=?, photo_uri=?, is_recurring=? WHERE id=?`,
-          [parsedAmount, category, note.trim(), photoUri ?? null, isRecurring ? 1 : 0, editingId]
+          `UPDATE expenses SET amount=?, category=?, note=?, date=?, photo_uri=?, is_recurring=? WHERE id=?`,
+          [parsedAmount, category, note.trim(), date, photoUri ?? null, isRecurring ? 1 : 0, editingId]
         );
       } else {
         await db.runAsync(
           `INSERT INTO expenses (amount, category, note, date, photo_uri, is_recurring) VALUES (?, ?, ?, ?, ?, ?)`,
-          [parsedAmount, category, note.trim(), getTodayString(), photoUri ?? null, isRecurring ? 1 : 0]
+          [parsedAmount, category, note.trim(), date, photoUri ?? null, isRecurring ? 1 : 0]
         );
       }
       // Learn this vendor from what was actually confirmed, so the next photo
@@ -198,6 +205,11 @@ export default function AddExpenseScreen({ navigation, route }: any) {
         <Text style={styles.whereHint}>
           Helps you remember what a payment was for when you look back.
         </Text>
+
+        {/* ── When ── */}
+        <View style={styles.dateBlock}>
+          <PeggyDateField value={date} onChange={setDate} label="When was it?" />
+        </View>
 
         {/* ── Category ── */}
         <Text style={styles.sectionLabel}>Category</Text>
@@ -385,6 +397,7 @@ function makeStyles(C: ColorPalette) {
       borderWidth: 1.5, borderColor: C.border,
       alignItems: 'center', justifyContent: 'center',
     },
+    dateBlock: { marginTop: Spacing.lg },
     whereInput: {
       minHeight: 56,
       borderRadius: Radius.md,

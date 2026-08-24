@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
+import { View, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Spacing, Radius, Shadow } from '../../theme';
 import { useColors } from '../../context/ThemeContext';
@@ -17,16 +17,25 @@ import { useColors } from '../../context/ThemeContext';
 
 interface Props {
   children: React.ReactNode;
+  /**
+   * Makes the hero answerable. The screen's most important number is exactly
+   * the one people ask "why?" about, so the hero is where an explanation
+   * belongs. Without it the card is a dead end.
+   */
+  onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
-export default function PeggyHeroCard({ children, style, testID }: Props) {
+export default function PeggyHeroCard({ children, onPress, style, testID }: Props) {
   const C = useColors();
+  const Outer: any = onPress ? TouchableOpacity : View;
 
   return (
-    <View
+    <Outer
       testID={testID}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.9 : undefined}
       style={[
         {
           borderRadius: Radius.hero,
@@ -47,6 +56,6 @@ export default function PeggyHeroCard({ children, style, testID }: Props) {
       >
         {children}
       </LinearGradient>
-    </View>
+    </Outer>
   );
 }

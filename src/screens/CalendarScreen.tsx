@@ -15,6 +15,7 @@ import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { dueDayInMonth } from '../core/datetime';
+import { activeSchedules, occurrencesBetween } from '../lib/incomeSchedules';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -450,7 +451,7 @@ export default function CalendarScreen({ navigation }: any) {
       const startStr    = `${year}-${pad(month + 1)}-01`;
       const endStr      = `${year}-${pad(month + 1)}-${pad(daysInMonth)}`;
 
-      const [bills, subs, expenses, incomes, goals, reminders, paydaySetting] = await Promise.all([
+      const [bills, subs, expenses, incomes, goals, reminders, paydaySetting, schedules] = await Promise.all([
         db.getAllAsync<Bill>(`SELECT * FROM bills`),
         db.getAllAsync<Subscription>(`SELECT * FROM subscriptions`),
         db.getAllAsync<Expense>(`SELECT * FROM expenses WHERE date >= ? AND date <= ?`, [startStr, endStr]),
@@ -462,6 +463,7 @@ export default function CalendarScreen({ navigation }: any) {
           `SELECT * FROM calendar_reminders WHERE date >= ? AND date <= ?`, [startStr, endStr]
         ),
         db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'payday'`),
+        activeSchedules(db),
       ]);
 
       const map: EventMap = {};
@@ -470,11 +472,37 @@ export default function CalendarScreen({ navigation }: any) {
         map[dateStr].push(ev);
       };
 
-      // Payday
-      const pd      = paydaySetting ? parseInt(paydaySetting.value, 10) : 1;
-      const safeDay = dueDayInMonth(pd, year, month);   // shared rule, not a local copy
-      add(`${year}-${pad(month + 1)}-${pad(safeDay)}`,
-        { key: 'payday', type: 'payday', title: 'Payday', colorHex: C.income });
+      // Payday.
+      //
+      // This used to read settings.payday -- a bare day-of-month -- and ignore
+      // pay frequency entirely, so someone paid every second Friday saw a single
+      // monthly marker on the wrong day. The Calendar disagreed with the Income
+      // screen about the same paycheque.
+      //
+      // Income schedules are the canonical answer, and occurrencesBetween is the
+      // same function the Income screen uses, so the two cannot drift apart.
+      // No new payday arithmetic is introduced here.
+      const monthStartDate = new Date(year, month, 1);
+      const monthEndDate = new Date(year, month + 1, 0);
+      if (schedules.length) {
+        for (const s of schedules) {
+          for (const iso of occurrencesBetween(s, monthStartDate, monthEndDate)) {
+            add(iso, {
+              key: 'payday-' + s.id + '-' + iso,
+              type: 'payday',
+              title: s.label || 'Payday',
+              amount: s.amount,
+              colorHex: C.income,
+            });
+          }
+        }
+      } else if (paydaySetting) {
+        // Nobody has set up a schedule yet, so fall back to the older single
+        // payday setting rather than showing them nothing.
+        const pd = parseInt(paydaySetting.value, 10) || 1;
+        add(`${year}-${pad(month + 1)}-${pad(dueDayInMonth(pd, year, month))}`,
+          { key: 'payday', type: 'payday', title: 'Payday', colorHex: C.income });
+      }
 
       // Bills
       for (const bill of bills) {

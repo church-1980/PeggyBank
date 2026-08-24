@@ -20,10 +20,14 @@
  */
 
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { computeFinanceSummary, type FinanceSummary, type FinanceBill, type PaidCycle } from '../core/finance';
+import {
+  computeFinanceSummary, explainSafeToSpend,
+  type FinanceSummary, type FinanceInput, type FinanceBill, type PaidCycle,
+  type SafeToSpendExplanation,
+} from '../core/finance';
 import { localMonthRange } from '../core/datetime';
 
-export type { FinanceSummary };
+export type { FinanceSummary, SafeToSpendExplanation };
 
 /**
  * Everything the month looks like, straight from the database.
@@ -31,7 +35,7 @@ export type { FinanceSummary };
  * Bills and subscriptions are read as ONE list because they are the same thing
  * to the person paying them; the split is a leftover of how the tables grew.
  */
-export async function loadFinanceSummary(db: SQLiteDatabase, now: Date = new Date()): Promise<FinanceSummary> {
+export async function buildFinanceInput(db: SQLiteDatabase, now: Date = new Date()): Promise<FinanceInput> {
   const { start, end } = localMonthRange(now);
 
   const [expenses, income, bills, subs, paid, goals] = await Promise.all([
@@ -72,7 +76,7 @@ export async function loadFinanceSummary(db: SQLiteDatabase, now: Date = new Dat
     cycle_date: p.cycle_date,
   }));
 
-  return computeFinanceSummary({
+  return {
     today: now,
     monthStart: start,
     monthEnd: end,
@@ -81,5 +85,22 @@ export async function loadFinanceSummary(db: SQLiteDatabase, now: Date = new Dat
     bills: allBills,
     paidCycles,
     goals,
-  });
+  };
+}
+
+/** The month's headline figures. */
+export async function loadFinanceSummary(db: SQLiteDatabase, now: Date = new Date()): Promise<FinanceSummary> {
+  return computeFinanceSummary(await buildFinanceInput(db, now));
+}
+
+/**
+ * The same figures, plus the lines that explain Safe to Spend.
+ *
+ * Reads the same rows through the same loader and hands them to the same
+ * engine, so "why is that my number?" can never answer with a different number.
+ */
+export async function loadSafeToSpendExplanation(
+  db: SQLiteDatabase, now: Date = new Date()
+): Promise<SafeToSpendExplanation> {
+  return explainSafeToSpend(await buildFinanceInput(db, now));
 }

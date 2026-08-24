@@ -30,6 +30,7 @@ import BillsScreen            from '../screens/BillsScreen';
 import CalendarScreen         from '../screens/CalendarScreen';
 import DebtScreen             from '../screens/DebtScreen';
 import MonthlyBreakdownScreen from '../screens/MonthlyBreakdownScreen';
+import ActivityScreen from '../screens/ActivityScreen';
 import ProfileScreen         from '../screens/ProfileScreen';
 import QuickCaptureScreen    from '../screens/QuickCaptureScreen';
 
@@ -138,6 +139,7 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="Calendar"         component={CalendarScreen}        options={{ presentation: 'modal' }} />
         <Stack.Screen name="Debt"             component={DebtScreen}            options={{ presentation: 'modal' }} />
         <Stack.Screen name="MonthlyBreakdown" component={MonthlyBreakdownScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Activity"         component={ActivityScreen}        options={{ presentation: 'modal' }} />
         <Stack.Screen name="WeeklyCheckIn"    component={WeeklyCheckInScreen}   options={{ presentation: 'modal' }} />
         <Stack.Screen name="Currency"         component={CurrencyScreen}        options={{ presentation: 'modal' }} />
         <Stack.Screen name="Export"           component={ExportScreen}          options={{ presentation: 'modal' }} />

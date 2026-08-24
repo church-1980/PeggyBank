@@ -36,6 +36,7 @@ const TOOLS: ToolItem[] = [
   { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'goals',                 colorKey: 'goals',         screen: 'Goals' },
   { label: 'Weekly Check-In',     description: 'How did this week go?',              iconKey: 'check-in',              colorKey: 'income',        screen: 'WeeklyCheckIn' },
   // ── Insights ──
+  { label: 'What Happened',       description: 'Every payment, newest first',        iconKey: 'check-in',              colorKey: 'primary',       screen: 'Activity' },
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },
   { label: 'Calendar',            description: 'See your month at a glance',         iconKey: 'calendar',              colorKey: 'primary',       screen: 'Calendar' },
   // ── Tools ──

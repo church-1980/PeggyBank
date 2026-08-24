@@ -99,3 +99,82 @@ describe('Recording where the money went', () => {
     expect(getByPlaceholderText("Dunn's, Shell, Metro…").props.value).toBe('Subway');
   });
 });
+
+/**
+ * EDITING MUST NOT DESTROY WHAT IT WAS NOT ASKED ABOUT.
+ *
+ * The form read prefill.capturedPhoto but never prefill.photo_uri, and always
+ * started with recurring off. The update then wrote both of those blanks back:
+ *
+ *     UPDATE expenses SET ..., photo_uri=?, is_recurring=? WHERE id=?
+ *
+ * So correcting an amount silently deleted the receipt photo attached to the
+ * expense and forgot that it repeated. Nothing warned, and the photo was the
+ * evidence of the purchase.
+ */
+describe('Correcting an expense keeps everything else', () => {
+  const existing = {
+    id: 9, amount: 5, category: 'restaurant', note: 'Supper',
+    date: '2026-08-18', photo_uri: 'file:///receipt.jpg', is_recurring: 1,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    require('../database/database').getDatabase.mockResolvedValue(mockDb);
+  });
+
+  it('can correct the date, which was not editable at all before', async () => {
+    const { getByText } = renderScreen(existing);
+    expect(getByText('When was it?')).toBeTruthy();
+    fireEvent.press(getByText('Today'));
+    fireEvent.press(getByText('Update'));
+
+    await waitFor(() => expect(expenseWrite()).not.toBeNull());
+    const w = expenseWrite()!;
+    expect(w.sql).toContain('UPDATE expenses');
+    expect(w.sql).toContain('date=?');
+    expect(w.args).not.toContain('2026-08-18');
+  });
+
+  it('keeps the date when it is not touched', async () => {
+    const { getByText } = renderScreen(existing);
+    fireEvent.press(getByText('Update'));
+    await waitFor(() => expect(expenseWrite()).not.toBeNull());
+    expect(expenseWrite()!.args).toContain('2026-08-18');
+  });
+
+  it('THE BUG: the receipt photo survives an edit', async () => {
+    const { getByText } = renderScreen(existing);
+    fireEvent.press(getByText('Update'));
+    await waitFor(() => expect(expenseWrite()).not.toBeNull());
+    expect(expenseWrite()!.args).toContain('file:///receipt.jpg');
+  });
+
+  it('THE BUG: the recurring flag survives an edit', async () => {
+    const { getByText } = renderScreen(existing);
+    fireEvent.press(getByText('Update'));
+    await waitFor(() => expect(expenseWrite()).not.toBeNull());
+    expect(expenseWrite()!.args).toContain(1);
+  });
+
+  it('the place and category survive an edit', async () => {
+    const { getByText } = renderScreen(existing);
+    fireEvent.press(getByText('Update'));
+    await waitFor(() => expect(expenseWrite()).not.toBeNull());
+    const args = expenseWrite()!.args;
+    expect(args).toContain('Supper');
+    expect(args).toContain('restaurant');
+  });
+
+  it('correcting the amount changes only the amount', async () => {
+    const { getByPlaceholderText, getByText } = renderScreen(existing);
+    fireEvent.changeText(getByPlaceholderText('0.00'), '30');
+    fireEvent.press(getByText('Update'));
+    await waitFor(() => expect(expenseWrite()).not.toBeNull());
+    const args = expenseWrite()!.args;
+    expect(args).toContain(30);
+    expect(args).toContain('file:///receipt.jpg');   // still there
+    expect(args).toContain('2026-08-18');            // still there
+    expect(args).toContain('Supper');                // still there
+  });
+});

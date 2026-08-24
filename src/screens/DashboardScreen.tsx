@@ -1,13 +1,15 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { View, Text, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, RefreshControl, TouchableOpacity, Modal } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
-import { unpaidTotalForCurrentCycles, currentCycleDate, paidCyclesFor } from '../lib/billCycles';
-import { loadFinanceSummary } from '../lib/financeSummary';
-import { formatCurrency, getMonthRange, getDaysUntil } from '../utils/helpers';
+import { currentCycleDate, paidCyclesFor } from '../lib/billCycles';
+import { loadFinanceSummary, loadSafeToSpendExplanation, type SafeToSpendExplanation } from '../lib/financeSummary';
+import { recentActivity, type ActivityItem } from '../lib/activity';
+import PeggyActivityRow from '../components/peggy/PeggyActivityRow';
+import { formatCurrency, getDaysUntil } from '../utils/helpers';
 import { SavingsGoal, Bill, Category } from '../types';
-import { Spacing, Typography, IconSize } from '../theme';
+import { Spacing, Typography, IconSize, Radius } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { CATEGORIES } from '../data/categories';
 import { categoryIconKey, goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
@@ -59,6 +61,17 @@ export default function DashboardScreen({ navigation }: any) {
   const [upcomingBills, setUpcomingBills] = useState<Bill[]>([]);
   const [pinnedGoals, setPinnedGoals] = useState<SavingsGoal[]>([]);
   const [suggestion, setSuggestion] = useState('');
+  // What happened lately, and why Safe to Spend is what it is. Both are read
+  // from records that already exist; Home stores no figures of its own.
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [explaining, setExplaining] = useState<SafeToSpendExplanation | null>(null);
+
+  const openExplanation = async () => {
+    try {
+      const db = await getDatabase();
+      setExplaining(await loadSafeToSpendExplanation(db));
+    } catch { /* no explanation is better than a wrong one */ }
+  };
   const [refreshing, setRefreshing] = useState(false);
   const [profileName, setProfileName] = useState('');
   // Picked once per mount so the welcome line differs each time Home is opened.
@@ -70,7 +83,6 @@ export default function DashboardScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     try {
       const db = await getDatabase();
-      const { start, end } = getMonthRange();
 
       // Profile (shared with the Profile screen via the settings table)
       const nameRow = await db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'display_name'`);
@@ -81,6 +93,9 @@ export default function DashboardScreen({ navigation }: any) {
       // Every figure on this screen comes from the ONE shared engine, so the
       // Dashboard and the Weekly Check-In can never show different amounts.
       const finance = await loadFinanceSummary(db);
+      // A short preview only: Home asks for the few rows it shows, not a
+      // year of history it would immediately throw away.
+      setActivity(await recentActivity(db, 4));
       const totalIncome = finance.monthIncome;
       const totalSpending = finance.monthSpending;
 
@@ -93,7 +108,6 @@ export default function DashboardScreen({ navigation }: any) {
       // Only what is still owed for the CURRENT occurrence. Reading is_paid off
       // the bill meant last month's payment silently reduced this month's total,
       // and hid the bill from Coming Up forever.
-      const unpaidTotal = await unpaidTotalForCurrentCycles(db);
       const paidBillCycles = await paidCyclesFor(db, 'bill');
       const unpaidBills = bills.filter(
         (b) => !paidBillCycles.get(b.id as number)?.has(currentCycleDate(b as any))
@@ -195,8 +209,13 @@ export default function DashboardScreen({ navigation }: any) {
       </View>
 
       {/* ── Hero: Safe to Spend (§3) ───────────────────────────── */}
-      <PeggyHeroCard>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      <PeggyHeroCard onPress={openExplanation}>
+        <View
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel="Safe to Spend. Tap to see how this number was worked out"
+        >
           <Text style={[Typography.helper, { color: C.glassText, fontWeight: '600' }]}>Safe to Spend</Text>
           <Ionicons name="information-circle-outline" size={14} color={C.glassText} />
         </View>
@@ -235,6 +254,21 @@ export default function DashboardScreen({ navigation }: any) {
           <Text style={[Typography.helper, { color: C.textSecondary, flex: 1, lineHeight: 19 }]}>{suggestion}</Text>
         </PeggyCard>
       ) : null}
+
+      {/* ── What happened ─────────────────────────────────────── */}
+      {activity.length > 0 && (
+        <>
+          <PeggySectionHeader title="What happened" onAction={() => navigation.navigate('Activity')} />
+          <PeggyCard>
+            {activity.map((a, i) => (
+              <View key={a.key}>
+                {i > 0 ? <View style={{ height: 1, backgroundColor: C.border }} /> : null}
+                <PeggyActivityRow item={a} onPress={() => navigation.navigate('Activity')} />
+              </View>
+            ))}
+          </PeggyCard>
+        </>
+      )}
 
       {/* ── Quick Add (§6) ─────────────────────────────────────── */}
       <PeggySectionHeader title="Quick Add" />
@@ -302,6 +336,78 @@ export default function DashboardScreen({ navigation }: any) {
           </PeggyCard>
         </>
       )}
+
+      {/* ── Why is that my number? ─────────────────────────────── */}
+      <Modal
+        visible={!!explaining}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setExplaining(null)}
+      >
+        <TouchableOpacity
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#00000066' }}
+          activeOpacity={1}
+          onPress={() => setExplaining(null)}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        />
+        <View style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0,
+          backgroundColor: C.bgCard, padding: Spacing.lg,
+          borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
+        }}>
+          <Text style={[Typography.h3, { color: C.textPrimary }]}>Your Safe to Spend</Text>
+          <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 4, marginBottom: Spacing.md }]}>
+            Where this month&apos;s number comes from.
+          </Text>
+
+          {explaining?.lines.map(line => (
+            <View key={line.key} style={{ marginBottom: Spacing.sm }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[Typography.body, { color: C.textPrimary, flex: 1 }]}>{line.label}</Text>
+                <Text style={[Typography.bodyBold, {
+                  color: line.amount < 0 ? C.textPrimary : C.income,
+                }]}>
+                  {line.amount < 0 ? '−' : '+'}{formatCurrency(Math.abs(line.amount))}
+                </Text>
+              </View>
+              {/* One level of detail: enough to answer "which bills?" */}
+              {line.detail?.slice(0, 4).map((d, i) => (
+                <View key={line.key + i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: Spacing.md, marginTop: 2 }}>
+                  <Text style={[Typography.caption, { color: C.textSecondary }]}>{d.label}</Text>
+                  <Text style={[Typography.caption, { color: C.textSecondary }]}>{formatCurrency(d.amount)}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+
+          <View style={{ height: 1, backgroundColor: C.border, marginVertical: Spacing.sm }} />
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={[Typography.bodyBold, { color: C.textPrimary }]}>Safe to Spend</Text>
+            <Text style={[Typography.h3, { color: C.primary }]}>
+              {formatCurrency(explaining?.safeToSpend ?? 0)}
+            </Text>
+          </View>
+
+          {explaining?.shortfall ? (
+            <Text style={[Typography.caption, { color: C.textSecondary, marginTop: Spacing.sm }]}>
+              This month&apos;s bills and savings come to more than has come in, so there is
+              nothing spare. We show zero rather than a negative number.
+            </Text>
+          ) : null}
+
+          <TouchableOpacity
+            style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.md }}
+            onPress={() => setExplaining(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Close this explanation"
+          >
+            <Text style={[Typography.body, { color: C.textSecondary, fontWeight: '600' }]}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
     </PeggyScreen>
   );
 }
