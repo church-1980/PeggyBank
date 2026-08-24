@@ -366,9 +366,10 @@ export default function DashboardScreen({ navigation }: any) {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={[Typography.body, { color: C.textPrimary, flex: 1 }]}>{line.label}</Text>
                 <Text style={[Typography.bodyBold, {
-                  color: line.amount < 0 ? C.textPrimary : C.income,
+                  color: line.amount > 0 ? C.income : C.textPrimary,
                 }]}>
-                  {line.amount < 0 ? '−' : '+'}{formatCurrency(Math.abs(line.amount))}
+                  {line.amount > 0 ? '+' : line.amount < 0 ? '−' : ''}
+                  {formatCurrency(Math.abs(line.amount))}
                 </Text>
               </View>
               {/* One level of detail: enough to answer "which bills?" */}
