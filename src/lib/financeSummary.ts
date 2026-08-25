@@ -45,8 +45,10 @@ export async function buildFinanceInput(db: SQLiteDatabase, now: Date = new Date
       `SELECT amount, date FROM income WHERE date >= ? AND date <= ?`, [start, end]),
     db.getAllAsync<any>(`SELECT * FROM bills`),
     db.getAllAsync<any>(`SELECT * FROM subscriptions`).catch(() => []),
-    db.getAllAsync<{ source: string; bill_id: number; cycle_date: string; paid: number }>(
-      `SELECT source, bill_id, cycle_date, paid FROM bill_payments WHERE paid = 1`).catch(() => []),
+    // amount comes from bill_payments, the authoritative record of what was
+    // actually paid. Without it the engine cannot know that money has gone.
+    db.getAllAsync<{ source: string; bill_id: number; cycle_date: string; paid: number; amount: number | null }>(
+      `SELECT source, bill_id, cycle_date, paid, amount FROM bill_payments WHERE paid = 1`).catch(() => []),
     db.getAllAsync<{ target_amount: number; current_amount: number }>(
       `SELECT target_amount, current_amount FROM savings_goals`),
   ]);
@@ -74,6 +76,7 @@ export async function buildFinanceInput(db: SQLiteDatabase, now: Date = new Date
   const paidCycles: PaidCycle[] = paid.map(p => ({
     bill_id: p.source === 'subscription' ? -Math.abs(p.bill_id) : p.bill_id,
     cycle_date: p.cycle_date,
+    amount: p.amount,
   }));
 
   return {

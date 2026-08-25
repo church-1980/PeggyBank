@@ -100,7 +100,7 @@ export const GOLDEN_INPUT: FinanceInput = {
  *   monthSpending      142.75 + 68.40 + 55.20 + 98.65
  *                      + 42.00 + 71.30                       =  478.30
  *                      (2026-07-30 and 2026-09-01 excluded)
- *   moneyLeft          4400.00 - 478.30                      = 3921.70
+ *   moneyLeft          4400.00 - 628.29                      = 3771.71
  *
  *   cycle dates on Wed 2026-08-19:
  *     Hydro     due 15  -> 2026-08-15   NOT paid (only July was paid)
@@ -112,19 +112,60 @@ export const GOLDEN_INPUT: FinanceInput = {
  *
  *   goalsSavingsNeeded 1800/12 + 0 + 1800/12 + 0             =  300.00
  *
- *   safeToSpend        3921.70 - 240.99 - 300.00             = 3380.71
+ *   billsPaidTotal     89.99 (Internet) + 60.00 (Cleaner)     =  149.99
+ *                      paid IN AUGUST. Hydro's payment was July.
+ *   monthSpending      478.30 + 149.99                       =  628.29
+ *                      everyday spending PLUS bills already paid
+ *
+ *   safeToSpend        4400.00 - 628.29 - 240.99 - 300.00    = 3230.72
  *   daysLeftInMonth    31 - 19                               =   12
- *   dailyAllowance     3380.71 / 12                          =  281.73
+ *   dailyAllowance     3230.72 / 12                          =  269.23
+ */
+/**
+ * CORRECTED 25 August 2026 — paid bills are money that has GONE.
+ *
+ * The previous expectations encoded a defect. monthSpending counted only the
+ * expenses table, so a bill that had been PAID left "still owed" and was never
+ * added to "already spent". It fell out of the arithmetic entirely, and paying
+ * a bill made Safe to Spend rise by its amount:
+ *
+ *     Bell $425, income $1,000
+ *       unpaid -> $575        PAID -> $1,000
+ *
+ * These numbers were not edited to make tests pass. The engine was corrected
+ * first, the invariant proved (paidBillInvariant.test.ts), and only then were
+ * these recomputed -- twice, independently, both agreeing.
+ *
+ * WHAT CHANGED AND WHY
+ *   monthIncome        4400.00 -> 4400.00   unchanged; income was never at fault
+ *   everydaySpending       n/a ->  478.30   NEW: what monthSpending used to mean
+ *   billsPaidTotal         n/a ->  149.99   NEW: Internet 89.99 + Cleaner 60.00,
+ *                                           the two occurrences paid IN AUGUST
+ *   monthSpending       478.30 ->  628.29   now ALL money out: 478.30 + 149.99
+ *   moneyLeft          3921.70 -> 3771.71   4400.00 - 628.29
+ *   unpaidBillsTotal    240.99 ->  240.99   unchanged; Hydro, Netflix, Phone
+ *   goalsSavingsNeeded  300.00 ->  300.00   unchanged
+ *   safeToSpend        3380.71 -> 3230.72   4400 - 628.29 - 240.99 - 300
+ *   daysLeftInMonth         12 ->      12   unchanged
+ *   dailyAllowance      281.73 ->  269.23   3230.72 / 12
+ *
+ * The July Hydro payment (2026-07-15, $145) is deliberately NOT counted. It
+ * settles a different month's occurrence and must not touch August.
+ *
+ * GOLDEN_PAID_CYCLES carries no amounts, so this also exercises the fallback to
+ * each bill's planned amount. Explicit paid amounts are covered separately.
  */
 export const GOLDEN_EXPECTED = {
   monthIncome: 4400.00,
-  monthSpending: 478.30,
-  moneyLeft: 3921.70,
+  everydaySpending: 478.30,
+  billsPaidTotal: 149.99,
+  monthSpending: 628.29,
+  moneyLeft: 3771.71,
   unpaidBillsTotal: 240.99,
   goalsSavingsNeeded: 300.00,
-  safeToSpend: 3380.71,
+  safeToSpend: 3230.72,
   daysLeftInMonth: 12,
-  dailyAllowance: 281.73,
+  dailyAllowance: 269.23,
 } as const;
 
 /** Which bills are still owed, by name, on the golden date. */

@@ -30,9 +30,14 @@ describe('The explanation reconciles to the number on screen', () => {
     const s = computeFinanceSummary(GOLDEN_INPUT);
     const by = Object.fromEntries(e.lines.map(l => [l.key, l.amount]));
     expect(by.income).toBe(s.monthIncome);
-    expect(by.spending).toBe(cents(-s.monthSpending));
+    // Money out is shown as two named lines, not one lump, so a reader can see
+    // which part was everyday spending and which was bills that have gone.
+    expect(by.spending).toBe(cents(-s.everydaySpending));
+    expect(by.billsPaid).toBe(cents(-s.billsPaidTotal));
     expect(by.bills).toBe(cents(-s.unpaidBillsTotal));
     expect(by.goals).toBe(cents(-s.goalsSavingsNeeded));
+    // The two halves still account for every dollar of money out.
+    expect(cents(-(by.spending + by.billsPaid))).toBe(s.monthSpending);
   });
 
   it('the headline it explains IS the headline the app shows', () => {
@@ -132,5 +137,54 @@ describe('Awkward months still reconcile', () => {
       expect(sumLines(e.lines)).toBe(e.rawTotal);
       if (!e.shortfall) expect(sumLines(e.lines)).toBe(e.safeToSpend);
     }
+  });
+});
+
+/**
+ * PAYING A BILL MUST NOT CHANGE THE EXPLANATION'S BOTTOM LINE EITHER.
+ *
+ * The headline and its explanation come from one calculation, so the invariant
+ * has to survive in both. If the lines reconciled but the total moved, or the
+ * total held but the lines drifted, the app would be contradicting itself.
+ */
+describe('The explanation obeys the same invariant as the headline', () => {
+  const AUG = { monthStart: '2026-08-01', monthEnd: '2026-08-31', today: new Date(2026, 7, 20) };
+  const bell = { id: 1, name: 'Bell', amount: 425, frequency: 'monthly' as const, due_day: 15 };
+  const make = (paidCycles: any[]) => explainSafeToSpend({
+    ...AUG, income: [{ amount: 1000, date: '2026-08-01' }],
+    expenses: [], bills: [bell], goals: [], paidCycles,
+  });
+
+  const owed = make([]);
+  const paid = make([{ bill_id: 1, cycle_date: '2026-08-15', amount: 425 }]);
+
+  it('the explained total does not rise when the bill is paid', () => {
+    expect(paid.safeToSpend).toBe(owed.safeToSpend);
+  });
+
+  it('the money simply moves from "still owed" to "already paid"', () => {
+    const o = Object.fromEntries(owed.lines.map(l => [l.key, l.amount]));
+    const p = Object.fromEntries(paid.lines.map(l => [l.key, l.amount]));
+    expect(o.bills).toBe(-425);
+    expect(o.billsPaid).toBe(0);
+    expect(p.bills).toBe(0);
+    expect(p.billsPaid).toBe(-425);
+  });
+
+  it('and the lines still reconcile in both states', () => {
+    for (const e of [owed, paid]) {
+      expect(sumLines(e.lines)).toBe(e.safeToSpend);
+    }
+  });
+
+  it('names the bill that was paid, so the number can be traced', () => {
+    const line = paid.lines.find(l => l.key === 'billsPaid')!;
+    expect(line.detail).toEqual([{ label: 'Bell', amount: 425 }]);
+  });
+
+  it('a payment from another month is not listed as paid this month', () => {
+    const july = make([{ bill_id: 1, cycle_date: '2026-07-15', amount: 425 }]);
+    expect(july.lines.find(l => l.key === 'billsPaid')!.amount).toBe(0);
+    expect(july.lines.find(l => l.key === 'bills')!.amount).toBe(-425);
   });
 });

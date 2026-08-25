@@ -1,4 +1,5 @@
 import { localMonthRange } from '../core/datetime';
+import { loadFinanceSummary } from '../lib/financeSummary';
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,7 +23,10 @@ interface CategoryTotal {
 
 interface MonthData {
   totalIncome: number;
+  /** ALL money out: everyday spending plus bills actually paid. */
   totalSpending: number;
+  /** Everyday expenses only. What the category breakdown below describes. */
+  everydaySpending: number;
   categoryTotals: CategoryTotal[];
   billsPaid: number;
   billsUnpaid: number;
@@ -43,9 +47,13 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
       const { start, end } = localMonthRange(targetDate);
 
-      const [incomeResult, expenseResult, categoryResult, billsResult] = await Promise.all([
-        db.getFirstAsync<{ total: number }>(`SELECT COALESCE(SUM(amount),0) as total FROM income WHERE date>=? AND date<=?`, [start, end]),
-        db.getFirstAsync<{ total: number }>(`SELECT COALESCE(SUM(amount),0) as total FROM expenses WHERE date>=? AND date<=?`, [start, end]),
+      // The money totals come from the SAME engine Home and Weekly Check-In use.
+      // This screen used to add up income and expenses itself, which made it a
+      // second version of financial reality: it counted only the expenses table,
+      // so a paid Bell bill of $425 was money that had genuinely left the
+      // account and was invisible here while What Happened showed it.
+      const [finance, categoryResult, billsResult] = await Promise.all([
+        loadFinanceSummary(db, targetDate),
         db.getAllAsync<CategoryTotal>(`SELECT category, SUM(amount) as total FROM expenses WHERE date>=? AND date<=? GROUP BY category ORDER BY total DESC`, [start, end]),
         db.getAllAsync<any>(`SELECT id, amount, frequency, due_day, due_weekday FROM bills`),
       ]);
@@ -58,12 +66,14 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       );
 
       setData({
-        totalIncome: incomeResult?.total ?? 0,
-        totalSpending: expenseResult?.total ?? 0,
+        totalIncome: finance.monthIncome,
+        totalSpending: finance.monthSpending,
+        everydaySpending: finance.everydaySpending,
         categoryTotals: categoryResult,
         billsPaid: paidRows.length,
         billsUnpaid: billsResult.length - paidRows.length,
-        billsPaidAmount: paidRows.reduce((s: number, b: any) => s + b.amount, 0),
+        // What was ACTUALLY paid, from bill_payments, not the planned amounts.
+        billsPaidAmount: finance.billsPaidTotal,
       });
     } catch {}
   }, [monthOffset]);
@@ -124,10 +134,24 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         </View>
         <View style={[styles.bigCard, { flex: 1 }]}>
           <IconBadge iconKey="spent" color={C.spending} size={56} tinted={false} />
-          <Text style={styles.bigLabel}>Spent</Text>
+          <Text style={styles.bigLabel}>Money out</Text>
           <Text style={[styles.bigNumber, { color: C.spending }]}>{formatCurrency(data?.totalSpending ?? 0)}</Text>
         </View>
       </View>
+
+      {/* The two halves of money out, so "Money out" is never a lump nobody
+          can take apart. Everyday spending and bills stay distinct records. */}
+      <PeggyCard style={styles.card}>
+        <Text style={styles.cardLabel}>What the money out was</Text>
+        <View style={styles.splitRow}>
+          <Text style={styles.splitLabel}>Everyday spending</Text>
+          <Text style={styles.splitValue}>{formatCurrency(data?.everydaySpending ?? 0)}</Text>
+        </View>
+        <View style={styles.splitRow}>
+          <Text style={styles.splitLabel}>Bills paid</Text>
+          <Text style={styles.splitValue}>{formatCurrency(data?.billsPaidAmount ?? 0)}</Text>
+        </View>
+      </PeggyCard>
 
       <PeggyCard style={styles.card}>
         <Text style={styles.cardLabel}>Money left over</Text>
@@ -166,7 +190,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       {/* Spending by category */}
       {(data?.categoryTotals.length ?? 0) > 0 ? (
         <PeggyCard style={styles.card}>
-          <Text style={styles.cardLabel}>Where the money went</Text>
+          <Text style={styles.cardLabel}>Everyday spending by category</Text>
           {data!.categoryTotals.map((cat) => {
             const info = CATEGORIES[cat.category as Category] ?? CATEGORIES.other;
             const barWidth = maxCategory > 0 ? (cat.total / maxCategory) * 100 : 0;
@@ -230,6 +254,9 @@ function makeStyles(C: ColorPalette) {
     // PeggyCard supplies the surface, radius and shadow.
     // Only this screen's roomier padding and spacing stay local.
     card: { padding: Spacing.lg, marginBottom: Spacing.md },
+    splitRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 36 },
+    splitLabel: { ...Typography.body, color: C.textSecondary },
+    splitValue: { ...Typography.bodyBold, color: C.textPrimary },
     cardLabel:     { ...Typography.label, color: C.textHint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm },
     leftover:      { ...Typography.hero, fontSize: 34 },
     leftoverSub:   { ...Typography.caption, color: C.spending, marginTop: 4 },

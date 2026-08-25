@@ -115,9 +115,19 @@ describe('Spending breakdown', () => {
     expect(cats).toEqual([...GOLDEN_EXPECTED_CATEGORIES]);
   });
 
-  it('category totals add up to total spending — no money invented or lost', () => {
+  it('category totals add up to EVERYDAY spending — no money invented or lost', () => {
+    // Categories describe everyday expenses: groceries, gas, restaurants.
+    // A paid bill has no such category, and inventing one for Bell so a chart
+    // balanced would be a lie about what kind of spending it was. So this
+    // reconciles to everydaySpending, and the bills half is checked separately.
     const total = cents(cats.reduce((s, c) => s + c.total, 0));
-    expect(total).toBe(GOLDEN_EXPECTED.monthSpending);
+    expect(total).toBe(GOLDEN_EXPECTED.everydaySpending);
+  });
+
+  it('and the two halves of money out add up to the whole', () => {
+    // everyday spending + bills actually paid = all money out.
+    expect(cents(GOLDEN_EXPECTED.everydaySpending + GOLDEN_EXPECTED.billsPaidTotal))
+      .toBe(GOLDEN_EXPECTED.monthSpending);
   });
 });
 

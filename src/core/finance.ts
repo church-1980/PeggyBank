@@ -33,7 +33,20 @@ export interface FinanceBill {
   due_weekday?: number;
 }
 /** A bill occurrence the user has actually marked paid, keyed by its cycle. */
-export interface PaidCycle { bill_id: number; cycle_date: string }
+export interface PaidCycle {
+  bill_id: number;
+  /**
+   * The occurrence this settles. Also decides which month the money belongs
+   * to: the same date the bill was RESERVED under, so a reservation and the
+   * payment that clears it always land in the same month.
+   */
+  cycle_date: string;
+  /**
+   * What was actually paid, from bill_payments.amount. Optional because older
+   * rows may not have recorded it; the bill's planned amount is used then.
+   */
+  amount?: number | null;
+}
 
 /** How goal saving is spread. A goal's remaining gap is saved over this many months. */
 export const GOAL_SPREAD_MONTHS = 12;
@@ -119,6 +132,33 @@ export function unpaidBillsTotal(bills: FinanceBill[], paid: PaidCycle[], today:
   return sumAmounts(unpaidBills(bills, paid, today));
 }
 
+/**
+ * What actually LEFT the account this month for bills and subscriptions.
+ *
+ * A paid occurrence is counted under its cycle_date -- the very date it was
+ * reserved under while unpaid -- so a reservation and the payment that clears
+ * it are always attributed to the same month. That is what makes the invariant
+ * exact: paying a bill you already owed moves money from "still owed" to
+ * "already gone" and leaves Safe to Spend untouched.
+ *
+ * The amount actually paid wins. The bill's planned amount is only a fallback
+ * for older rows that never recorded one.
+ */
+export function paidBillsTotalInMonth(input: FinanceInput): number {
+  const planned = new Map<number, number>();
+  for (const b of input.bills) if (b.id != null) planned.set(b.id, b.amount);
+
+  let total = 0;
+  for (const p of input.paidCycles) {
+    if (p.cycle_date < input.monthStart || p.cycle_date > input.monthEnd) continue;
+    const amount = p.amount != null && Number.isFinite(p.amount)
+      ? p.amount
+      : planned.get(p.bill_id) ?? 0;
+    total += amount;
+  }
+  return cents(total);
+}
+
 export interface FinanceInput {
   today: Date;
   monthStart: string;
@@ -132,7 +172,18 @@ export interface FinanceInput {
 
 export interface FinanceSummary {
   monthIncome: number;
+  /**
+   * ALL money out this month: everyday spending plus bills actually paid.
+   *
+   * It used to mean everyday spending only. That was the defect: a paid bill
+   * left "still owed" and was never added here, so it fell out of the sum
+   * entirely and paying a bill made Safe to Spend go UP by its amount.
+   */
   monthSpending: number;
+  /** Everyday expenses only -- the expenses table. Kept separate for the breakdown. */
+  everydaySpending: number;
+  /** Bills and subscriptions actually paid this month. */
+  billsPaidTotal: number;
   moneyLeft: number;          // may be negative: this is the honest number
   unpaidBillsTotal: number;
   goalsSavingsNeeded: number;
@@ -153,7 +204,11 @@ export interface FinanceSummary {
  */
 export function computeFinanceSummary(input: FinanceInput): FinanceSummary {
   const monthIncome = sumAmounts(inRange(input.income, input.monthStart, input.monthEnd));
-  const monthSpending = sumAmounts(inRange(input.expenses, input.monthStart, input.monthEnd));
+  const everydaySpending = sumAmounts(inRange(input.expenses, input.monthStart, input.monthEnd));
+  const billsPaidTotal = paidBillsTotalInMonth(input);
+  // Money out is both halves. A bill that has been paid has GONE; it must not
+  // vanish from the arithmetic just because it is no longer owed.
+  const monthSpending = cents(everydaySpending + billsPaidTotal);
   const unpaid = unpaidBillsTotal(input.bills, input.paidCycles, input.today);
   const goalsNeeded = goalsSavingsNeeded(input.goals);
   const moneyLeft = cents(monthIncome - monthSpending);
@@ -163,6 +218,8 @@ export function computeFinanceSummary(input: FinanceInput): FinanceSummary {
   return {
     monthIncome,
     monthSpending,
+    everydaySpending,
+    billsPaidTotal,
     moneyLeft,
     unpaidBillsTotal: unpaid,
     goalsSavingsNeeded: goalsNeeded,
@@ -258,9 +315,30 @@ export function explainSafeToSpend(input: FinanceInput): SafeToSpendExplanation 
     .map(g => ({ label: 'Goal', amount: cents(monthlyGoalContribution(g.target_amount, g.current_amount)) }))
     .filter(d => d.amount > 0);
 
+  // Bills already paid are shown on their own line rather than folded into
+  // "already spent". Both are money gone, but a person reading this needs to
+  // see WHICH kind -- otherwise "Already spent $628" silently contains Bell
+  // while a separate line still talks about bills, and the two look like they
+  // might be the same money counted twice. They are not.
+  const paidDetail = input.paidCycles
+    .filter(p => p.cycle_date >= input.monthStart && p.cycle_date <= input.monthEnd)
+    .map(p => {
+      const bill = input.bills.find(b => b.id === p.bill_id);
+      const amount = p.amount != null && Number.isFinite(p.amount) ? p.amount : bill?.amount ?? 0;
+      return { label: bill?.name || 'Bill', amount: cents(amount) };
+    })
+    .filter(d => d.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
   const lines: SafeToSpendLine[] = [
     { key: 'income', label: 'Money in this month', amount: summary.monthIncome },
-    { key: 'spending', label: 'Already spent', amount: cents(-summary.monthSpending) },
+    { key: 'spending', label: 'Everyday spending', amount: cents(-summary.everydaySpending) },
+    {
+      key: 'billsPaid',
+      label: 'Bills already paid',
+      amount: cents(-summary.billsPaidTotal),
+      detail: paidDetail.length ? paidDetail : undefined,
+    },
     {
       key: 'bills',
       label: 'Bills you still owe',
@@ -277,7 +355,11 @@ export function explainSafeToSpend(input: FinanceInput): SafeToSpendExplanation 
 
   // Read off the summary, never recomputed from the lines.
   const rawTotal = cents(
-    summary.monthIncome - summary.monthSpending - summary.unpaidBillsTotal - summary.goalsSavingsNeeded
+    summary.monthIncome
+    - summary.everydaySpending
+    - summary.billsPaidTotal
+    - summary.unpaidBillsTotal
+    - summary.goalsSavingsNeeded
   );
 
   return {
