@@ -2,7 +2,9 @@
 // CameraView is positioned with StyleSheet.absoluteFill and the controls float
 // over it, so a padded, scrolling shell would letterbox the live preview.
 import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
+import PeggyDateField from '../components/peggy/PeggyDateField';
+import { localDateString } from '../core/datetime';
 import { CameraView, useCameraPermissions, CameraType, FlashMode } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +15,8 @@ import { formatCurrency, formatDate } from '../utils/helpers';
 import { saveAcceptedImage, deleteTempImage } from '../lib/receiptStorage';
 import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
+import { Category } from '../types';
+import { resolveReview, formParams, Corrections } from '../lib/recognition/review';
 import { CATEGORIES } from '../data/categories';
 import PeggyPushButton from '../components/peggy/PeggyPushButton';
 import PeggyCard from '../components/peggy/PeggyCard';
@@ -69,6 +73,36 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const [result, setResult] = useState<RecognitionResult | null>(null);
   const [chosenType, setChosenType] = useState<DocType>('unknown');
   const [known, setKnown] = useState<MerchantMemory | null>(null);
+
+  /**
+   * What the person has confirmed or corrected on THIS screen.
+   *
+   * Smart Capture used to be read-only: it showed what it had read, and any
+   * correction meant leaving for a different screen and rebuilding the
+   * transaction there. At that point photographing the receipt saved nobody
+   * anything. A review screen has to be a place you can review.
+   */
+  const [edits, setEdits] = useState<Corrections>({});
+  const [editing, setEditing] = useState<null | 'merchant' | 'amount' | 'date' | 'category'>(null);
+  const [draft, setDraft] = useState('');
+
+  // What the screen currently believes. One resolution, shared by the fields,
+  // the headline, the question and the form, so they cannot disagree.
+  const review = resolveReview(result, known, edits);
+  const { merchant: merchantValue, amount: amountValue, date: dateValue, category: categoryValue } = review;
+  const confOf = (key: 'merchant' | 'amount' | 'date' | 'category') => review.confidence[key];
+
+  const commitDraft = () => {
+    if (editing === 'merchant') {
+      const v = draft.trim();
+      setEdits(e => ({ ...e, merchant: v || undefined }));
+    } else if (editing === 'amount') {
+      const v = parseFloat(draft.replace(',', '.').replace(/[^0-9.]/g, ''));
+      setEdits(e => ({ ...e, amount: Number.isFinite(v) && v > 0 ? v : undefined }));
+    }
+    setEditing(null);
+    setDraft('');
+  };
   const [questionDismissed, setQuestionDismissed] = useState(false);
   const [flash, setFlash] = useState<FlashMode>('off');
   const [facing] = useState<CameraType>('back');
@@ -117,6 +151,9 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const retake = async () => {
     await deleteTempImage(tempUri);
     setTempUri(null); setOwnedUri(null); setResult(null);
+    // A different receipt must not inherit the last one's vendor, corrections
+    // or dismissed question.
+    setKnown(null); setEdits({}); setEditing(null); setQuestionDismissed(false);
     setStage('camera');
   };
 
@@ -124,6 +161,9 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const usePhoto = async () => {
     if (!tempUri) return;
     setStage('reading');
+    // A fresh photo starts fresh: old corrections must not bleed into it.
+    setEdits({});
+    setEditing(null);
     try {
       const owned = await saveAcceptedImage(tempUri);
       await deleteTempImage(tempUri);
@@ -149,26 +189,13 @@ export default function QuickCaptureScreen({ navigation }: any) {
   // Continue → prefilled form (or manual = photo only)
   const goToForm = (type: DocType, prefill: boolean) => {
     if (!ownedUri || type === 'unknown') return;
-    const r = prefill ? result : null;
-    const m = prefill ? known : null;
+    const params = formParams(review, type, ownedUri, prefill);
     if (type === 'expense') {
-      navigation.replace('AddExpense', {
-        capturedPhoto: ownedUri,
-        // Read the amount off the document, falling back to what this vendor
-        // usually costs. Category comes from memory first, then the guess.
-        amount: r?.amount ?? m?.lastAmount,
-        category: m?.category ?? r?.category,
-        note: m?.displayName ?? r?.merchant,
-      });
+      navigation.replace('AddExpense', params);
     } else {
-      const ocrDueDay = r?.dueDate ? parseInt(r.dueDate.split('-')[2], 10) : undefined;
-      navigation.replace('Bills', {
-        autoOpen: true,
-        capturedPhoto: ownedUri,
-        billName: m?.displayName ?? r?.merchant,
-        billAmount: r?.amount ?? m?.lastAmount,
-        billDueDay: ocrDueDay ?? m?.dueDay,
-      });
+      // A due DAY is a bill's own idea; it comes from the document or memory.
+      const ocrDueDay = prefill && result?.dueDate ? parseInt(result.dueDate.split('-')[2], 10) : undefined;
+      navigation.replace('Bills', { ...params, billDueDay: ocrDueDay ?? (prefill ? known?.dueDay : undefined) });
     }
   };
 
@@ -219,10 +246,10 @@ export default function QuickCaptureScreen({ navigation }: any) {
 
   // ── Review stage ───────────────────────────────────────────────────
   const ok = !!result?.ok;
-  const summary = buildSummary(result, chosenType);
+  const summary = buildSummary(result, chosenType, merchantValue, amountValue);
   const question = questionDismissed
     ? null
-    : confirmQuestion(chosenType, known?.category ?? result?.category, result?.amount);
+    : confirmQuestion(chosenType, categoryValue, amountValue);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
@@ -289,27 +316,120 @@ export default function QuickCaptureScreen({ navigation }: any) {
         {chosenType === 'unknown' && <Text style={[Typography.helper, { color: C.warning, marginTop: 6 }]}>Please choose one.</Text>}
 
         {/* Detected fields (honest confidence) */}
-        <Text style={styles.sectionLabel}>DETECTED</Text>
+        <Text style={styles.sectionLabel}>CHECK THIS</Text>
         <PeggyCard style={styles.card}>
-          <Field C={C} label={chosenType === 'bill' ? 'Payee' : 'Merchant'} value={result?.merchant} conf={result?.confidence.merchant} />
+          {/* Every row can be corrected right here. Leaving Smart Capture to fix
+              one field meant rebuilding the whole transaction elsewhere, which
+              made photographing the receipt pointless. */}
+          {editing === 'merchant' ? (
+            <View style={styles.editRow}>
+              <Text style={styles.editLabel}>{chosenType === 'bill' ? 'Payee' : 'Merchant'}</Text>
+              <TextInput
+                style={styles.editInput}
+                value={draft}
+                onChangeText={setDraft}
+                autoFocus
+                placeholder="Who was it?"
+                placeholderTextColor={C.textHint}
+                onBlur={commitDraft}
+                onSubmitEditing={commitDraft}
+                returnKeyType="done"
+                accessibilityLabel="Merchant name"
+              />
+            </View>
+          ) : (
+            <EditableField
+              C={C}
+              label={chosenType === 'bill' ? 'Payee' : 'Merchant'}
+              value={merchantValue}
+              conf={confOf('merchant')}
+              onPress={() => { setDraft(merchantValue ?? ''); setEditing('merchant'); }}
+            />
+          )}
           <Divider C={C} />
-          <Field C={C} label="Amount" value={result?.amount != null ? formatCurrency(result.amount) : undefined} conf={result?.confidence.amount} />
+
+          {editing === 'amount' ? (
+            <View style={styles.editRow}>
+              <Text style={styles.editLabel}>Amount</Text>
+              <TextInput
+                style={styles.editInput}
+                value={draft}
+                onChangeText={setDraft}
+                autoFocus
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor={C.textHint}
+                onBlur={commitDraft}
+                onSubmitEditing={commitDraft}
+                returnKeyType="done"
+                accessibilityLabel="Amount paid"
+              />
+            </View>
+          ) : (
+            <EditableField
+              C={C}
+              label="Amount"
+              value={amountValue != null ? formatCurrency(amountValue) : undefined}
+              conf={confOf('amount')}
+              onPress={() => { setDraft(amountValue != null ? String(amountValue) : ''); setEditing('amount'); }}
+            />
+          )}
           <Divider C={C} />
-          <Field C={C} label="Date" value={result?.date ? formatDate(result.date) : undefined} conf={result?.confidence.date} />
-          {chosenType === 'bill' && (<><Divider C={C} /><Field C={C} label="Due date" value={result?.dueDate ? formatDate(result.dueDate) : undefined} conf={result?.confidence.dueDate} /></>)}
+
+          <EditableField
+            C={C}
+            label="Date"
+            value={dateValue ? formatDate(dateValue) : undefined}
+            conf={confOf('date')}
+            onPress={() => setEditing(editing === 'date' ? null : 'date')}
+          />
+          {editing === 'date' && (
+            <View style={{ paddingBottom: Spacing.sm }}>
+              <PeggyDateField
+                value={dateValue ?? localDateString(new Date())}
+                onChange={(d) => { setEdits(e => ({ ...e, date: d })); setEditing(null); }}
+                label="When was it?"
+              />
+            </View>
+          )}
           <Divider C={C} />
-          <Field C={C} label="Category" value={result?.category} conf={result?.confidence.category} />
+
+          <EditableField
+            C={C}
+            label="Category"
+            value={categoryValue ? (CATEGORIES as any)[categoryValue]?.label ?? categoryValue : undefined}
+            conf={confOf('category')}
+            onPress={() => setEditing(editing === 'category' ? null : 'category')}
+          />
+          {editing === 'category' && (
+            <View style={styles.catRow}>
+              {(Object.keys(CATEGORIES) as Category[]).map((key) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.catChip, categoryValue === key && { backgroundColor: C.primary, borderColor: C.primary }]}
+                  onPress={() => { setEdits(e => ({ ...e, category: key })); setEditing(null); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={'Category ' + (CATEGORIES as any)[key].label}
+                  accessibilityState={{ selected: categoryValue === key }}
+                >
+                  <Text style={[styles.catChipText, categoryValue === key && { color: C.textOnPrimary, fontWeight: '700' }]}>
+                    {(CATEGORIES as any)[key].label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </PeggyCard>
 
         <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 10 }]}>
-          You&apos;ll review and correct every field on the next screen before saving.
+          Tap anything above to correct it. Your photo stays attached.
         </Text>
 
         {/* Actions */}
         <TouchableOpacity
           style={[styles.continueBtn, { backgroundColor: chosenType === 'unknown' ? C.primary + '55' : C.primary }]}
           disabled={chosenType === 'unknown'}
-          onPress={() => goToForm(chosenType, ok)}
+          onPress={() => goToForm(chosenType, review.shouldPrefill)}
         >
           <Text style={{ color: C.textOnPrimary, fontWeight: '700' }}>Continue</Text>
         </TouchableOpacity>
@@ -324,10 +444,10 @@ export default function QuickCaptureScreen({ navigation }: any) {
   );
 }
 
-function buildSummary(r: RecognitionResult | null, type: DocType): string {
+function buildSummary(r: RecognitionResult | null, type: DocType, merchant?: string, amount?: number): string {
   if (!r || !r.ok) return '';
-  const who = r.merchant ?? (type === 'bill' ? 'This document' : 'This receipt');
-  const amt = r.amount != null ? ` for ${formatCurrency(r.amount)}` : '';
+  const who = merchant ?? (type === 'bill' ? 'This document' : 'This receipt');
+  const amt = amount != null ? ` for ${formatCurrency(amount)}` : '';
   if (type === 'bill') {
     const due = r.dueDate ? ` due ${formatDate(r.dueDate)}` : '';
     return `${who} looks like a bill${amt}${due}. Review and add it to Bills?`;
@@ -344,18 +464,38 @@ function TypeChip({ C, label, icon, active, onPress }: { C: ColorPalette; label:
   );
 }
 
-function Field({ C, label, value, conf }: { C: ColorPalette; label: string; value?: string; conf?: 'high' | 'low' | 'none' }) {
-  const review = !value || conf === 'none';
+function EditableField({ C, label, value, conf, onPress }: {
+  C: ColorPalette; label: string; value?: string;
+  conf?: 'high' | 'low' | 'none'; onPress: () => void;
+}) {
+  const missing = !value || conf === 'none';
+  const spoken = missing ? label + ', not read. Tap to enter it.' : label + ', ' + value + '. Tap to change it.';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }}>
+    <TouchableOpacity
+      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, minHeight: 48 }}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={spoken}
+    >
       <Text style={[Typography.helper, { color: C.textSecondary, width: 90 }]}>{label}</Text>
-      <Text style={[Typography.body, { color: review ? C.warning : C.textPrimary, flex: 1, fontWeight: review ? '600' : '400' }]} numberOfLines={1}>
-        {value ?? 'Please review'}
+      <Text
+        style={[Typography.body, {
+          color: missing ? C.warning : C.textPrimary,
+          flex: 1,
+          fontWeight: missing ? '600' : '400',
+        }]}
+        numberOfLines={1}
+      >
+        {value ?? 'Tap to add'}
       </Text>
-      {conf === 'low' && !review ? <Text style={[Typography.caption, { color: C.warning }]}>check</Text> : null}
-    </View>
+      {conf === 'low' && !missing ? (
+        <Text style={[Typography.caption, { color: C.warning, marginRight: 6 }]}>check</Text>
+      ) : null}
+      <Ionicons name="pencil-outline" size={16} color={C.textHint} />
+    </TouchableOpacity>
   );
 }
+
 function Divider({ C }: { C: ColorPalette }) { return <View style={{ height: 1, backgroundColor: C.borderLight }} />; }
 
 function makeStyles(C: ColorPalette) {
@@ -394,6 +534,19 @@ function makeStyles(C: ColorPalette) {
     card: { paddingVertical: 0, paddingHorizontal: Spacing.md },
     continueBtn: { height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.lg },
     reviewActions: { flexDirection: 'row', justifyContent: 'space-around', marginTop: Spacing.md },
+    editRow:   { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 56 },
+    editLabel: { ...Typography.helper, color: C.textSecondary, width: 90 },
+    editInput: {
+      flex: 1, ...Typography.body, color: C.textPrimary,
+      borderWidth: 1, borderColor: C.primary, borderRadius: Radius.md,
+      paddingHorizontal: 12, minHeight: 44,
+    },
+    catRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: Spacing.sm },
+    catChip: {
+      minHeight: 40, paddingHorizontal: 14, borderRadius: Radius.md,
+      borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
+    },
+    catChipText: { ...Typography.caption, color: C.textSecondary },
     reviewAction: { ...Typography.helper, color: C.textSecondary, fontWeight: '600' },
   });
 }
