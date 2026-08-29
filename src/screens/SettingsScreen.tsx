@@ -41,6 +41,15 @@ const APP_ROWS: RowItem[] = [
     screen: 'Appearance',
   },
   {
+    // Named in English here because Settings itself is not translated yet;
+    // the screen it opens names every language in its own language.
+    label: 'Language',
+    sub: 'English, Français, Español, Português, 中文',
+    icon: 'language-outline',
+    iconColorKey: 'primary',
+    screen: 'Language',
+  },
+  {
     label: 'Export & Backup',
     sub: 'Save or share a copy of your data',
     icon: 'cloud-download-outline',

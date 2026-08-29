@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NavProvider, useNavConfig } from './src/context/NavContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 import { CustomLogoProvider } from './src/context/CustomLogoContext';
 import { setupDatabase, getDatabase } from './src/database/database';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -99,12 +100,14 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <ThemedStatusBar />
-        <NavProvider>
-          <CustomLogoProvider>
-            <AppRoot />
-          </CustomLogoProvider>
-        </NavProvider>
+        <LanguageProvider>
+          <ThemedStatusBar />
+          <NavProvider>
+            <CustomLogoProvider>
+              <AppRoot />
+            </CustomLogoProvider>
+          </NavProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

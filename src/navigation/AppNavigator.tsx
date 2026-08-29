@@ -24,6 +24,7 @@ import ExportScreen           from '../screens/ExportScreen';
 import SettingsScreen         from '../screens/SettingsScreen';
 import OnboardingScreen       from '../screens/OnboardingScreen';
 import AppearanceScreen       from '../screens/AppearanceScreen';
+import LanguageScreen         from '../screens/LanguageScreen';
 import ShareScreen            from '../screens/ShareScreen';
 import IncomesScreen          from '../screens/IncomesScreen';
 import BillsScreen            from '../screens/BillsScreen';
@@ -145,6 +146,7 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="Export"           component={ExportScreen}          options={{ presentation: 'modal' }} />
         <Stack.Screen name="Settings"         component={SettingsScreen}        options={{ presentation: 'modal' }} />
         <Stack.Screen name="Appearance"       component={AppearanceScreen}       options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Language"         component={LanguageScreen}         options={{ presentation: 'modal' }} />
         <Stack.Screen name="Share"            component={ShareScreen}           options={{ presentation: 'modal' }} />
         <Stack.Screen name="Incomes"          component={IncomesScreen}         options={{ presentation: 'modal' }} />
       </Stack.Navigator>
