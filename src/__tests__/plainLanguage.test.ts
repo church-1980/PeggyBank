@@ -26,8 +26,12 @@ const JARGON = /\b(occurrence|reconcile|reconciliation|ledger|cycle|settlement|t
 function userVisibleStrings(src: string): string[] {
   const out: string[] = [];
 
-  // >Some words here<
-  for (const m of src.matchAll(/>\s*([A-Z][^<>{}\n]{4,80})\s*</g)) out.push(m[1]);
+  // JSX text: >Some words here<  AND  {value} some words here<
+  //
+  // The second case is why this missed "$0.00 still due this cycle" sitting on
+  // the Bills header: the sentence starts after an interpolation, not after a
+  // tag, so a pattern anchored to > never saw it.
+  for (const m of src.matchAll(/[>}]\s*([A-Za-z][^<>{}\n]{4,80})\s*</g)) out.push(m[1]);
 
   // text: '...', label: "...", title: '...', message: '...', placeholder: '...'
   const re = /\b(?:text|label|title|message|placeholder|subtitle|accessibilityLabel|actionLabel|helper)\s*[:=]\s*["']([^"']{4,120})["']/g;

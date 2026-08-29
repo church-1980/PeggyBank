@@ -31,7 +31,8 @@
     "audit:web": "node scripts/webtest/run.js",
     "audit:android": "node scripts/androidtest/run.js",
     "android:build": "bash -c \"cd android && ANDROID_HOME=$ANDROID_HOME ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon\"",
-    "audit:donut": "node scripts/webtest/donut.js"
+    "audit:donut": "node scripts/webtest/donut.js",
+    "audit:bills": "node scripts/webtest/bills.js"
   },
   "jest": {
     "preset": "jest-expo",

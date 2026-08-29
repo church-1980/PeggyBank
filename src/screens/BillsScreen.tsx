@@ -27,6 +27,9 @@ import {
 } from '../lib/billCycles';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
+import {
+  PeggyButton, PeggyChip, PeggyCheckbox, PeggyChoiceTile, PeggyCurrencyInput,
+} from '../components/peggy';
 /** Which occurrence the 'did it come out?' sheet is asking about. */
 interface VerifyTarget {
   source: 'bill' | 'subscription';
@@ -382,7 +385,7 @@ export default function BillsScreen({ navigation, route }: any) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Bills & Subscriptions</Text>
-          <Text style={styles.headerSub}>{formatCurrency(unpaidTotal)} still due this cycle</Text>
+          <Text style={styles.headerSub}>{formatCurrency(unpaidTotal)} still to pay</Text>
         </View>
         <TouchableOpacity style={styles.headerAdd} onPress={() => openAdd('bill')} accessibilityRole="button" accessibilityLabel="Add a bill or subscription">
           <Ionicons name="add" size={22} color={C.textOnPrimary} />
@@ -455,18 +458,15 @@ export default function BillsScreen({ navigation, route }: any) {
                 {/* One button, and only the one this bill actually needs. An
                     auto-pay bill that has not come due yet asks for nothing. */}
                 {say.action === 'verify' ? (
-                  <TouchableOpacity
-                    style={[styles.verifyBtn, { borderColor: C.spending }]}
+                  <PeggyChip
+                    label="Check"
+                    color={C.spending}
+                    style={styles.verifyChip}
                     onPress={() => {
                       setVerify({ source: 'bill', id: item.id as number, name: item.name, planned: item.amount, cycleDate: cycle });
                       setVerifyAmount(String(item.amount));
                     }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Check whether ${item.name} was paid`}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={[styles.verifyBtnText, { color: C.spending }]}>Check</Text>
-                  </TouchableOpacity>
+                  />
                 ) : (
                   <TouchableOpacity
                     style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
@@ -526,18 +526,15 @@ export default function BillsScreen({ navigation, route }: any) {
                   {formatCurrency(item.amount)}
                 </Text>
                 {say.action === 'verify' ? (
-                  <TouchableOpacity
-                    style={[styles.verifyBtn, { borderColor: C.spending }]}
+                  <PeggyChip
+                    label="Check"
+                    color={C.spending}
+                    style={styles.verifyChip}
                     onPress={() => {
                       setVerify({ source: 'subscription', id: item.id as number, name: item.name, planned: item.amount, cycleDate: cycle });
                       setVerifyAmount(String(item.amount));
                     }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Check whether ${item.name} was charged`}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={[styles.verifyBtnText, { color: C.spending }]}>Check</Text>
-                  </TouchableOpacity>
+                  />
                 ) : (
                   <TouchableOpacity
                     style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
@@ -569,47 +566,37 @@ export default function BillsScreen({ navigation, route }: any) {
             {formatCurrency(verify?.planned ?? 0)} was expected to come out. Did it?
           </Text>
 
-          <TouchableOpacity
-            style={[styles.verifyPrimary, { backgroundColor: C.income }]}
+          <PeggyButton
+            label="Yes, it was paid"
+            icon={<Ionicons name="checkmark" size={18} color={C.textOnPrimary} />}
             onPress={() => answerVerify('paid')}
-            accessibilityRole="button"
-          >
-            <Ionicons name="checkmark" size={18} color={C.textOnPrimary} />
-            <Text style={styles.verifyPrimaryText}>Yes, it was paid</Text>
-          </TouchableOpacity>
+            style={styles.verifyPrimary}
+          />
 
           {/* A different amount, typed straight in — no second screen. */}
           <View style={styles.verifyAmountRow}>
             <Text style={styles.verifyAmountLabel}>Different amount</Text>
-            <TextInput
-              style={styles.verifyAmountInput}
+            <PeggyCurrencyInput
               value={verifyAmount}
               onChangeText={setVerifyAmount}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              placeholderTextColor={C.textHint}
-              accessibilityLabel="Amount actually paid"
+              style={styles.verifyAmountInput}
             />
-            <TouchableOpacity
-              style={[styles.verifySecondary, { borderColor: C.bills }]}
+            <PeggyButton
+              label="Save"
+              variant="pill"
               onPress={() => {
                 const v = parseFloat(verifyAmount.replace(',', '.'));
                 if (Number.isFinite(v) && v > 0) answerVerify('paid', v);
               }}
-              accessibilityRole="button"
-              accessibilityLabel="Save the different amount"
-            >
-              <Text style={[styles.verifySecondaryText, { color: C.bills }]}>Save</Text>
-            </TouchableOpacity>
+            />
           </View>
 
-          <TouchableOpacity
-            style={styles.verifyFailed}
+          <PeggyButton
+            label="It didn't go through"
+            variant="pill"
             onPress={() => answerVerify('failed')}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.verifyFailedText, { color: C.spending }]}>It didn&apos;t go through</Text>
-          </TouchableOpacity>
+            style={styles.verifyFailed}
+          />
 
           <TouchableOpacity style={styles.confirmCancelBtn} onPress={() => setVerify(null)}>
             <Text style={styles.confirmCancelText}>Ask me later</Text>
@@ -653,14 +640,14 @@ export default function BillsScreen({ navigation, route }: any) {
                 <View style={styles.typeRow}>
                   <TouchableOpacity
                     style={[styles.typeBtn, modalType === 'bill' && { borderColor: C.bills, backgroundColor: C.bills + '18' }]}
-                    onPress={() => setModalType('bill')}
+                    onPress={() => { setModalType('bill'); setPayMethod('manual'); setAutoConfirm(false); }}
                   >
                     <IconBadge iconKey="bills" color={modalType === 'bill' ? C.bills : C.textHint} size={24} iconSize={16} tinted={false} />
                     <Text style={[styles.typeBtnText, modalType === 'bill' && { color: C.bills }]}>Bill</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.typeBtn, modalType === 'subscription' && { borderColor: C.subs, backgroundColor: C.subs + '18' }]}
-                    onPress={() => setModalType('subscription')}
+                    onPress={() => { setModalType('subscription'); setPayMethod('auto'); setAutoConfirm(false); }}
                   >
                     <IconBadge iconKey="recurring" color={modalType === 'subscription' ? C.subs : C.textHint} size={24} iconSize={16} tinted={false} />
                     <Text style={[styles.typeBtnText, modalType === 'subscription' && { color: C.subs }]}>Subscription</Text>
@@ -818,44 +805,33 @@ export default function BillsScreen({ navigation, route }: any) {
                   fake manual work every month. Two options, plain words. */}
               <Text style={styles.modalLabel}>How is this paid?</Text>
               <View style={styles.methodRow}>
-                <TouchableOpacity
-                  style={[styles.methodBtn, payMethod === 'manual' && { borderColor: accentColor, backgroundColor: accentColor + '18' }]}
+                <PeggyChoiceTile
+                  title="I pay it"
+                  help="You'll mark it paid."
+                  selected={payMethod === 'manual'}
+                  tone={accentColor}
                   onPress={() => { setPayMethod('manual'); setAutoConfirm(false); }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: payMethod === 'manual' }}
-                >
-                  <Text style={[styles.methodTitle, payMethod === 'manual' && { color: accentColor }]}>I pay it</Text>
-                  <Text style={styles.methodHelp}>You&apos;ll mark it paid.</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.methodBtn, payMethod === 'auto' && { borderColor: accentColor, backgroundColor: accentColor + '18' }]}
+                />
+                <PeggyChoiceTile
+                  title="Auto-pay"
+                  help="It comes out on its own."
+                  selected={payMethod === 'auto'}
+                  tone={accentColor}
                   onPress={() => setPayMethod('auto')}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: payMethod === 'auto' }}
-                >
-                  <Text style={[styles.methodTitle, payMethod === 'auto' && { color: accentColor }]}>Auto-pay</Text>
-                  <Text style={styles.methodHelp}>It comes out on its own.</Text>
-                </TouchableOpacity>
+                />
               </View>
 
               {/* Only ever shown to someone who has already chosen auto-pay, so
                   a person who pays their own bills never sees this at all.
                   PeggyBank cannot see the bank, so "assume" is the honest word. */}
               {payMethod === 'auto' && (
-                <TouchableOpacity
+                <PeggyCheckbox
+                  label="Don't ask me each month — assume it went through"
+                  checked={autoConfirm}
+                  tone={accentColor}
+                  onToggle={() => setAutoConfirm(!autoConfirm)}
                   style={styles.assumeRow}
-                  onPress={() => setAutoConfirm(!autoConfirm)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: autoConfirm }}
-                  accessibilityLabel="Don't ask me each month; assume this went through"
-                >
-                  <View style={[styles.assumeBox, autoConfirm && { backgroundColor: accentColor, borderColor: accentColor }]}>
-                    {autoConfirm ? <Ionicons name="checkmark" size={14} color={C.textOnPrimary} /> : null}
-                  </View>
-                  <Text style={styles.assumeText}>
-                    Don&apos;t ask me each month — assume it went through
-                  </Text>
-                </TouchableOpacity>
+                />
               )}
 
               <TouchableOpacity
@@ -1053,47 +1029,19 @@ function makeStyles(C: ColorPalette) {
     methodBadge: { ...Typography.caption, color: C.textHint, fontWeight: '700', letterSpacing: 0.5 },
 
     // The 'Check' button that replaces the tick for an expected auto-payment.
-    verifyBtn: {
-      marginLeft: Spacing.sm, minHeight: 44, minWidth: 60, paddingHorizontal: 12,
-      borderWidth: 1, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center',
-    },
-    verifyBtnText: { ...Typography.caption, fontWeight: '700' },
 
     // 'How is this paid?' — two cards, side by side.
-    methodRow: { flexDirection: 'row', gap: 10, marginBottom: Spacing.sm },
-    methodBtn: {
-      flex: 1, minHeight: 64, padding: 12, borderRadius: Radius.md,
-      borderWidth: 1, borderColor: C.border, justifyContent: 'center',
-    },
-    methodTitle: { ...Typography.bodyBold, color: C.textPrimary },
-    methodHelp:  { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
+    methodRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
 
     // Only shown once auto-pay is chosen.
-    assumeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, marginBottom: Spacing.sm },
-    assumeBox: {
-      width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.border,
-      alignItems: 'center', justifyContent: 'center',
-    },
-    assumeText: { ...Typography.caption, color: C.textSecondary, flex: 1 },
+    assumeRow: { marginBottom: Spacing.sm },
 
     // The 'did it come out?' sheet.
-    verifyPrimary: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-      minHeight: 56, borderRadius: Radius.md, marginTop: Spacing.sm,
-    },
-    verifyPrimaryText: { ...Typography.cardTitle, color: C.textOnPrimary },
-    verifyAmountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md },
+    verifyPrimary:     { marginTop: Spacing.sm },
+    verifyAmountRow:   { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
     verifyAmountLabel: { ...Typography.caption, color: C.textSecondary, width: 92 },
-    verifyAmountInput: {
-      flex: 1, minHeight: 48, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md,
-      paddingHorizontal: 12, ...Typography.body, color: C.textPrimary,
-    },
-    verifySecondary: {
-      minHeight: 48, paddingHorizontal: 16, borderWidth: 1, borderRadius: Radius.md,
-      alignItems: 'center', justifyContent: 'center',
-    },
-    verifySecondaryText: { ...Typography.caption, fontWeight: '700' },
-    verifyFailed: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm },
-    verifyFailedText: { ...Typography.body, fontWeight: '600' },
+    verifyChip:        { marginLeft: Spacing.sm },
+    verifyAmountInput: { flex: 1 },
+    verifyFailed:      { marginTop: Spacing.sm },
   });
 }

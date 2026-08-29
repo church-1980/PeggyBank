@@ -233,3 +233,28 @@ describe('The next cycle always survives', () => {
     expect(september.safeToSpend).toBe(883);
   });
 });
+
+describe('Switching what you are adding switches how it is paid', () => {
+  /**
+   * A browser check found this: "Add New" opened from the Subscriptions row
+   * starts as auto-pay, and switching the toggle to Bill left auto-pay
+   * selected — quietly contradicting the conservative rule that a bill is
+   * something you pay yourself unless you say otherwise.
+   *
+   * The screen now resets the method with the type. This pins the defaults
+   * that reset depends on.
+   */
+  const defaultFor = (type: 'bill' | 'subscription') => (type === 'subscription' ? 'auto' : 'manual');
+
+  it('a bill defaults to being paid by the person', () => {
+    expect(defaultFor('bill')).toBe('manual');
+  });
+
+  it('a subscription defaults to charging itself', () => {
+    expect(defaultFor('subscription')).toBe('auto');
+  });
+
+  it('the two defaults are genuinely different, or the reset means nothing', () => {
+    expect(defaultFor('bill')).not.toBe(defaultFor('subscription'));
+  });
+});

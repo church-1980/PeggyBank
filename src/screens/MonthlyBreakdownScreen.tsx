@@ -1,7 +1,6 @@
 import { buildFinanceInput } from '../lib/financeSummary';
 import { computeFinanceSummary, spendingByCategory } from '../core/finance';
 import { buildSegments, donutCentre, type ChartSegment } from '../core/spendingChart';
-import PeggyDonut from '../components/peggy/PeggyDonut';
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -14,7 +13,7 @@ import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
-import { PeggyScreen, PeggyHeader } from '../components/peggy';
+import { PeggyScreen, PeggyHeader, PeggyDonut, PeggyLegendRow } from '../components/peggy';
 import IconBadge from '../components/IconBadge';
 import PeggyCard from '../components/peggy/PeggyCard';
 
@@ -237,12 +236,13 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
               slices apart — every one is named, with its own dollars. */}
           <View style={styles.legend}>
             {data!.segments.map((seg) => (
-              <View key={seg.key} style={styles.legendRow}>
-                <View style={[styles.legendDot, { backgroundColor: seg.color }]} />
-                <Text style={styles.legendLabel} numberOfLines={1}>{seg.label}</Text>
-                <Text style={styles.legendAmount}>{formatCurrency(seg.amount)}</Text>
-                <Text style={styles.legendPercent}>{seg.percent}%</Text>
-              </View>
+              <PeggyLegendRow
+                key={seg.key}
+                color={seg.color}
+                label={seg.label}
+                amount={formatCurrency(seg.amount)}
+                percent={seg.percent}
+              />
             ))}
           </View>
         </PeggyCard>
@@ -311,11 +311,6 @@ function makeStyles(C: ColorPalette) {
     legend:        { marginTop: Spacing.sm },
     // 44 high so a row is a comfortable target if it ever becomes tappable,
     // and so the text has room to grow with the system font size.
-    legendRow:     { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: Spacing.sm },
-    legendDot:     { width: 12, height: 12, borderRadius: 6 },
-    legendLabel:   { ...Typography.body, color: C.textPrimary, flex: 1 },
-    legendAmount:  { ...Typography.body, color: C.textPrimary, fontVariant: ['tabular-nums'] },
-    legendPercent: { ...Typography.caption, color: C.textSecondary, width: 42, textAlign: 'right', fontVariant: ['tabular-nums'] },
     
     empty:         { alignItems: 'center', padding: 40 },
     emptyIcon: {

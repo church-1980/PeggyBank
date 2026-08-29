@@ -109,12 +109,27 @@ one avatar implementation.
 - **`PeggyGoalCard`** — icon frame + name + % + milestone-banded progress + required encouragement line.
 - **`PeggyStatCard`**, **`PeggyPickerTile`**, **`PeggyQuickActionCard`** — as in the gallery.
 - **`PeggyDivider`** between rows.
+- **`PeggyLegendRow`** — colour swatch + label + amount + optional percent. The key
+  to a chart, and the part that carries the information: it is what someone who
+  cannot separate the colours reads instead, so it is never optional decoration.
+  Distinct from `PeggyListRow`, which is for records you can open.
 
 ## 10. Controls
 `PeggyButton` (primary/pill/fab — one primary per screen), `PeggyIconButton`
-(plain/soft/solid), `PeggyInput`, `PeggyCurrencyInput`, `PeggyChip`, `PeggyBadge`,
+(plain/soft/solid), `PeggyInput`, `PeggyCurrencyInput`, `PeggyChip` (tinted, or
+filled when `selected` — chips also choose), `PeggyCheckbox` (tick box + label;
+the whole row is the target, because a 22pt square is a hard thing to hit with a
+thumb), `PeggyChoiceTile` (a choice with one line of plain English under it —
+`PeggyPickerTile` picks a CONCEPT via its icon, this picks a BEHAVIOUR that needs
+a sentence), `PeggyBadge`,
 `PeggyProgressBar` (milestone bands: 0–24 coral · 25–49 orange · 50–74 purple ·
 75–99 green · 100 gold).
+
+## 10a. Charts
+`PeggyDonut` — one ring, one number in the middle, never a dashboard. Slices are
+drawn as dashed circle strokes rather than arc paths, so a single 100% slice and
+a sub-degree slice both render correctly with no special cases. Always paired
+with `PeggyLegendRow`s: the ring is the impression, the legend is the fact.
 
 ## 11. States
 `PeggyEmptyState` (encouraging, one action) · `PeggyLoadingState` (spinner + calm
@@ -139,8 +154,9 @@ text tokens only. `Read Step Aloud` (TTS) planned per the app charter.
 `PeggyPage, PeggyScreen, PeggyHeader, PeggyBackButton, PeggyBottomNav, PeggyCard,
 PeggyHeroCard, PeggySection, PeggySectionHeader, PeggyDivider, PeggyIconFrame,
 PeggyAvatar, PeggyGoalCard, PeggyQuickActionCard, PeggyListRow, PeggyStatCard,
-PeggyPickerTile, PeggyButton, PeggyIconButton, PeggyInput, PeggyCurrencyInput,
-PeggyChip, PeggyBadge, PeggyProgressBar, PeggyEmptyState, PeggyLoadingState,
+PeggyPickerTile, PeggyChoiceTile, PeggyLegendRow, PeggyButton, PeggyIconButton,
+PeggyInput, PeggyCurrencyInput, PeggyChip, PeggyCheckbox, PeggyBadge,
+PeggyProgressBar, PeggyDonut, PeggyEmptyState, PeggyLoadingState,
 PeggyErrorState, PeggyModal, PeggyConfirmationModal` (+ deprecated `PeggyIconBadge`
 shim, `PeggyIllustration` legacy slot).
 

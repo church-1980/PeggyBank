@@ -2,7 +2,7 @@
 // CameraView is positioned with StyleSheet.absoluteFill and the controls float
 // over it, so a padded, scrolling shell would letterbox the live preview.
 import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import PeggyDateField from '../components/peggy/PeggyDateField';
 import { localDateString } from '../core/datetime';
 import { CameraView, useCameraPermissions, CameraType, FlashMode } from 'expo-camera';
@@ -20,6 +20,7 @@ import { resolveReview, formParams, Corrections } from '../lib/recognition/revie
 import { CATEGORIES } from '../data/categories';
 import PeggyPushButton from '../components/peggy/PeggyPushButton';
 import PeggyCard from '../components/peggy/PeggyCard';
+import { PeggyChip, PeggyInput, PeggyCurrencyInput } from '../components/peggy';
 
 /**
  * QuickCaptureScreen — PeggyBank Smart Quick Capture.
@@ -324,13 +325,12 @@ export default function QuickCaptureScreen({ navigation }: any) {
           {editing === 'merchant' ? (
             <View style={styles.editRow}>
               <Text style={styles.editLabel}>{chosenType === 'bill' ? 'Payee' : 'Merchant'}</Text>
-              <TextInput
-                style={styles.editInput}
+              <PeggyInput
+                containerStyle={styles.editInput}
                 value={draft}
                 onChangeText={setDraft}
                 autoFocus
                 placeholder="Who was it?"
-                placeholderTextColor={C.textHint}
                 onBlur={commitDraft}
                 onSubmitEditing={commitDraft}
                 returnKeyType="done"
@@ -351,18 +351,11 @@ export default function QuickCaptureScreen({ navigation }: any) {
           {editing === 'amount' ? (
             <View style={styles.editRow}>
               <Text style={styles.editLabel}>Amount</Text>
-              <TextInput
+              <PeggyCurrencyInput
                 style={styles.editInput}
                 value={draft}
                 onChangeText={setDraft}
                 autoFocus
-                keyboardType="decimal-pad"
-                placeholder="0.00"
-                placeholderTextColor={C.textHint}
-                onBlur={commitDraft}
-                onSubmitEditing={commitDraft}
-                returnKeyType="done"
-                accessibilityLabel="Amount paid"
               />
             </View>
           ) : (
@@ -404,18 +397,12 @@ export default function QuickCaptureScreen({ navigation }: any) {
           {editing === 'category' && (
             <View style={styles.catRow}>
               {(Object.keys(CATEGORIES) as Category[]).map((key) => (
-                <TouchableOpacity
+                <PeggyChip
                   key={key}
-                  style={[styles.catChip, categoryValue === key && { backgroundColor: C.primary, borderColor: C.primary }]}
+                  label={(CATEGORIES as any)[key].label}
+                  selected={categoryValue === key}
                   onPress={() => { setEdits(e => ({ ...e, category: key })); setEditing(null); }}
-                  accessibilityRole="button"
-                  accessibilityLabel={'Category ' + (CATEGORIES as any)[key].label}
-                  accessibilityState={{ selected: categoryValue === key }}
-                >
-                  <Text style={[styles.catChipText, categoryValue === key && { color: C.textOnPrimary, fontWeight: '700' }]}>
-                    {(CATEGORIES as any)[key].label}
-                  </Text>
-                </TouchableOpacity>
+                />
               ))}
             </View>
           )}
@@ -534,19 +521,10 @@ function makeStyles(C: ColorPalette) {
     card: { paddingVertical: 0, paddingHorizontal: Spacing.md },
     continueBtn: { height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.lg },
     reviewActions: { flexDirection: 'row', justifyContent: 'space-around', marginTop: Spacing.md },
+    editInput: { flex: 1 },
     editRow:   { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 56 },
     editLabel: { ...Typography.helper, color: C.textSecondary, width: 90 },
-    editInput: {
-      flex: 1, ...Typography.body, color: C.textPrimary,
-      borderWidth: 1, borderColor: C.primary, borderRadius: Radius.md,
-      paddingHorizontal: 12, minHeight: 44,
-    },
     catRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: Spacing.sm },
-    catChip: {
-      minHeight: 40, paddingHorizontal: 14, borderRadius: Radius.md,
-      borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center',
-    },
-    catChipText: { ...Typography.caption, color: C.textSecondary },
     reviewAction: { ...Typography.helper, color: C.textSecondary, fontWeight: '600' },
   });
 }
