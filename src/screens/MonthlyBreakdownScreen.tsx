@@ -7,7 +7,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
-import { currentCycleDate, paidCyclesFor } from '../lib/billCycles';
 import { formatCurrency } from '../utils/helpers';
 import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
@@ -31,8 +30,6 @@ interface MonthData {
   categoryTotals: CategoryTotal[];
   /** The slices of "Money out". Built from the same rows the totals came from. */
   segments: ChartSegment[];
-  billsPaid: number;
-  billsUnpaid: number;
   billsPaidAmount: number;
 }
 
@@ -58,19 +55,9 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       // same rows, so the chart cannot end up describing a different month's
       // money than the numbers printed above it. This used to be a second
       // SELECT ... GROUP BY, which was a second version of the same question.
-      const [input, billsResult] = await Promise.all([
-        buildFinanceInput(db, targetDate),
-        db.getAllAsync<any>(`SELECT id, amount, frequency, due_day, due_weekday FROM bills`),
-      ]);
+      const input = await buildFinanceInput(db, targetDate);
       const finance = computeFinanceSummary(input);
       const categoryResult = spendingByCategory(input.expenses);
-
-      // Which bills are paid for the occurrence falling in the month being viewed.
-      const paidMap = await paidCyclesFor(db, 'bill');
-      const ref = new Date(targetDate.getFullYear(), targetDate.getMonth(), 15);
-      const paidRows = billsResult.filter((b: any) =>
-        paidMap.get(b.id)?.has(currentCycleDate(b, ref))
-      );
 
       setData({
         totalIncome: finance.monthIncome,
@@ -89,8 +76,6 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           billsColor: C.bills,
           otherColor: C.textHint,
         }),
-        billsPaid: paidRows.length,
-        billsUnpaid: billsResult.length - paidRows.length,
         // What was ACTUALLY paid, from bill_payments, not the planned amounts.
         billsPaidAmount: finance.billsPaidTotal,
       });
@@ -189,32 +174,6 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         {leftover < 0 && <Text style={styles.leftoverSub}>over budget this month</Text>}
       </PeggyCard>
 
-      {/* Bills summary */}
-      <PeggyCard style={styles.card}>
-        <Text style={styles.cardLabel}>Bills this month</Text>
-        <View style={styles.statRow}>
-          <View style={styles.statCell}>
-            <IconBadge iconKey="paid" color={C.income} size={56} tinted={false} />
-            <Text style={styles.statNumber}>{data?.billsPaid ?? 0}</Text>
-            <Text style={styles.statLabel}>Paid</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statCell}>
-            <IconBadge iconKey="due" color={data?.billsUnpaid ? C.bills : C.income} size={56} tinted={false} />
-            <Text style={[styles.statNumber, { color: data?.billsUnpaid ? C.bills : C.income }]}>
-              {data?.billsUnpaid ?? 0}
-            </Text>
-            <Text style={styles.statLabel}>Still due</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statCell}>
-            <IconBadge iconKey="paid-out" color={C.primaryLight} size={56} tinted={false} />
-            <Text style={styles.statNumber}>{formatCurrency(data?.billsPaidAmount ?? 0)}</Text>
-            <Text style={styles.statLabel}>Paid out</Text>
-          </View>
-        </View>
-      </PeggyCard>
-
       {/* WHERE YOUR MONEY WENT.
           This REPLACES the old per-category bar list rather than sitting next
           to it: the same categories in two forms on one screen is duplicated
@@ -297,11 +256,6 @@ function makeStyles(C: ColorPalette) {
     leftover:      { ...Typography.hero, fontSize: 34 },
     leftoverSub:   { ...Typography.caption, color: C.spending, marginTop: 4 },
 
-    statRow:       { flexDirection: 'row', alignItems: 'center' },
-    statCell:      { flex: 1, alignItems: 'center', gap: 4, paddingVertical: Spacing.sm },
-    statDivider:   { width: 1, height: 50, backgroundColor: C.border },
-    statNumber:    { ...Typography.h3, color: C.textPrimary },
-    statLabel:     { ...Typography.caption, color: C.textSecondary },
 
 
     // The donut sits on its own line, centred: at phone width a chart
