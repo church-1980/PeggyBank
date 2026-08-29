@@ -58,8 +58,8 @@ describe('The same month, read by every screen', () => {
     expect(finance.monthIncome).toBe(1880);
   });
 
-  it('R. Home and Weekly Check-In read the identical summary', async () => {
-    // Both call loadFinanceSummary; reading it twice must be stable.
+  it('R. reading the summary twice gives the same answer', async () => {
+    // Every screen calls loadFinanceSummary; reading it twice must be stable.
     const a = await loadFinanceSummary(db as any, WHEN);
     const b = await loadFinanceSummary(db as any, WHEN);
     expect(a).toEqual(b);

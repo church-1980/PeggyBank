@@ -43,7 +43,6 @@ export const es: Record<string, Phrase> = {
   'nav.calendar':  'Calendario',
   'nav.breakdown': 'Resumen del mes',
   'nav.activity':  'Qué pasó',
-  'nav.checkIn':   'Resumen de la semana',
   'nav.currency':  'Conversor de monedas',
   'nav.profile':   'Perfil',
 

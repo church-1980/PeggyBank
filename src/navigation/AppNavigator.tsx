@@ -15,7 +15,6 @@ import ExpensesScreen         from '../screens/ExpensesScreen';
 import MoreScreen             from '../screens/MoreScreen';
 import ComponentShowcaseScreen from '../screens/ComponentShowcaseScreen';
 import GoalsScreen            from '../screens/GoalsScreen';
-import WeeklyCheckInScreen    from '../screens/WeeklyCheckInScreen';
 import AddExpenseScreen       from '../screens/AddExpenseScreen';
 import AddIncomeScreen        from '../screens/AddIncomeScreen';
 import PaydayScreen           from '../screens/PaydayScreen';
@@ -141,7 +140,6 @@ export default function AppNavigator({ initialRoute = 'Home' }: { initialRoute?:
         <Stack.Screen name="Debt"             component={DebtScreen}            options={{ presentation: 'modal' }} />
         <Stack.Screen name="MonthlyBreakdown" component={MonthlyBreakdownScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="Activity"         component={ActivityScreen}        options={{ presentation: 'modal' }} />
-        <Stack.Screen name="WeeklyCheckIn"    component={WeeklyCheckInScreen}   options={{ presentation: 'modal' }} />
         <Stack.Screen name="Currency"         component={CurrencyScreen}        options={{ presentation: 'modal' }} />
         <Stack.Screen name="Export"           component={ExportScreen}          options={{ presentation: 'modal' }} />
         <Stack.Screen name="Settings"         component={SettingsScreen}        options={{ presentation: 'modal' }} />

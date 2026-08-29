@@ -98,10 +98,22 @@ describe('Only the shared engine decides what a number is', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('both screens read the shared engine', () => {
-    for (const screen of ['screens/DashboardScreen.tsx', 'screens/WeeklyCheckInScreen.tsx']) {
+  it('no screen works the money out for itself', () => {
+    const ENGINE_DOORS = ['loadFinanceSummary', 'buildFinanceInput'];
+    for (const screen of ['screens/DashboardScreen.tsx', 'screens/MonthlyBreakdownScreen.tsx']) {
       const text = fs.readFileSync(path.join(SRC, screen), 'utf8');
-      expect(text).toContain('loadFinanceSummary');
+      const usesEngine = ENGINE_DOORS.some(d => text.includes(d));
+      expect(usesEngine).toBe(true);
+    }
+  });
+
+  it('the screens it names still exist (a deleted file must not pass silently)', () => {
+    // The previous version of the test above pointed at a screen that was
+    // later removed. Reading a missing file throws, which is loud — but a
+    // check that quietly stopped covering anything would not be, so the
+    // existence of its targets is now asserted rather than assumed.
+    for (const screen of ['screens/DashboardScreen.tsx', 'screens/MonthlyBreakdownScreen.tsx']) {
+      expect(fs.existsSync(path.join(SRC, screen))).toBe(true);
     }
   });
 });

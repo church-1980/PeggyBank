@@ -39,7 +39,6 @@ export const pt: Record<string, Phrase> = {
   'nav.calendar':  'Calendário',
   'nav.breakdown': 'Resumo do mês',
   'nav.activity':  'O que aconteceu',
-  'nav.checkIn':   'Resumo da semana',
   'nav.currency':  'Conversor de moedas',
   'nav.profile':   'Perfil',
 

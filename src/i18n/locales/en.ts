@@ -46,7 +46,6 @@ export const en: Record<string, Phrase> = {
   'nav.calendar':  'Calendar',
   'nav.breakdown': 'Monthly Breakdown',
   'nav.activity':  'What Happened',
-  'nav.checkIn':   'Weekly Check-In',
   'nav.currency':  'Currency Calculator',
   'nav.profile':   'Profile',
 

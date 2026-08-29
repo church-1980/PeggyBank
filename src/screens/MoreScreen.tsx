@@ -34,7 +34,6 @@ const TOOLS: ToolItem[] = [
   { label: 'Debt Tracker',        description: 'Pay it down, one step at a time',    iconKey: 'debt',                  colorKey: 'debt',          screen: 'Debt' },
   // ── Saving & planning ──
   { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'goals',                 colorKey: 'goals',         screen: 'Goals' },
-  { label: 'Weekly Check-In',     description: 'How did this week go?',              iconKey: 'check-in',              colorKey: 'income',        screen: 'WeeklyCheckIn' },
   // ── Insights ──
   { label: 'What Happened',       description: 'Every payment, newest first',        iconKey: 'check-in',              colorKey: 'primary',       screen: 'Activity' },
   { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },

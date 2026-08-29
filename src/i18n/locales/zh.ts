@@ -45,7 +45,6 @@ export const zh: Record<string, Phrase> = {
   'nav.calendar':  '日历',
   'nav.breakdown': '每月明细',
   'nav.activity':  '发生了什么',
-  'nav.checkIn':   '每周回顾',
   'nav.currency':  '货币换算',
   'nav.profile':   '个人资料',
 

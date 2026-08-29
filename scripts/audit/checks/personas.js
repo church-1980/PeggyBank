@@ -38,7 +38,7 @@ const PERSONAS = [
       { step: 'Safe to Spend reflects the new expense',            status: 'VERIFIED',  by: 'goldenFinance: SAFE TO SPEND is correct' },
       { step: 'Marks a bill paid; it leaves what is owed',         status: 'VERIFIED',  by: 'goldenFinance: paying this cycle removes the bill' },
       { step: 'Next month the same bill comes back',               status: 'VERIFIED',  by: 'goldenFinance: a bill paid LAST month is still owed THIS month' },
-      { step: 'Dashboard and Weekly Check-In agree',               status: 'VERIFIED',  by: 'safeToSpendConsistency: every screen reads the same engine' },
+      { step: 'Every screen shows the same Safe to Spend',         status: 'VERIFIED',  by: 'safeToSpendConsistency: every screen reads the same engine' },
       { step: 'The numbers are readable and well laid out',        status: 'HUMAN' },
     ],
   },
