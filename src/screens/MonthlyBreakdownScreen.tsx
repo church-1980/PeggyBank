@@ -1,5 +1,7 @@
-import { localMonthRange } from '../core/datetime';
-import { loadFinanceSummary } from '../lib/financeSummary';
+import { buildFinanceInput } from '../lib/financeSummary';
+import { computeFinanceSummary, spendingByCategory } from '../core/finance';
+import { buildSegments, donutCentre, type ChartSegment } from '../core/spendingChart';
+import PeggyDonut from '../components/peggy/PeggyDonut';
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,6 +30,8 @@ interface MonthData {
   /** Everyday expenses only. What the category breakdown below describes. */
   everydaySpending: number;
   categoryTotals: CategoryTotal[];
+  /** The slices of "Money out". Built from the same rows the totals came from. */
+  segments: ChartSegment[];
   billsPaid: number;
   billsUnpaid: number;
   billsPaidAmount: number;
@@ -45,18 +49,22 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       const db = await getDatabase();
       const now = new Date();
       const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-      const { start, end } = localMonthRange(targetDate);
 
       // The money totals come from the SAME engine Home and Weekly Check-In use.
       // This screen used to add up income and expenses itself, which made it a
       // second version of financial reality: it counted only the expenses table,
       // so a paid Bell bill of $425 was money that had genuinely left the
       // account and was invisible here while What Happened showed it.
-      const [finance, categoryResult, billsResult] = await Promise.all([
-        loadFinanceSummary(db, targetDate),
-        db.getAllAsync<CategoryTotal>(`SELECT category, SUM(amount) as total FROM expenses WHERE date>=? AND date<=? GROUP BY category ORDER BY total DESC`, [start, end]),
+      // ONE read of the month. The totals and the chart are built from the very
+      // same rows, so the chart cannot end up describing a different month's
+      // money than the numbers printed above it. This used to be a second
+      // SELECT ... GROUP BY, which was a second version of the same question.
+      const [input, billsResult] = await Promise.all([
+        buildFinanceInput(db, targetDate),
         db.getAllAsync<any>(`SELECT id, amount, frequency, due_day, due_weekday FROM bills`),
       ]);
+      const finance = computeFinanceSummary(input);
+      const categoryResult = spendingByCategory(input.expenses);
 
       // Which bills are paid for the occurrence falling in the month being viewed.
       const paidMap = await paidCyclesFor(db, 'bill');
@@ -70,13 +78,25 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         totalSpending: finance.monthSpending,
         everydaySpending: finance.everydaySpending,
         categoryTotals: categoryResult,
+        // A decomposition of finance.monthSpending — never a second total.
+        segments: buildSegments({
+          moneyOut: finance.monthSpending,
+          billsPaid: finance.billsPaidTotal,
+          categories: categoryResult,
+          meta: (key) => {
+            const info = CATEGORIES[key as Category] ?? CATEGORIES.other;
+            return { label: info.label, color: info.color };
+          },
+          billsColor: C.bills,
+          otherColor: C.textHint,
+        }),
         billsPaid: paidRows.length,
         billsUnpaid: billsResult.length - paidRows.length,
         // What was ACTUALLY paid, from bill_payments, not the planned amounts.
         billsPaidAmount: finance.billsPaidTotal,
       });
     } catch {}
-  }, [monthOffset]);
+  }, [monthOffset, C.bills, C.textHint]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
@@ -88,15 +108,24 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
 
   const statusMessage = () => {
     if (!data || data.totalIncome === 0) return null;
+    // These describe what the two numbers below already say, and nothing more.
+    //
+    // They used to praise and console: "Nice work", "you stayed aware, that
+    // matters". The only thing they actually knew was spending divided by
+    // income — which says nothing about whether a month was well handled. A
+    // month dominated by a mortgage payment is not a failure of character, and
+    // a quiet month is not an achievement. Telling someone they did well, on
+    // that basis, is a guess dressed up as encouragement.
+    //
+    // So they now report, warmly, and let the chart do the teaching.
     const ratio = data.totalSpending / data.totalIncome;
-    if (ratio >= 1)    return { text: "This month got a little stretched. That is okay — you can see exactly where it went.", color: C.spending };
-    if (ratio >= 0.85) return { text: "Things got tight this month, but you stayed aware. That matters.", color: C.bills };
-    if (ratio >= 0.6)  return { text: "You stayed roughly on budget this month.", color: C.income };
-    return { text: "You kept spending well under control this month. Nice work.", color: C.income };
+    if (ratio >= 1)    return { text: "More went out than came in this month. Here is where it went.", color: C.spending };
+    if (ratio >= 0.85) return { text: "Nearly everything that came in went back out this month.", color: C.bills };
+    if (ratio >= 0.6)  return { text: "Some of what came in is still left over this month.", color: C.income };
+    return { text: "Most of what came in is still left over this month.", color: C.income };
   };
 
   const status = statusMessage();
-  const maxCategory = data?.categoryTotals[0]?.total ?? 1;
   const leftover = (data?.totalIncome ?? 0) - (data?.totalSpending ?? 0);
 
   return (
@@ -187,35 +216,42 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
         </View>
       </PeggyCard>
 
-      {/* Spending by category */}
-      {(data?.categoryTotals.length ?? 0) > 0 ? (
+      {/* WHERE YOUR MONEY WENT.
+          This REPLACES the old per-category bar list rather than sitting next
+          to it: the same categories in two forms on one screen is duplicated
+          information, and the donut also covers bills, which the bars never
+          did. One card, one idea. */}
+      {(data?.segments.length ?? 0) > 0 ? (
         <PeggyCard style={styles.card}>
-          <Text style={styles.cardLabel}>Everyday spending by category</Text>
-          {data!.categoryTotals.map((cat) => {
-            const info = CATEGORIES[cat.category as Category] ?? CATEGORIES.other;
-            const barWidth = maxCategory > 0 ? (cat.total / maxCategory) * 100 : 0;
-            return (
-              <View key={cat.category} style={styles.catRow}>
-                <IconBadge iconKey={info.iconKey} color={info.color} size={56} />
-                <View style={styles.catMiddle}>
-                  <View style={styles.catLabelRow}>
-                    <Text style={styles.catName}>{info.label}</Text>
-                    <Text style={styles.catAmount}>{formatCurrency(cat.total)}</Text>
-                  </View>
-                  <View style={styles.barBg}>
-                    <View style={[styles.barFill, { width: `${barWidth}%`, backgroundColor: info.color }]} />
-                  </View>
-                </View>
+          <Text style={styles.cardLabel}>Where your money went</Text>
+
+          <View style={styles.chartRow}>
+            <PeggyDonut
+              segments={data!.segments}
+              centreAmount={donutCentre(data!.totalSpending).amount}
+              centreLabel={donutCentre(data!.totalSpending).label}
+            />
+          </View>
+
+          {/* The readable half. Colour is never the only way to tell the
+              slices apart — every one is named, with its own dollars. */}
+          <View style={styles.legend}>
+            {data!.segments.map((seg) => (
+              <View key={seg.key} style={styles.legendRow}>
+                <View style={[styles.legendDot, { backgroundColor: seg.color }]} />
+                <Text style={styles.legendLabel} numberOfLines={1}>{seg.label}</Text>
+                <Text style={styles.legendAmount}>{formatCurrency(seg.amount)}</Text>
+                <Text style={styles.legendPercent}>{seg.percent}%</Text>
               </View>
-            );
-          })}
+            ))}
+          </View>
         </PeggyCard>
       ) : (
         <View style={styles.empty}>
           <View style={styles.emptyIcon}>
             <IconBadge iconKey="reports" color={C.textHint} size={44} iconSize={28} tinted={false} />
           </View>
-          <Text style={styles.emptyText}>No spending recorded this month yet.</Text>
+          <Text style={styles.emptyText}>No spending recorded this month.</Text>
         </View>
       )}
 
@@ -267,15 +303,20 @@ function makeStyles(C: ColorPalette) {
     statNumber:    { ...Typography.h3, color: C.textPrimary },
     statLabel:     { ...Typography.caption, color: C.textSecondary },
 
-    catRow:        { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: Spacing.sm },
-    catIcon:       { width: 36, height: 36, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
-    catMiddle:     { flex: 1 },
-    catLabelRow:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-    catName:       { ...Typography.body, color: C.textPrimary },
-    catAmount:     { ...Typography.caption, color: C.textSecondary },
-    barBg:         { height: 6, backgroundColor: C.border, borderRadius: 3, overflow: 'hidden' },
-    barFill:       { height: 6, borderRadius: 3 },
 
+    // The donut sits on its own line, centred: at phone width a chart
+    // beside a list squeezes both, and the list is the readable half.
+    chartRow:      { alignItems: 'center', paddingVertical: Spacing.sm },
+    
+    legend:        { marginTop: Spacing.sm },
+    // 44 high so a row is a comfortable target if it ever becomes tappable,
+    // and so the text has room to grow with the system font size.
+    legendRow:     { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: Spacing.sm },
+    legendDot:     { width: 12, height: 12, borderRadius: 6 },
+    legendLabel:   { ...Typography.body, color: C.textPrimary, flex: 1 },
+    legendAmount:  { ...Typography.body, color: C.textPrimary, fontVariant: ['tabular-nums'] },
+    legendPercent: { ...Typography.caption, color: C.textSecondary, width: 42, textAlign: 'right', fontVariant: ['tabular-nums'] },
+    
     empty:         { alignItems: 'center', padding: 40 },
     emptyIcon: {
       width: 64, height: 64, borderRadius: 32,
