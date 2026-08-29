@@ -14,13 +14,27 @@ import { useColors } from '../context/ThemeContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import IconBadge from '../components/IconBadge';
 import { categoryIconKey, subscriptionIconKey } from '../data/iconRegistry';
+import { occurrenceState, describeOccurrence, type PaymentMethod } from '../core/paymentState';
+import { localDateString } from '../core/datetime';
+
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { POPULAR_SUBSCRIPTIONS } from '../data/popularSubscriptions';
 import { getNotificationMode, rescheduleAll } from '../lib/notifications';
 import { rememberMerchant } from '../lib/merchantMemory';
-import { currentCycleDate, setCyclePaid, paidCyclesFor } from '../lib/billCycles';
+import {
+  currentCycleDate, setCyclePaid, paidCyclesFor,
+  paymentsFor, recordPayment, methodOf, settleAssumedPayments,
+} from '../lib/billCycles';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
+/** Which occurrence the 'did it come out?' sheet is asking about. */
+interface VerifyTarget {
+  source: 'bill' | 'subscription';
+  id: number;
+  name: string;
+  planned: number;
+  cycleDate: string;
+}
 
 interface Subscription {
   id?: number;
@@ -28,6 +42,8 @@ interface Subscription {
   amount: number;
   billing_day: number;
   is_paid?: number;
+  payment_method?: string | null;
+  auto_confirm?: number;
 }
 
 const MONTH_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -90,6 +106,14 @@ export default function BillsScreen({ navigation, route }: any) {
   const [selectedWeekday, setSelectedWeekday] = useState(1);
   const [saving, setSaving] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  // How this one is paid, and whether the user has asked us to stop checking.
+  const [payMethod, setPayMethod] = useState<PaymentMethod>('manual');
+  const [autoConfirm, setAutoConfirm] = useState(false);
+  // The "did it come out?" sheet, and the box for a different amount.
+  const [verify, setVerify] = useState<VerifyTarget | null>(null);
+  const [verifyAmount, setVerifyAmount] = useState('');
+  const [billPayments, setBillPayments] = useState<Map<string, any>>(new Map());
+  const [subPayments, setSubPayments] = useState<Map<string, any>>(new Map());
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   /** Is THIS bill's current occurrence paid? */
@@ -97,6 +121,23 @@ export default function BillsScreen({ navigation, route }: any) {
     !!paidBills.get(b.id as number)?.has(currentCycleDate(b as any));
   const subPaid = (sub: Subscription) =>
     !!paidSubs.get(sub.id as number)?.has(currentCycleDate({ id: sub.id as number, billing_day: sub.billing_day }));
+
+  /**
+   * What is going on with this bill right now, and what should the row say?
+   *
+   * Every list on this screen asks this one function, so a bill can never be
+   * described one way in the bills list and another way anywhere else.
+   */
+  const stateOf = (
+    source: 'bill' | 'subscription', id: number, cycleDate: string,
+    method: PaymentMethod,
+  ) => {
+    const map = source === 'bill' ? billPayments : subPayments;
+    return occurrenceState({
+      method, cycleDate, today: localDateString(new Date()),
+      payment: map.get(id + '|' + cycleDate) ?? null,
+    });
+  };
 
   const loadAll = useCallback(async () => {
     try {
@@ -110,10 +151,18 @@ export default function BillsScreen({ navigation, route }: any) {
       );
       setSubs(subsResult ?? []);
 
+      // Bills the user asked us to stop checking on are settled first, so the
+      // list below never shows "check payment" for one of those. Idempotent.
+      await settleAssumedPayments(db);
+
       // Payment state comes from the OCCURRENCE table, not the bill row, so
-      // last month's payment does not mark this month paid.
+      // last month's payment does not mark this month paid. The full record is
+      // needed now, not just which dates are paid: a failed payment and an
+      // untouched one are both "not paid" but mean very different things.
       setPaidBills(await paidCyclesFor(db, 'bill'));
       setPaidSubs(await paidCyclesFor(db, 'subscription'));
+      setBillPayments(await paymentsFor(db, 'bill'));
+      setSubPayments(await paymentsFor(db, 'subscription'));
 
       // Keep due-date reminders in step with what's actually on this screen —
       // loadAll runs after every add/edit/delete/mark-paid.
@@ -143,6 +192,10 @@ export default function BillsScreen({ navigation, route }: any) {
     setEditingBill(null); setEditingSub(null);
     setName(''); setAmount('');
     setFrequency('monthly'); setSelectedDay(1); setSelectedWeekday(1);
+    // A new bill is assumed to be one the person pays; a new subscription is
+    // assumed to be charged automatically. Both are one tap to change.
+    setPayMethod(type === 'subscription' ? 'auto' : 'manual');
+    setAutoConfirm(false);
     setModalType(type);
     setModalVisible(true);
   };
@@ -154,6 +207,8 @@ export default function BillsScreen({ navigation, route }: any) {
     setFrequency((bill.frequency as BillFrequency) ?? 'monthly');
     setSelectedDay(bill.due_day ?? 1);
     setSelectedWeekday(bill.due_weekday ?? 1);
+    setPayMethod(methodOf(bill as any, 'manual'));
+    setAutoConfirm(!!(bill as any).auto_confirm);
     setModalType('bill');
     setModalVisible(true);
   };
@@ -163,6 +218,8 @@ export default function BillsScreen({ navigation, route }: any) {
     setName(sub.name);
     setAmount(String(sub.amount));
     setSelectedDay(sub.billing_day);
+    setPayMethod(methodOf(sub as any, 'auto'));
+    setAutoConfirm(!!sub.auto_confirm);
     setModalType('subscription');
     setModalVisible(true);
   };
@@ -180,13 +237,15 @@ export default function BillsScreen({ navigation, route }: any) {
         const dueWeekday = frequency === 'weekly' ? selectedWeekday : null;
         if (editingBill?.id) {
           await db.runAsync(
-            `UPDATE bills SET name=?, amount=?, frequency=?, due_day=?, due_weekday=? WHERE id=?`,
-            [name.trim(), parsed, frequency, dueDay, dueWeekday, editingBill.id]
+            `UPDATE bills SET name=?, amount=?, frequency=?, due_day=?, due_weekday=?, payment_method=?, auto_confirm=? WHERE id=?`,
+            // Changing how a bill is paid changes what happens NEXT. Payments
+            // already recorded are history and are deliberately left alone.
+            [name.trim(), parsed, frequency, dueDay, dueWeekday, payMethod, autoConfirm ? 1 : 0, editingBill.id]
           );
         } else {
           await db.runAsync(
-            `INSERT INTO bills (name, amount, frequency, due_day, due_weekday, photo_uri) VALUES (?, ?, ?, ?, ?, ?)`,
-            [name.trim(), parsed, frequency, dueDay, dueWeekday, route?.params?.capturedPhoto ?? null]
+            `INSERT INTO bills (name, amount, frequency, due_day, due_weekday, photo_uri, payment_method, auto_confirm) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name.trim(), parsed, frequency, dueDay, dueWeekday, route?.params?.capturedPhoto ?? null, payMethod, autoConfirm ? 1 : 0]
           );
         }
         // Remember this biller — recurring by definition — with what it costs
@@ -201,13 +260,13 @@ export default function BillsScreen({ navigation, route }: any) {
       } else {
         if (editingSub?.id) {
           await db.runAsync(
-            `UPDATE subscriptions SET name=?, amount=?, billing_day=? WHERE id=?`,
-            [name.trim(), parsed, selectedDay, editingSub.id]
+            `UPDATE subscriptions SET name=?, amount=?, billing_day=?, payment_method=?, auto_confirm=? WHERE id=?`,
+            [name.trim(), parsed, selectedDay, payMethod, autoConfirm ? 1 : 0, editingSub.id]
           );
         } else {
           await db.runAsync(
-            `INSERT INTO subscriptions (name, amount, billing_day) VALUES (?, ?, ?)`,
-            [name.trim(), parsed, selectedDay]
+            `INSERT INTO subscriptions (name, amount, billing_day, payment_method, auto_confirm) VALUES (?, ?, ?, ?, ?)`,
+            [name.trim(), parsed, selectedDay, payMethod, autoConfirm ? 1 : 0]
           );
         }
       }
@@ -229,6 +288,33 @@ export default function BillsScreen({ navigation, route }: any) {
       loadAll();
     } catch (e) {
       console.error('[Bills] togglePaid error:', e);
+      Alert.alert('Could not update', 'Something went wrong. Please try again.');
+    }
+  };
+
+  /**
+   * "Did it come out?" — the whole verification flow.
+   *
+   * PeggyBank cannot see the bank, so it asks. Answering writes to the same
+   * bill_payments table that ticking a bill by hand writes to; there is no
+   * separate record of automatic payments.
+   */
+  const answerVerify = async (answer: 'paid' | 'failed', actual?: number) => {
+    if (!verify) return;
+    try {
+      const db = await getDatabase();
+      await recordPayment(
+        db, verify.source, verify.id, verify.cycleDate,
+        answer === 'failed' ? 'failed' : 'confirmed',
+        // What actually left the account. The bill's own amount is the PLAN
+        // and is deliberately not touched: one surprising month must not
+        // silently rewrite every month to come.
+        answer === 'failed' ? null : (actual ?? verify.planned),
+      );
+      setVerify(null); setVerifyAmount('');
+      loadAll();
+    } catch (e) {
+      console.error('[Bills] verify error:', e);
       Alert.alert('Could not update', 'Something went wrong. Please try again.');
     }
   };
@@ -341,10 +427,14 @@ export default function BillsScreen({ navigation, route }: any) {
           </TouchableOpacity>
         ) : (
           bills.map((item) => {
-            const daysLeft = billDaysLeft(item);
             const paid = billPaid(item);
-            const urgent = daysLeft <= 3 && !paid;
-            const color = paid ? C.income : urgent ? C.spending : C.bills;
+            const daysLeft = billDaysLeft(item);
+            const method = methodOf(item as any, 'manual');
+            const cycle = currentCycleDate(item as any);
+            const state = stateOf('bill', item.id as number, cycle, method);
+            const say = describeOccurrence(state, method, billDueLabel(item).replace(/^Due /, ''));
+            const urgent = say.tone === 'action' || (say.tone !== 'done' && daysLeft <= 3);
+            const color = say.tone === 'done' ? C.income : urgent ? C.spending : C.bills;
             return (
               <PeggyCard
                 key={item.id}
@@ -355,22 +445,40 @@ export default function BillsScreen({ navigation, route }: any) {
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
-                    {paid ? 'Paid this cycle' : billDueLabel(item)}
+                    {say.label}
+                    {say.badge ? <Text style={styles.methodBadge}>{'   ' + say.badge}</Text> : null}
                   </Text>
                 </View>
                 <Text style={[styles.cardAmount, { color }, paid && styles.paidText]}>
                   {formatCurrency(item.amount)}
                 </Text>
-                <TouchableOpacity
-                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
-                  onPress={() => toggleBillPaid(item)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: paid }}
-                  accessibilityLabel={paid ? `Mark ${item.name} as not paid` : `Mark ${item.name} as paid`}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
-                </TouchableOpacity>
+                {/* One button, and only the one this bill actually needs. An
+                    auto-pay bill that has not come due yet asks for nothing. */}
+                {say.action === 'verify' ? (
+                  <TouchableOpacity
+                    style={[styles.verifyBtn, { borderColor: C.spending }]}
+                    onPress={() => {
+                      setVerify({ source: 'bill', id: item.id as number, name: item.name, planned: item.amount, cycleDate: cycle });
+                      setVerifyAmount(String(item.amount));
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Check whether ${item.name} was paid`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.verifyBtnText, { color: C.spending }]}>Check</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
+                    onPress={() => toggleBillPaid(item)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: paid }}
+                    accessibilityLabel={paid ? `Mark ${item.name} as not paid` : `Mark ${item.name} as paid`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
+                  </TouchableOpacity>
+                )}
               </PeggyCard>
             );
           })
@@ -393,8 +501,13 @@ export default function BillsScreen({ navigation, route }: any) {
           subs.map((item) => {
             const days = getDaysUntil(item.billing_day);
             const paid = subPaid(item);
-            const urgent = days <= 3 && !paid;
-            const color = paid ? C.income : urgent ? C.spending : C.subs;
+            const method = methodOf(item as any, 'auto');
+            const cycle = currentCycleDate({ id: item.id as number, billing_day: item.billing_day });
+            const state = stateOf('subscription', item.id as number, cycle, method);
+            const when = days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
+            const say = describeOccurrence(state, method, when, true);
+            const urgent = say.tone === 'action';
+            const color = say.tone === 'done' ? C.income : urgent ? C.spending : C.subs;
             return (
               <PeggyCard
                 key={item.id}
@@ -405,33 +518,104 @@ export default function BillsScreen({ navigation, route }: any) {
                 <View style={styles.cardMiddle}>
                   <Text style={[styles.cardName, paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
-                    {paid
-                      ? 'Paid this cycle'
-                      : days === 0 ? 'Charges today'
-                      : days === 1 ? 'Charges tomorrow'
-                      : `Charges in ${days} days`}
-                    {!paid ? ` · ${ordinal(item.billing_day)} of month` : ''}
+                    {say.label}
+                    {say.tone !== 'done' ? ` · ${ordinal(item.billing_day)} of month` : ''}
                   </Text>
                 </View>
                 <Text style={[styles.cardAmount, { color }, paid && styles.paidText]}>
                   {formatCurrency(item.amount)}
                 </Text>
-                <TouchableOpacity
-                  style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
-                  onPress={() => toggleSubPaid(item)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: paid }}
-                  accessibilityLabel={paid ? `Mark ${item.name} as not paid` : `Mark ${item.name} as paid`}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
-                </TouchableOpacity>
+                {say.action === 'verify' ? (
+                  <TouchableOpacity
+                    style={[styles.verifyBtn, { borderColor: C.spending }]}
+                    onPress={() => {
+                      setVerify({ source: 'subscription', id: item.id as number, name: item.name, planned: item.amount, cycleDate: cycle });
+                      setVerifyAmount(String(item.amount));
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Check whether ${item.name} was charged`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.verifyBtnText, { color: C.spending }]}>Check</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.checkbox, { marginLeft: Spacing.sm, borderColor: color, backgroundColor: paid ? color + '20' : 'transparent' }]}
+                    onPress={() => toggleSubPaid(item)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: paid }}
+                    accessibilityLabel={paid ? `Mark ${item.name} as not paid` : `Mark ${item.name} as paid`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    {paid ? <Ionicons name="checkmark" size={16} color={C.income} /> : null}
+                  </TouchableOpacity>
+                )}
               </PeggyCard>
             );
           })
         )}
 
       </ScrollView>
+
+      {/* "Did it come out?" — PeggyBank cannot see the bank, so it asks.
+          One tap answers it. The other two options exist because automatic
+          payments are not always the expected amount, and sometimes fail. */}
+      <Modal visible={!!verify} transparent animationType="slide" onRequestClose={() => setVerify(null)}>
+        <TouchableOpacity style={styles.confirmOverlay} activeOpacity={1} onPress={() => setVerify(null)} />
+        <View style={[styles.confirmSheet, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={styles.confirmHandle} />
+          <Text style={styles.confirmTitle}>{verify?.name}</Text>
+          <Text style={styles.confirmMessage}>
+            {formatCurrency(verify?.planned ?? 0)} was expected to come out. Did it?
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.verifyPrimary, { backgroundColor: C.income }]}
+            onPress={() => answerVerify('paid')}
+            accessibilityRole="button"
+          >
+            <Ionicons name="checkmark" size={18} color={C.textOnPrimary} />
+            <Text style={styles.verifyPrimaryText}>Yes, it was paid</Text>
+          </TouchableOpacity>
+
+          {/* A different amount, typed straight in — no second screen. */}
+          <View style={styles.verifyAmountRow}>
+            <Text style={styles.verifyAmountLabel}>Different amount</Text>
+            <TextInput
+              style={styles.verifyAmountInput}
+              value={verifyAmount}
+              onChangeText={setVerifyAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={C.textHint}
+              accessibilityLabel="Amount actually paid"
+            />
+            <TouchableOpacity
+              style={[styles.verifySecondary, { borderColor: C.bills }]}
+              onPress={() => {
+                const v = parseFloat(verifyAmount.replace(',', '.'));
+                if (Number.isFinite(v) && v > 0) answerVerify('paid', v);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Save the different amount"
+            >
+              <Text style={[styles.verifySecondaryText, { color: C.bills }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.verifyFailed}
+            onPress={() => answerVerify('failed')}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.verifyFailedText, { color: C.spending }]}>It didn&apos;t go through</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.confirmCancelBtn} onPress={() => setVerify(null)}>
+            <Text style={styles.confirmCancelText}>Ask me later</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* Confirm sheet */}
       <Modal visible={!!confirm} transparent animationType="slide" onRequestClose={() => setConfirm(null)}>
@@ -630,6 +814,50 @@ export default function BillsScreen({ navigation, route }: any) {
                 </>
               )}
 
+              {/* HOW IS THIS PAID? The one question that stops people doing
+                  fake manual work every month. Two options, plain words. */}
+              <Text style={styles.modalLabel}>How is this paid?</Text>
+              <View style={styles.methodRow}>
+                <TouchableOpacity
+                  style={[styles.methodBtn, payMethod === 'manual' && { borderColor: accentColor, backgroundColor: accentColor + '18' }]}
+                  onPress={() => { setPayMethod('manual'); setAutoConfirm(false); }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: payMethod === 'manual' }}
+                >
+                  <Text style={[styles.methodTitle, payMethod === 'manual' && { color: accentColor }]}>I pay it</Text>
+                  <Text style={styles.methodHelp}>You&apos;ll mark it paid.</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.methodBtn, payMethod === 'auto' && { borderColor: accentColor, backgroundColor: accentColor + '18' }]}
+                  onPress={() => setPayMethod('auto')}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: payMethod === 'auto' }}
+                >
+                  <Text style={[styles.methodTitle, payMethod === 'auto' && { color: accentColor }]}>Auto-pay</Text>
+                  <Text style={styles.methodHelp}>It comes out on its own.</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Only ever shown to someone who has already chosen auto-pay, so
+                  a person who pays their own bills never sees this at all.
+                  PeggyBank cannot see the bank, so "assume" is the honest word. */}
+              {payMethod === 'auto' && (
+                <TouchableOpacity
+                  style={styles.assumeRow}
+                  onPress={() => setAutoConfirm(!autoConfirm)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: autoConfirm }}
+                  accessibilityLabel="Don't ask me each month; assume this went through"
+                >
+                  <View style={[styles.assumeBox, autoConfirm && { backgroundColor: accentColor, borderColor: accentColor }]}>
+                    {autoConfirm ? <Ionicons name="checkmark" size={14} color={C.textOnPrimary} /> : null}
+                  </View>
+                  <Text style={styles.assumeText}>
+                    Don&apos;t ask me each month — assume it went through
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 style={[styles.saveBtn, { backgroundColor: accentColor }, saving && { opacity: 0.6 }]}
                 onPress={handleSave}
@@ -820,5 +1048,52 @@ function makeStyles(C: ColorPalette) {
     confirmDeleteText: { ...Typography.bodyBold, color: C.spending, fontSize: 17 },
     confirmCancelBtn:  { paddingVertical: Spacing.md, alignItems: 'center' },
     confirmCancelText: { ...Typography.body, color: C.textHint },
+
+    // How this bill is paid, said quietly next to the due date.
+    methodBadge: { ...Typography.caption, color: C.textHint, fontWeight: '700', letterSpacing: 0.5 },
+
+    // The 'Check' button that replaces the tick for an expected auto-payment.
+    verifyBtn: {
+      marginLeft: Spacing.sm, minHeight: 44, minWidth: 60, paddingHorizontal: 12,
+      borderWidth: 1, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center',
+    },
+    verifyBtnText: { ...Typography.caption, fontWeight: '700' },
+
+    // 'How is this paid?' — two cards, side by side.
+    methodRow: { flexDirection: 'row', gap: 10, marginBottom: Spacing.sm },
+    methodBtn: {
+      flex: 1, minHeight: 64, padding: 12, borderRadius: Radius.md,
+      borderWidth: 1, borderColor: C.border, justifyContent: 'center',
+    },
+    methodTitle: { ...Typography.bodyBold, color: C.textPrimary },
+    methodHelp:  { ...Typography.caption, color: C.textSecondary, marginTop: 2 },
+
+    // Only shown once auto-pay is chosen.
+    assumeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, marginBottom: Spacing.sm },
+    assumeBox: {
+      width: 22, height: 22, borderRadius: 6, borderWidth: 1, borderColor: C.border,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    assumeText: { ...Typography.caption, color: C.textSecondary, flex: 1 },
+
+    // The 'did it come out?' sheet.
+    verifyPrimary: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+      minHeight: 56, borderRadius: Radius.md, marginTop: Spacing.sm,
+    },
+    verifyPrimaryText: { ...Typography.cardTitle, color: C.textOnPrimary },
+    verifyAmountRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: Spacing.md },
+    verifyAmountLabel: { ...Typography.caption, color: C.textSecondary, width: 92 },
+    verifyAmountInput: {
+      flex: 1, minHeight: 48, borderWidth: 1, borderColor: C.border, borderRadius: Radius.md,
+      paddingHorizontal: 12, ...Typography.body, color: C.textPrimary,
+    },
+    verifySecondary: {
+      minHeight: 48, paddingHorizontal: 16, borderWidth: 1, borderRadius: Radius.md,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    verifySecondaryText: { ...Typography.caption, fontWeight: '700' },
+    verifyFailed: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm },
+    verifyFailedText: { ...Typography.body, fontWeight: '600' },
   });
 }

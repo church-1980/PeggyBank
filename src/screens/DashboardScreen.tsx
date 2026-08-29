@@ -3,7 +3,9 @@ import { View, Text, RefreshControl, TouchableOpacity, Modal } from 'react-nativ
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
-import { currentCycleDate, paidCyclesFor } from '../lib/billCycles';
+import { currentCycleDate, paidCyclesFor, methodOf } from '../lib/billCycles';
+import { occurrenceState, describeOccurrence } from '../core/paymentState';
+import { localDateString } from '../core/datetime';
 import { loadFinanceSummary, loadSafeToSpendExplanation, type SafeToSpendExplanation } from '../lib/financeSummary';
 import { recentActivity, type ActivityItem } from '../lib/activity';
 import PeggyActivityRow from '../components/peggy/PeggyActivityRow';
@@ -325,7 +327,19 @@ export default function DashboardScreen({ navigation }: any) {
                     iconKey={categoryIconKey(cat)}
                     iconColor={catInfo.color}
                     title={bill.name}
-                    subtitle={days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `Due in ${days} days`}
+                    // What the person needs to know at a glance: is this one
+                    // MINE to pay, or does it happen on its own? Same wording
+                    // as the Bills screen, from the same function.
+                    subtitle={describeOccurrence(
+                      occurrenceState({
+                        method: methodOf(bill as any, 'manual'),
+                        cycleDate: currentCycleDate(bill as any),
+                        today: localDateString(new Date()),
+                        payment: null,       // Coming Up lists only what is still owed
+                      }),
+                      methodOf(bill as any, 'manual'),
+                      days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`,
+                    ).label}
                     amount={formatCurrency(bill.amount)}
                     amountColor={C.amount}
                     onPress={() => navigation.navigate('Bills')}

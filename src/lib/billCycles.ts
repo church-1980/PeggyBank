@@ -172,3 +172,122 @@ export async function paidInRange(
   );
   return { count: row?.n ?? 0, total: row?.t ?? 0 };
 }
+
+/**
+ * ── PAYMENT METHOD & VERIFICATION ─────────────────────────────────────────
+ *
+ * Everything below writes to the SAME bill_payments table as marking a bill
+ * paid by hand. There is no second recurring-payment system and no second
+ * ledger: an automatic payment and a manual one produce the same kind of row.
+ * Only `status` records how we came to believe it.
+ */
+
+import type { PaymentMethod, PaymentStatus, OccurrencePayment } from '../core/paymentState';
+
+/** One occurrence's payment row, or null when nothing has been recorded. */
+export async function paymentForCycle(
+  db: SQLiteDatabase, source: BillSource, billId: number, cycleDate: string
+): Promise<OccurrencePayment | null> {
+  const row = await db.getFirstAsync<{ paid: number; status: string | null; amount: number | null }>(
+    `SELECT paid, status, amount FROM bill_payments
+      WHERE source = ? AND bill_id = ? AND cycle_date = ?`,
+    [source, billId, cycleDate]
+  );
+  if (!row) return null;
+  return { paid: !!row.paid, status: (row.status as PaymentStatus) ?? 'confirmed', amount: row.amount };
+}
+
+/** Every payment row for a source, keyed "billId|cycleDate". Powers list screens. */
+export async function paymentsFor(
+  db: SQLiteDatabase, source: BillSource
+): Promise<Map<string, OccurrencePayment>> {
+  const rows = await db.getAllAsync<{ bill_id: number; cycle_date: string; paid: number; status: string | null; amount: number | null }>(
+    `SELECT bill_id, cycle_date, paid, status, amount FROM bill_payments WHERE source = ?`,
+    [source]
+  );
+  const map = new Map<string, OccurrencePayment>();
+  for (const r of rows) {
+    map.set(r.bill_id + '|' + r.cycle_date, {
+      paid: !!r.paid,
+      status: (r.status as PaymentStatus) ?? 'confirmed',
+      amount: r.amount,
+    });
+  }
+  return map;
+}
+
+/**
+ * Record what happened to ONE occurrence.
+ *
+ * `amount` is what ACTUALLY left the account. Bell planned $117 and took
+ * $121.36? That $121.36 belongs to this occurrence only — the bill's own
+ * amount is the PLAN and is deliberately not touched here. One occurrence and
+ * the future schedule are different things, and a single surprising month must
+ * not silently rewrite every month to come.
+ */
+export async function recordPayment(
+  db: SQLiteDatabase, source: BillSource, billId: number, cycleDate: string,
+  status: PaymentStatus, amount?: number | null
+): Promise<void> {
+  const paid = status === 'failed' ? 0 : 1;
+  await db.runAsync(
+    `INSERT OR REPLACE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [billId, source, cycleDate, paid, new Date().toISOString(), amount ?? null, status]
+  );
+}
+
+/**
+ * Undo any record for an occurrence, returning it to simply owed.
+ * Used when the user un-ticks a bill they ticked by mistake.
+ */
+export async function clearPayment(
+  db: SQLiteDatabase, source: BillSource, billId: number, cycleDate: string
+): Promise<void> {
+  await db.runAsync(
+    `DELETE FROM bill_payments WHERE source = ? AND bill_id = ? AND cycle_date = ?`,
+    [source, billId, cycleDate]
+  );
+}
+
+/**
+ * For bills the user has explicitly asked us to stop asking about: once the
+ * date has passed, record the expected payment as ASSUMED.
+ *
+ * Only ever runs for auto_confirm = 1, which is off until the user turns it on.
+ * Idempotent — UNIQUE(source, bill_id, cycle_date) means running it twice
+ * cannot produce two rows, and an occurrence the user has already answered for
+ * is left exactly as they left it.
+ *
+ * This does not change how much money is accounted for. The occurrence moves
+ * from "still owed" to "already gone", and it is subtracted once either way.
+ */
+export async function settleAssumedPayments(
+  db: SQLiteDatabase, ref: Date = new Date()
+): Promise<number> {
+  const today = iso(ref);
+  let settled = 0;
+
+  const run = async (source: BillSource, sql: string) => {
+    const rows = await db.getAllAsync<CycleBill & { amount: number; auto_confirm: number; payment_method: string }>(sql)
+      .catch(() => [] as any[]);
+    for (const b of rows) {
+      if (b.payment_method !== 'auto' || !b.auto_confirm) continue;
+      const cycle = currentCycleDate(b, ref);
+      if (cycle > today) continue;                       // not due yet
+      const existing = await paymentForCycle(db, source, b.id, cycle);
+      if (existing) continue;                            // the user already answered
+      await recordPayment(db, source, b.id, cycle, 'assumed', b.amount);
+      settled++;
+    }
+  };
+
+  await run('bill', `SELECT id, amount, frequency, due_day, due_weekday, auto_confirm, payment_method FROM bills`);
+  await run('subscription', `SELECT id, amount, billing_day, auto_confirm, payment_method FROM subscriptions`);
+  return settled;
+}
+
+/** How a bill or subscription is normally paid, defaulting safely. */
+export function methodOf(row: { payment_method?: string | null }, fallback: PaymentMethod): PaymentMethod {
+  return row.payment_method === 'auto' ? 'auto' : row.payment_method === 'manual' ? 'manual' : fallback;
+}

@@ -83,6 +83,8 @@ export async function setupDatabase(): Promise<void> {
       due_weekday INTEGER,
       category TEXT DEFAULT 'bills',
       is_paid INTEGER DEFAULT 0,
+      payment_method TEXT DEFAULT 'manual',
+      auto_confirm INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -110,6 +112,8 @@ export async function setupDatabase(): Promise<void> {
       billing_day INTEGER NOT NULL,
       is_paid INTEGER DEFAULT 0,
       notes TEXT,
+      payment_method TEXT DEFAULT 'auto',
+      auto_confirm INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -156,6 +160,7 @@ export async function setupDatabase(): Promise<void> {
       paid       INTEGER DEFAULT 1,
       paid_at    TEXT,
       amount     REAL,
+      status     TEXT DEFAULT 'confirmed',   -- 'confirmed' | 'assumed' | 'failed'
       UNIQUE(source, bill_id, cycle_date)
     );
   `);
@@ -174,6 +179,25 @@ export async function setupDatabase(): Promise<void> {
     `ALTER TABLE income ADD COLUMN schedule_id INTEGER`,
     `ALTER TABLE income ADD COLUMN cycle_date TEXT`,
     `ALTER TABLE income_schedules ADD COLUMN anchor_date TEXT`,
+
+    // HOW IS THIS PAID? Bills default to 'manual' — the conservative choice,
+    // and what every existing bill already behaved as. Nobody's hydro quietly
+    // becomes an automatic withdrawal because they updated the app.
+    `ALTER TABLE bills ADD COLUMN payment_method TEXT DEFAULT 'manual'`,
+    // Subscriptions default to 'auto'. This is not a guess: the subscriptions
+    // table exists precisely to hold Netflix/Spotify-style recurring charges,
+    // and the screen has always described them in automatic language
+    // ("Charges in 3 days"), never "you pay this". It changes no arithmetic —
+    // the money is reserved either way — only what the row says and which
+    // button it offers.
+    `ALTER TABLE subscriptions ADD COLUMN payment_method TEXT DEFAULT 'auto'`,
+    // OPT-IN, and off for everyone until they say so. "Assume it went through"
+    // is the only honest meaning available without a bank connection.
+    `ALTER TABLE bills ADD COLUMN auto_confirm INTEGER DEFAULT 0`,
+    `ALTER TABLE subscriptions ADD COLUMN auto_confirm INTEGER DEFAULT 0`,
+    // What a payment row MEANS. Existing rows were all ticked by hand, so
+    // 'confirmed' is the truthful default for them.
+    `ALTER TABLE bill_payments ADD COLUMN status TEXT DEFAULT 'confirmed'`,
   ];
   for (const sql of migrations) {
     try { await database.execAsync(sql + ';'); } catch {}

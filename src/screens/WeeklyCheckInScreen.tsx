@@ -100,7 +100,7 @@ function weekCompareText(data: WeekData, C: ColorPalette): { text: string; color
 function buildInsights(data: WeekData, C: ColorPalette): { icon: keyof typeof Ionicons.glyphMap; color: string; text: string }[] {
   const insights: { icon: keyof typeof Ionicons.glyphMap; color: string; text: string }[] = [];
   if (data.paidBillsCount > 0 && data.paidBillsCount === data.totalBillsCount) {
-    insights.push({ icon: 'checkmark-circle-outline', color: C.income, text: 'All bills are paid this cycle.' });
+    insights.push({ icon: 'checkmark-circle-outline', color: C.income, text: 'Every bill is paid.' });
   } else if (data.paidBillsCount > 0) {
     insights.push({ icon: 'time-outline', color: C.bills, text: `${data.paidBillsCount} of ${data.totalBillsCount} bills paid so far.` });
   }

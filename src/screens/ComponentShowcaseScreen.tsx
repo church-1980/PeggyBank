@@ -290,7 +290,7 @@ export default function ComponentShowcaseScreen({ navigation }: any) {
         <PeggyListRow iconKey="add-expense" iconColor={ICON_REGISTRY['add-expense'].color} title="Add expense" onPress={() => setModal(false)} />
         <PeggyListRow iconKey="goals" iconColor={ICON_REGISTRY.goals.color} title="Add goal" onPress={() => setModal(false)} />
       </PeggyModal>
-      <PeggyConfirmationModal visible={confirm} title="Mark as paid?" message="This moves the bill to paid for this cycle." confirmLabel="Mark paid" onConfirm={() => setConfirm(false)} onCancel={() => setConfirm(false)} />
+      <PeggyConfirmationModal visible={confirm} title="Mark as paid?" message="This marks the bill paid for this month." confirmLabel="Mark paid" onConfirm={() => setConfirm(false)} onCancel={() => setConfirm(false)} />
       <PeggyDeleteConfirmation visible={del} title="Delete this bill?" onConfirm={() => setDel(false)} onCancel={() => setDel(false)} />
     </PeggyPage>
   );

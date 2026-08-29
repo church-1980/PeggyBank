@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import IconBadge from '../components/IconBadge';
 import { getDatabase } from '../database/database';
+import { methodOf } from '../lib/billCycles';
 import { formatCurrency } from '../utils/helpers';
 import { Expense, Bill, SavingsGoal } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
@@ -509,12 +510,16 @@ export default function CalendarScreen({ navigation }: any) {
         if (bill.frequency === 'monthly' && bill.due_day) {
           const d = dueDayInMonth(bill.due_day, year, month);   // shared rule, not a local copy
           add(`${year}-${pad(month + 1)}-${pad(d)}`,
-            { key: `bill-${bill.id}`, type: 'bill', title: bill.name, amount: bill.amount, colorHex: C.bills });
+            { key: `bill-${bill.id}`, type: 'bill', title: bill.name,
+              subtitle: methodOf(bill as any, 'manual') === 'auto' ? 'Auto-pay' : 'You pay this',
+              amount: bill.amount, colorHex: C.bills });
         } else if (bill.frequency === 'weekly' && bill.due_weekday !== undefined) {
           for (let d = 1; d <= daysInMonth; d++) {
             if (new Date(year, month, d).getDay() === bill.due_weekday) {
               add(`${year}-${pad(month + 1)}-${pad(d)}`,
-                { key: `bill-${bill.id}-${d}`, type: 'bill', title: bill.name, subtitle: 'weekly', amount: bill.amount, colorHex: C.bills });
+                { key: `bill-${bill.id}-${d}`, type: 'bill', title: bill.name,
+                  subtitle: methodOf(bill as any, 'manual') === 'auto' ? 'Auto-pay · weekly' : 'weekly',
+                  amount: bill.amount, colorHex: C.bills });
             }
           }
         }
@@ -524,7 +529,9 @@ export default function CalendarScreen({ navigation }: any) {
       for (const sub of subs) {
         const d = dueDayInMonth(sub.billing_day, year, month);  // shared rule, not a local copy
         add(`${year}-${pad(month + 1)}-${pad(d)}`,
-          { key: `sub-${sub.id}`, type: 'sub', title: sub.name, amount: sub.amount, colorHex: C.subs });
+          { key: `sub-${sub.id}`, type: 'sub', title: sub.name,
+            subtitle: methodOf(sub as any, 'auto') === 'auto' ? 'Auto-charge' : 'You pay this',
+            amount: sub.amount, colorHex: C.subs });
       }
 
       // Expenses

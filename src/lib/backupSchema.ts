@@ -41,7 +41,10 @@ export const BACKUP_TABLES: TableSpec[] = [
   {
     // photo_uri was exported but never restored before.
     table: 'bills',
-    columns: ['id', 'name', 'amount', 'frequency', 'due_day', 'due_weekday', 'category', 'is_paid', 'photo_uri', 'created_at'],
+    // payment_method / auto_confirm say whether the user pays this or it comes
+    // out on its own. Losing them on restore would put every auto-pay bill back
+    // to demanding a manual tick every month.
+    columns: ['id', 'name', 'amount', 'frequency', 'due_day', 'due_weekday', 'category', 'is_paid', 'photo_uri', 'payment_method', 'auto_confirm', 'created_at'],
     primaryKey: 'id', required: true,
   },
   {
@@ -59,7 +62,7 @@ export const BACKUP_TABLES: TableSpec[] = [
   {
     // is_paid / notes were being dropped.
     table: 'subscriptions',
-    columns: ['id', 'name', 'amount', 'billing_day', 'is_paid', 'notes', 'created_at'],
+    columns: ['id', 'name', 'amount', 'billing_day', 'is_paid', 'notes', 'payment_method', 'auto_confirm', 'created_at'],
     primaryKey: 'id', required: false,
   },
   {
@@ -88,7 +91,10 @@ export const BACKUP_TABLES: TableSpec[] = [
   {
     // Per-cycle payment state for recurring bills.
     table: 'bill_payments',
-    columns: ['id', 'bill_id', 'source', 'cycle_date', 'paid', 'paid_at', 'amount'],
+    // status is how we came to believe it: confirmed by the user, assumed on
+    // their instruction, or reported failed. A restore that dropped it would
+    // turn a failed payment back into a settled one.
+    columns: ['id', 'bill_id', 'source', 'cycle_date', 'paid', 'paid_at', 'amount', 'status'],
     primaryKey: 'id', required: false,
   },
   {

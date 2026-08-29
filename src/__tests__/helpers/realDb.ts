@@ -38,17 +38,19 @@ export const TEST_SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL, amount REAL NOT NULL, due_day INTEGER,
     frequency TEXT DEFAULT 'monthly', due_weekday INTEGER,
-    category TEXT, is_paid INTEGER DEFAULT 0, photo_uri TEXT
+    category TEXT, is_paid INTEGER DEFAULT 0, photo_uri TEXT,
+    payment_method TEXT DEFAULT 'manual', auto_confirm INTEGER DEFAULT 0
   );
   CREATE TABLE subscriptions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL, amount REAL NOT NULL, billing_day INTEGER NOT NULL,
-    is_paid INTEGER DEFAULT 0, notes TEXT
+    is_paid INTEGER DEFAULT 0, notes TEXT,
+    payment_method TEXT DEFAULT 'auto', auto_confirm INTEGER DEFAULT 0
   );
   CREATE TABLE bill_payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bill_id INTEGER NOT NULL, source TEXT NOT NULL, cycle_date TEXT NOT NULL,
-    paid INTEGER DEFAULT 1, paid_at TEXT, amount REAL,
+    paid INTEGER DEFAULT 1, paid_at TEXT, amount REAL, status TEXT DEFAULT 'confirmed',
     UNIQUE(source, bill_id, cycle_date)
   );
   CREATE TABLE income_schedules (
