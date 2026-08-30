@@ -32,7 +32,7 @@ interface Props {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const MASCOT = require('../../../assets/peggy-mascot.png');
+const MASCOT = require('../../../assets/brand/peggy-mascot.png');
 
 export default function PeggyAvatar({
   size = 44,

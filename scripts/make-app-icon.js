@@ -2,7 +2,7 @@
 /**
  * The PeggyBank app icon, built from the real mascot.
  *
- * assets/peggy-mascot.png is the brand: the squirrel holding an acorn, sitting
+ * assets/brand/peggy-mascot.png is the brand: the squirrel holding an acorn, sitting
  * in a P. This turns that one artwork into every size and shape Android, iOS
  * and the browser ask for, so the mark stays identical everywhere and there is
  * one file to change when it is redrawn.
@@ -24,7 +24,7 @@ const { PNG } = require('pngjs');
 const fs = require('fs');
 const path = require('path');
 
-const SOURCE = path.join('assets', 'peggy-mascot.png');
+const SOURCE = path.join('assets', 'brand', 'peggy-mascot.png');
 /**
  * The ground the mark sits on: white.
  *

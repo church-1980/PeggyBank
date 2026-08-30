@@ -89,7 +89,7 @@ export default function OnboardingScreen({ navigation }: any) {
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         {step === 0 ? (
           <Image
-            source={require('../../assets/peggy-mascot.png')}
+            source={require('../../assets/brand/peggy-mascot.png')}
             style={styles.mascot}
             resizeMode="contain"
           />

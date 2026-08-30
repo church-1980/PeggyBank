@@ -51,3 +51,17 @@ PeggyBank-Web-Test-*.zip
 
 # Web build output (regenerate with npm run web:build)
 dist-web/
+
+# ── Build and device artefacts ────────────────────────────────────────────
+# These kept accumulating at the project root and four of them were tracked,
+# so every emulator run showed up as a source change.
+*-log.txt
+dev-emulator-*.txt
+phone-setup-log.txt
+MIGRATION_AUDIT.txt
+PeggyBank-*.zip
+/dist
+/dist-web
+
+# Machine-local odds and ends, kept out of the way.
+/local
