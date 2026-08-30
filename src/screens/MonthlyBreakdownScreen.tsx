@@ -12,6 +12,7 @@ import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { PeggyScreen, PeggyHeader, PeggyDonut, PeggyLegendRow, PeggyModal } from '../components/peggy';
 import PeggyActivityRow from '../components/peggy/PeggyActivityRow';
 import { activityInCategory, billPaymentsInRange, type ActivityItem } from '../lib/activity';
@@ -42,6 +43,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const { t, monthYear } = useLanguage();
   const [data, setData] = useState<MonthData | null>(null);
   const [monthOffset, setMonthOffset] = useState(0);
   /** Which slice the person opened, and what was behind it. */
@@ -112,7 +114,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
   const monthLabel = () => {
     const now = new Date();
     const target = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-    return target.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return monthYear(target);
   };
 
   const statusMessage = () => {
@@ -128,10 +130,10 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
     //
     // So they now report, warmly, and let the chart do the teaching.
     const ratio = data.totalSpending / data.totalIncome;
-    if (ratio >= 1)    return { text: "More went out than came in this month. Here is where it went.", color: C.spending };
-    if (ratio >= 0.85) return { text: "Nearly everything that came in went back out this month.", color: C.bills };
-    if (ratio >= 0.6)  return { text: "Some of what came in is still left over this month.", color: C.income };
-    return { text: "Most of what came in is still left over this month.", color: C.income };
+    if (ratio >= 1)    return { text: t('breakdown.moreOutThanIn'), color: C.spending };
+    if (ratio >= 0.85) return { text: t('breakdown.nearlyAllOut'), color: C.bills };
+    if (ratio >= 0.6)  return { text: t('breakdown.someLeftOver'), color: C.income };
+    return { text: t('breakdown.mostLeftOver'), color: C.income };
   };
 
   const status = statusMessage();
@@ -143,7 +145,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
 
       {/* Month navigation */}
       <View style={styles.monthNav}>
-        <TouchableOpacity style={styles.navBtn} onPress={() => setMonthOffset((m) => m - 1)} accessibilityRole="button" accessibilityLabel="Previous month">
+        <TouchableOpacity style={styles.navBtn} onPress={() => setMonthOffset((m) => m - 1)} accessibilityRole="button" accessibilityLabel={t('common.previousMonth')}>
           <Ionicons name="chevron-back" size={22} color={C.primary} />
         </TouchableOpacity>
         <Text style={styles.monthLabel}>{monthLabel()}</Text>
@@ -151,7 +153,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           style={styles.navBtn}
           onPress={() => setMonthOffset((m) => Math.min(0, m + 1))}
           disabled={monthOffset === 0}
-         accessibilityRole="button" accessibilityLabel="Next month">
+         accessibilityRole="button" accessibilityLabel={t('common.nextMonth')}>
           <Ionicons name="chevron-forward" size={22} color={monthOffset === 0 ? C.border : C.primary} />
         </TouchableOpacity>
       </View>
@@ -167,12 +169,12 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       <View style={styles.bigRow}>
         <View style={[styles.bigCard, { flex: 1 }]}>
           <IconBadge iconKey="income" color={C.income} size={56} tinted={false} />
-          <Text style={styles.bigLabel}>Income</Text>
+          <Text style={styles.bigLabel}>{t('nav.income')}</Text>
           <Text style={[styles.bigNumber, { color: C.income }]}>{formatCurrency(data?.totalIncome ?? 0)}</Text>
         </View>
         <View style={[styles.bigCard, { flex: 1 }]}>
           <IconBadge iconKey="spent" color={C.spending} size={56} tinted={false} />
-          <Text style={styles.bigLabel}>Money out</Text>
+          <Text style={styles.bigLabel}>{t('money.moneyOut')}</Text>
           <Text style={[styles.bigNumber, { color: C.spending }]}>{formatCurrency(data?.totalSpending ?? 0)}</Text>
         </View>
       </View>
@@ -180,23 +182,23 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       {/* The two halves of money out, so "Money out" is never a lump nobody
           can take apart. Everyday spending and bills stay distinct records. */}
       <PeggyCard style={styles.card}>
-        <Text style={styles.cardLabel}>What the money out was</Text>
+        <Text style={styles.cardLabel}>{t('breakdown.whatMoneyOutWas')}</Text>
         <View style={styles.splitRow}>
-          <Text style={styles.splitLabel}>Everyday spending</Text>
+          <Text style={styles.splitLabel}>{t('money.everydaySpending')}</Text>
           <Text style={styles.splitValue}>{formatCurrency(data?.everydaySpending ?? 0)}</Text>
         </View>
         <View style={styles.splitRow}>
-          <Text style={styles.splitLabel}>Bills paid</Text>
+          <Text style={styles.splitLabel}>{t('money.billsPaid')}</Text>
           <Text style={styles.splitValue}>{formatCurrency(data?.billsPaidAmount ?? 0)}</Text>
         </View>
       </PeggyCard>
 
       <PeggyCard style={styles.card}>
-        <Text style={styles.cardLabel}>Money left over</Text>
+        <Text style={styles.cardLabel}>{t('money.moneyLeftOver')}</Text>
         <Text style={[styles.leftover, { color: leftover >= 0 ? C.income : C.spending }]}>
           {formatCurrency(Math.abs(leftover))}
         </Text>
-        {leftover < 0 && <Text style={styles.leftoverSub}>over budget this month</Text>}
+        {leftover < 0 && <Text style={styles.leftoverSub}>{t('money.overBudget')}</Text>}
       </PeggyCard>
 
       {/* WHERE YOUR MONEY WENT.
@@ -206,13 +208,13 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           did. One card, one idea. */}
       {(data?.segments.length ?? 0) > 0 ? (
         <PeggyCard style={styles.card}>
-          <Text style={styles.cardLabel}>Where your money went</Text>
+          <Text style={styles.cardLabel}>{t('breakdown.whereMoneyWent')}</Text>
 
           <View style={styles.chartRow}>
             <PeggyDonut
               segments={data!.segments}
               centreAmount={donutCentre(data!.totalSpending).amount}
-              centreLabel={donutCentre(data!.totalSpending).label}
+              centreLabel={t('breakdown.totalOut')}
             />
           </View>
 
@@ -238,7 +240,7 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           <View style={styles.emptyIcon}>
             <IconBadge iconKey="reports" color={C.textHint} size={44} iconSize={28} tinted={false} />
           </View>
-          <Text style={styles.emptyText}>No spending recorded this month.</Text>
+          <Text style={styles.emptyText}>{t('breakdown.nothingThisMonth')}</Text>
         </View>
       )}
 
@@ -255,12 +257,12 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
             }}
           />
         )) : (
-          <Text style={styles.cardLabel}>Nothing here this month.</Text>
+          <Text style={styles.cardLabel}>{t('breakdown.nothingHere')}</Text>
         )}
       </PeggyModal>
 
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-        <Text style={styles.closeBtnText}>Close</Text>
+        <Text style={styles.closeBtnText}>{t('common.close')}</Text>
       </TouchableOpacity>
     </PeggyScreen>
   );

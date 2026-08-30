@@ -6,6 +6,7 @@ import { PeggyScreen } from '../components/peggy';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { IconKey } from '../data/iconRegistry';
 import PeggyCard from '../components/peggy/PeggyCard';
+import { useT } from '../context/LanguageContext';
 
 /**
  * MoreScreen — reproduces the approved visual spec. Content tools carry their
@@ -14,8 +15,8 @@ import PeggyCard from '../components/peggy/PeggyCard';
  */
 
 interface ToolItem {
-  label: string;
-  description: string;
+  labelKey: string;
+  descKey: string;
   iconKey: IconKey;                                // matte concept art, always from the registry
   colorKey: 'goals' | 'primary' | 'subs' | 'debt' | 'income' | 'bills' | 'primaryLight' | 'textSecondary' | 'spending';
   screen: string;
@@ -28,43 +29,44 @@ interface ToolItem {
 // account.
 const TOOLS: ToolItem[] = [
   // ── Money in & out ──
-  { label: 'Spending',            description: 'Your expense history',               iconKey: 'spent',                 colorKey: 'spending',      screen: 'Spending' },
-  { label: 'Income',              description: 'Money coming in',                    iconKey: 'income',                colorKey: 'income',        screen: 'Incomes' },
-  { label: 'Bills & Subscriptions', description: 'Recurring bills and charges',      iconKey: 'bills',                 colorKey: 'bills',         screen: 'Bills' },
-  { label: 'Debt Tracker',        description: 'Pay it down, one step at a time',    iconKey: 'debt',                  colorKey: 'debt',          screen: 'Debt' },
+  { labelKey: 'nav.spending',  descKey: 'more.spendingDesc',  iconKey: 'spent',    colorKey: 'spending',      screen: 'Spending' },
+  { labelKey: 'nav.income',    descKey: 'more.incomeDesc',    iconKey: 'income',   colorKey: 'income',        screen: 'Incomes' },
+  { labelKey: 'nav.bills',     descKey: 'more.billsDesc',     iconKey: 'bills',    colorKey: 'bills',         screen: 'Bills' },
+  { labelKey: 'nav.debt',      descKey: 'more.debtDesc',      iconKey: 'debt',     colorKey: 'debt',          screen: 'Debt' },
   // ── Saving & planning ──
-  { label: 'Savings Goals',       description: "Track what you're saving for",     iconKey: 'goals',                 colorKey: 'goals',         screen: 'Goals' },
+  { labelKey: 'nav.goals',     descKey: 'more.goalsDesc',     iconKey: 'goals',    colorKey: 'goals',         screen: 'Goals' },
   // ── Insights ──
-  { label: 'What Happened',       description: 'Every payment, newest first',        iconKey: 'check-in',              colorKey: 'primary',       screen: 'Activity' },
-  { label: 'Monthly Breakdown',   description: 'See your spending by category',      iconKey: 'reports',               colorKey: 'bills',         screen: 'MonthlyBreakdown' },
-  { label: 'Calendar',            description: 'See your month at a glance',         iconKey: 'calendar',              colorKey: 'primary',       screen: 'Calendar' },
+  { labelKey: 'nav.activity',  descKey: 'more.activityDesc',  iconKey: 'check-in', colorKey: 'primary',       screen: 'Activity' },
+  { labelKey: 'nav.breakdown', descKey: 'more.breakdownDesc', iconKey: 'reports',  colorKey: 'bills',         screen: 'MonthlyBreakdown' },
+  { labelKey: 'nav.calendar',  descKey: 'more.calendarDesc',  iconKey: 'calendar', colorKey: 'primary',       screen: 'Calendar' },
   // ── Tools ──
-  { label: 'Currency Calculator', description: 'Convert money, works offline',       iconKey: 'currency',              colorKey: 'primaryLight',  screen: 'Currency' },
+  { labelKey: 'nav.currency',  descKey: 'more.currencyDesc',  iconKey: 'currency', colorKey: 'primaryLight',  screen: 'Currency' },
   // ── Account ──
-  { label: 'Profile',             description: 'Photo, name, data & privacy',        iconKey: 'profile',               colorKey: 'primary',       screen: 'Profile' },
-  { label: 'Settings',            description: 'Preferences, export, share & about', iconKey: 'settings',              colorKey: 'textSecondary', screen: 'Settings' },
+  { labelKey: 'nav.profile',   descKey: 'more.profileDesc',   iconKey: 'profile',  colorKey: 'primary',       screen: 'Profile' },
+  { labelKey: 'settings.title', descKey: 'more.settingsDesc', iconKey: 'settings', colorKey: 'textSecondary', screen: 'Settings' },
 ];
 
 export default function MoreScreen({ navigation }: any) {
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
+  const t = useT();
 
   return (
     <PeggyScreen>
-      <Text style={styles.title}>More</Text>
-      <Text style={styles.subtitle}>All your tools, in one calm place.</Text>
+      <Text style={styles.title}>{t('more.title')}</Text>
+      <Text style={styles.subtitle}>{t('more.subtitle')}</Text>
 
       <View style={styles.grid}>
         {TOOLS.map((item) => {
           return (
             <PeggyCard
-              key={item.label}
+              key={item.labelKey}
               style={styles.card}
               onPress={() => navigation.navigate(item.screen, item.params)}
             >
               <PeggyIconFrame iconKey={item.iconKey} size="card" shape="tile" style={styles.iconSlot} />
-              <Text style={styles.cardLabel}>{item.label}</Text>
-              <Text style={styles.cardDesc}>{item.description}</Text>
+              <Text style={styles.cardLabel}>{t(item.labelKey)}</Text>
+              <Text style={styles.cardDesc}>{t(item.descKey)}</Text>
             </PeggyCard>
           );
         })}
