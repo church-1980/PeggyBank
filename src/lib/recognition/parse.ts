@@ -137,24 +137,39 @@ const MONTHS: Record<string, number> = {
 function pad(n: number) { return n < 10 ? '0' + n : '' + n; }
 
 /** Parse the first date found in text → YYYY-MM-DD, or undefined. */
+/**
+ * Parse the first date found, and say how sure we are of it.
+ *
+ * The distinction existed in this code and was thrown away: every date was
+ * reported as merely low, however plainly it was printed, so no receipt could
+ * ever be confident enough to file itself. "AUG 28, 2026" has exactly one
+ * reading. "03/04/2026" has two — as the comment below already said.
+ */
 function parseDate(text: string): string | undefined {
+  return parseDateInner(text).date;
+}
+
+function parseDateInner(text: string): { date?: string; certain: boolean } {
   // 2026-07-28 or 2026/07/28
   let m = text.match(/\b(20\d{2})[-/](\d{1,2})[-/](\d{1,2})\b/);
-  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  if (m) return { date: `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`, certain: true };
   // 07/28/2026 (M/D/Y) or 28/07/2026 (D/M/Y). Disambiguate by which field can
   // only be a day; when both are ≤ 12 it's genuinely ambiguous → assume M/D/Y.
   m = text.match(/\b(\d{1,2})[-/](\d{1,2})[-/](20\d{2})\b/);
   if (m) {
     let month = +m[1], day = +m[2];
+    const ambiguous = month <= 12 && day <= 12;   // 03/04 reads both ways
     if (month > 12 && day <= 12) { month = +m[2]; day = +m[1]; } // clearly D/M/Y
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) return `${m[3]}-${pad(month)}-${pad(day)}`;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return { date: `${m[3]}-${pad(month)}-${pad(day)}`, certain: !ambiguous };
+    }
   }
   // Jul 28, 2026  /  July 28 2026  /  28 Jul 2026
   m = text.match(/\b([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(20\d{2})\b/);
-  if (m && MONTHS[m[1].slice(0, 3).toLowerCase()]) return `${m[3]}-${pad(MONTHS[m[1].slice(0, 3).toLowerCase()])}-${pad(+m[2])}`;
+  if (m && MONTHS[m[1].slice(0, 3).toLowerCase()]) return { date: `${m[3]}-${pad(MONTHS[m[1].slice(0, 3).toLowerCase()])}-${pad(+m[2])}`, certain: true };
   m = text.match(/\b(\d{1,2})\s+([A-Za-z]{3,9})\.?\s+(20\d{2})\b/);
-  if (m && MONTHS[m[2].slice(0, 3).toLowerCase()]) return `${m[3]}-${pad(MONTHS[m[2].slice(0, 3).toLowerCase()])}-${pad(+m[1])}`;
-  return undefined;
+  if (m && MONTHS[m[2].slice(0, 3).toLowerCase()]) return { date: `${m[3]}-${pad(MONTHS[m[2].slice(0, 3).toLowerCase()])}-${pad(+m[1])}`, certain: true };
+  return { certain: false };
 }
 
 function findDueDate(lines: string[]): string | undefined {
@@ -297,7 +312,8 @@ export function parseDocument(rawText: string): ExtractedFields {
   const amt = findAmount(lines);
   const merch = findMerchant(lines);
   const due = cls.type === 'bill' ? findDueDate(lines) : undefined;
-  const txDate = parseDate(text);
+  const txRead = parseDateInner(text);
+  const txDate = txRead.date;
 
   // Payee dictionary can also supply category + recurrence for bills.
   const payee = BILL_PAYEES.find((p) => merch.name && p.name === merch.name);
@@ -307,7 +323,7 @@ export function parseDocument(rawText: string): ExtractedFields {
   conf.docType = cls.conf;
   conf.amount = amt.conf;
   conf.merchant = merch.conf;
-  conf.date = txDate ? 'low' : 'none';
+  conf.date = txDate ? (txRead.certain ? 'high' : 'low') : 'none';
   conf.dueDate = due ? 'high' : 'none';
   conf.category = cat.conf;
 

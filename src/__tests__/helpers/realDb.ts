@@ -53,6 +53,11 @@ export const TEST_SCHEMA = `
     paid INTEGER DEFAULT 1, paid_at TEXT, amount REAL, status TEXT DEFAULT 'confirmed',
     UNIQUE(source, bill_id, cycle_date)
   );
+  CREATE TABLE merchant_memory (
+    name_key TEXT PRIMARY KEY, display_name TEXT NOT NULL, doc_type TEXT NOT NULL,
+    category TEXT, recurring INTEGER DEFAULT 0, last_amount REAL, avg_amount REAL,
+    due_day INTEGER, times_seen INTEGER DEFAULT 1, last_seen TEXT
+  );
   CREATE TABLE income_schedules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     label TEXT NOT NULL, amount REAL NOT NULL,

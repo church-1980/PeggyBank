@@ -1,4 +1,5 @@
 import { localDateString } from '../core/datetime';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../database/database';
 
 /**
@@ -86,11 +87,18 @@ export async function rememberMerchant(input: {
   recurring?: boolean;
   amount?: number;
   dueDay?: number;
+  /**
+   * The database to write to. Optional: every screen omits it and gets the
+   * app's own. It exists so this path can be TESTED — before it, remembering a
+   * merchant opened its own connection, which no test could reach, so the
+   * behaviour was exercised only on a real phone.
+   */
+  db?: SQLiteDatabase;
 }): Promise<void> {
   const key = merchantKey(input.name);
   if (!key) return;
   try {
-    const db = await getDatabase();
+    const db = input.db ?? await getDatabase();
     const today = localDateString(new Date());
     const prev = await db.getFirstAsync<any>(
       `SELECT times_seen, avg_amount FROM merchant_memory WHERE name_key = ?`, [key]

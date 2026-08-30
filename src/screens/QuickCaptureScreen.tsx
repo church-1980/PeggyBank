@@ -17,10 +17,13 @@ import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
 import { Category } from '../types';
 import { resolveReview, formParams, Corrections } from '../lib/recognition/review';
+import { decideRoute, type FieldKey } from '../core/captureRoute';
+import { createExpense, undoExpense } from '../lib/saveExpense';
+import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
 import PeggyPushButton from '../components/peggy/PeggyPushButton';
 import PeggyCard from '../components/peggy/PeggyCard';
-import { PeggyChip, PeggyInput, PeggyCurrencyInput } from '../components/peggy';
+import { PeggyChip, PeggyInput, PeggyCurrencyInput, PeggyButton } from '../components/peggy';
 
 /**
  * QuickCaptureScreen — PeggyBank Smart Quick Capture.
@@ -33,7 +36,7 @@ import { PeggyChip, PeggyInput, PeggyCurrencyInput } from '../components/peggy';
  * If OCR fails, the manual fallback (choose Expense/Bill) is preserved.
  */
 
-type Stage = 'camera' | 'preview' | 'reading' | 'review';
+type Stage = 'camera' | 'preview' | 'reading' | 'review' | 'ask' | 'saved';
 
 /**
  * The question the app asks before filing anything: plain language, naming
@@ -109,6 +112,26 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const [facing] = useState<CameraType>('back');
   const [busy, setBusy] = useState(false);
 
+  /**
+   * The expense an automatic save created, so Undo and Edit can name the exact
+   * row rather than guess at "the most recent one".
+   */
+  const [savedId, setSavedId] = useState<number | null>(null);
+  const [savedSummary, setSavedSummary] = useState<{ name: string; amount: number } | null>(null);
+  /** Only the fields worth a question, when the route is 'ask'. */
+  const [askFields, setAskFields] = useState<FieldKey[]>([]);
+
+  /**
+   * THE SAVE LATCH.
+   *
+   * A ref holding the in-flight save, not a boolean. A boolean is set after an
+   * await, and every caller reaches the check before the first one finishes —
+   * so three taps produce three expenses. Holding the PROMISE latches
+   * synchronously, and later callers wait on the same save. A test proves the
+   * naive version really does create three.
+   */
+  const saving = useRef<Promise<number> | null>(null);
+
   const close = () => {
     if (navigation.canGoBack()) navigation.goBack();
     else navigation.navigate('Home');
@@ -179,12 +202,88 @@ export default function QuickCaptureScreen({ navigation }: any) {
       setKnown(memory);
 
       const detected = r.ok && r.docType !== 'unknown' ? r.docType : 'unknown';
-      setChosenType(memory ? memory.docType : detected);
+      const type = memory ? memory.docType : detected;
+      setChosenType(type);
+
+      // WHICH ROAD DOES THIS PHOTO TAKE?
+      //
+      // Only an EXPENSE can be saved unattended. A bill is a recurring plan
+      // with a due day and a payment method attached, which no receipt states
+      // and PeggyBank must not invent.
+      const view = resolveReview(r, memory, {});
+      const decision = type === 'expense'
+        ? decideRoute({
+            ok: r.ok,
+            confidence: view.confidence,
+            merchant: view.merchant, amount: view.amount,
+            date: view.date, category: view.category,
+          })
+        : { route: 'review' as const, askFor: [] as FieldKey[], why: 'not an expense' };
+
+      if (decision.route === 'auto') {
+        await autoSave(owned, view.merchant!, view.amount!, view.date!, view.category!);
+        return;
+      }
+      if (decision.route === 'ask') {
+        setAskFields(decision.askFor);
+        setStage('ask');
+        return;
+      }
       setStage('review');
     } catch {
       Alert.alert('Could not process image', 'Please try again.');
       setStage('preview');
     }
+  };
+
+  /**
+   * Save without asking, then say so.
+   *
+   * Latched on the promise so a double tap, a repeated callback or a re-render
+   * cannot produce a second expense. If the write fails the person is told the
+   * truth and handed the review screen — never a "Saved" for a save that did
+   * not happen.
+   */
+  const autoSave = async (
+    photo: string, merchant: string, amount: number, date: string, category: Category,
+  ) => {
+    if (saving.current) { await saving.current; return; }
+    try {
+      const db = await getDatabase();
+      saving.current = createExpense(db, {
+        amount, category, note: merchant, date, photoUri: photo,
+      });
+      const id = await saving.current;
+      setSavedId(id);
+      setSavedSummary({ name: merchant, amount });
+      setStage('saved');
+    } catch {
+      saving.current = null;
+      Alert.alert('Could not save', 'Your photo is safe. Please check the details.');
+      setStage('review');
+    }
+  };
+
+  /** Undo deletes the row, so every view forgets it at once. */
+  const undoSave = async () => {
+    if (savedId == null) return;
+    try {
+      const db = await getDatabase();
+      await undoExpense(db, savedId);
+    } catch { /* the banner closing regardless beats a stuck screen */ }
+    setSavedId(null); setSavedSummary(null); saving.current = null;
+    close();
+  };
+
+  /** Edit opens the expense that was just created — never a second one. */
+  const editSaved = async () => {
+    if (savedId == null) return;
+    try {
+      const db = await getDatabase();
+      const row = await db.getFirstAsync<any>(`SELECT * FROM expenses WHERE id = ?`, [savedId]);
+      if (row) { navigation.replace('AddExpense', { ...row }); return; }
+    } catch { /* fall through */ }
+    close();
   };
 
   // Continue → prefilled form (or manual = photo only)
@@ -242,6 +341,136 @@ export default function QuickCaptureScreen({ navigation }: any) {
         <Text style={[Typography.cardTitle, { color: C.textPrimary, marginTop: Spacing.md }]}>Reading your document…</Text>
         <Text style={[Typography.helper, { color: C.textSecondary, marginTop: 4 }]}>On your device — nothing is uploaded.</Text>
       </View>
+    );
+  }
+
+  // ── Saved stage ────────────────────────────────────────────────────
+  //
+  // The whole point of the feature: take a picture, and it is done. This is a
+  // statement, not a question — the money is already recorded. Undo and Edit
+  // are the escape hatches, not confirmations.
+  if (stage === 'saved' && savedSummary) {
+    return (
+      <View style={[styles.fill, styles.center, { backgroundColor: C.bg, padding: Spacing.lg }]}>
+        <Ionicons name="checkmark-circle" size={64} color={C.income} />
+        <Text style={[Typography.h2, { color: C.textPrimary, marginTop: Spacing.md }]}>Saved</Text>
+        <Text style={[Typography.cardTitle, { color: C.textPrimary, marginTop: Spacing.sm }]}>
+          {savedSummary.name}
+        </Text>
+        <Text style={[Typography.h1, { color: C.spending, marginTop: 4 }]}>
+          {formatCurrency(savedSummary.amount)}
+        </Text>
+
+        <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xl, alignSelf: 'stretch' }}>
+          <PeggyButton label="Undo" variant="pill" style={{ flex: 1 }} onPress={undoSave} />
+          <PeggyButton label="Edit" variant="pill" style={{ flex: 1 }} onPress={editSaved} />
+        </View>
+
+        <TouchableOpacity style={{ marginTop: Spacing.lg, minHeight: 48, justifyContent: 'center' }} onPress={close}>
+          <Text style={[Typography.body, { color: C.primary, fontWeight: '600' }]}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ── Ask stage ──────────────────────────────────────────────────────
+  //
+  // PeggyBank read the rest. Asking about a field it already knows would be
+  // making the person redo work that is finished.
+  if (stage === 'ask') {
+    const askedAbout = (k: FieldKey) => askFields.includes(k);
+    const ready = askFields.every((k) => {
+      if (k === 'merchant') return !!merchantValue;
+      if (k === 'amount') return amountValue != null && amountValue > 0;
+      if (k === 'date') return !!dateValue;
+      return !!categoryValue;
+    });
+
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: Spacing.lg, paddingTop: insets.top + Spacing.lg }}>
+        {ownedUri ? <Image source={{ uri: ownedUri }} style={styles.readingThumb} resizeMode="cover" /> : null}
+
+        <Text style={[Typography.h2, { color: C.textPrimary, marginTop: Spacing.md }]}>Almost done</Text>
+
+        {/* What PeggyBank is already sure of. Shown as facts, not questions. */}
+        <PeggyCard style={{ marginTop: Spacing.md }}>
+          {!askedAbout('merchant') && merchantValue ? <KnownLine C={C} value={merchantValue} /> : null}
+          {!askedAbout('date') && dateValue ? <KnownLine C={C} value={formatDate(dateValue)} /> : null}
+          {!askedAbout('category') && categoryValue ? (
+            <KnownLine C={C} value={(CATEGORIES as any)[categoryValue]?.label ?? categoryValue} />
+          ) : null}
+          {!askedAbout('amount') && amountValue != null ? (
+            <KnownLine C={C} value={formatCurrency(amountValue)} />
+          ) : null}
+        </PeggyCard>
+
+        {askedAbout('merchant') && (
+          <>
+            <Text style={styles.sectionLabel}>WHO WAS IT?</Text>
+            <PeggyInput
+              value={edits.merchant ?? merchantValue ?? ''}
+              onChangeText={(v) => setEdits(e => ({ ...e, merchant: v }))}
+              placeholder="Shop name"
+              autoFocus
+            />
+          </>
+        )}
+
+        {askedAbout('amount') && (
+          <>
+            <Text style={styles.sectionLabel}>HOW MUCH?</Text>
+            <PeggyCurrencyInput
+              value={edits.amount != null ? String(edits.amount) : (amountValue != null ? String(amountValue) : '')}
+              onChangeText={(v) => {
+                const n = parseFloat(v.replace(',', '.').replace(/[^0-9.]/g, ''));
+                setEdits(e => ({ ...e, amount: Number.isFinite(n) && n > 0 ? n : undefined }));
+              }}
+              autoFocus={!askedAbout('merchant')}
+            />
+          </>
+        )}
+
+        {askedAbout('date') && (
+          <>
+            <Text style={styles.sectionLabel}>WHEN?</Text>
+            <PeggyDateField
+              value={dateValue ?? localDateString(new Date())}
+              onChange={(d) => setEdits(e => ({ ...e, date: d }))}
+              label=""
+            />
+          </>
+        )}
+
+        {askedAbout('category') && (
+          <>
+            <Text style={styles.sectionLabel}>WHAT KIND OF SPENDING?</Text>
+            <View style={styles.catRow}>
+              {(Object.keys(CATEGORIES) as Category[]).map((key) => (
+                <PeggyChip
+                  key={key}
+                  label={(CATEGORIES as any)[key].label}
+                  selected={categoryValue === key}
+                  onPress={() => setEdits(e => ({ ...e, category: key }))}
+                />
+              ))}
+            </View>
+          </>
+        )}
+
+        <PeggyButton
+          label="Save"
+          disabled={!ready}
+          style={{ marginTop: Spacing.lg }}
+          onPress={() => {
+            if (!ready || !ownedUri) return;
+            autoSave(ownedUri, merchantValue!, amountValue!, dateValue!, categoryValue!);
+          }}
+        />
+
+        <TouchableOpacity style={{ marginTop: Spacing.md, minHeight: 48, justifyContent: 'center', alignItems: 'center' }} onPress={() => setStage('review')}>
+          <Text style={[Typography.body, { color: C.textSecondary }]}>Check everything instead</Text>
+        </TouchableOpacity>
+      </ScrollView>
     );
   }
 
@@ -448,6 +677,22 @@ function TypeChip({ C, label, icon, active, onPress }: { C: ColorPalette; label:
       <Ionicons name={icon} size={20} color={active ? C.primary : C.textSecondary} />
       <Text style={[Typography.cardTitle, { color: active ? C.primary : C.textPrimary }]}>{label}</Text>
     </TouchableOpacity>
+  );
+}
+
+/**
+ * Something already read with confidence, shown as settled.
+ *
+ * A tick rather than a field: re-presenting it as an input would invite the
+ * person to check work that is finished, which is the tax this whole feature
+ * exists to remove.
+ */
+function KnownLine({ C, value }: { C: ColorPalette; value: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10 }}>
+      <Ionicons name="checkmark-circle" size={18} color={C.income} />
+      <Text style={[Typography.body, { color: C.textPrimary }]}>{value}</Text>
+    </View>
   );
 }
 
