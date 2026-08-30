@@ -61,9 +61,9 @@ function billDueLabel(bill: Bill): string {
   }
   if (bill.due_day) {
     const days = getDaysUntil(bill.due_day);
-    if (days === 0) return `Due today (${ordinal(bill.due_day)} of month)`;
-    if (days === 1) return `Due tomorrow (${ordinal(bill.due_day)} of month)`;
-    return `Due in ${days} days (${ordinal(bill.due_day)} of month)`;
+    if (days === 0) return 'Due today';
+    if (days === 1) return 'Due tomorrow';
+    return `Due in ${days} days`;
   }
   return 'Due date not set';
 }
@@ -519,7 +519,6 @@ export default function BillsScreen({ navigation, route }: any) {
                   <Text style={[styles.cardName, paid && styles.paidText]}>{item.name}</Text>
                   <Text style={[styles.cardDue, urgent && { color: C.spending }]}>
                     {say.label}
-                    {say.tone !== 'done' ? ` · ${ordinal(item.billing_day)} of month` : ''}
                   </Text>
                 </View>
                 <Text style={[styles.cardAmount, { color }, paid && styles.paidText]}>
