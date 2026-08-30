@@ -129,15 +129,19 @@ function write(file, png) {
 const art = loadTrimmed();
 console.log('PeggyBank icon, from ' + SOURCE + ':');
 
-// A little breathing room so the mascot is not jammed against the edge.
-write('icon.png',    resample(art, 1024, { background: true, inset: 0.86 }));
-write('favicon.png', resample(art, 196,  { background: true, inset: 0.86 }));
+// ROOM FOR THE LAUNCHER'S MASK.
+//
+// Android launchers reshape the icon — Samsung squircles everything — and a
+// mark filling 86% of the square loses the top of the P and the leaf to that
+// crop. Two thirds leaves the whole logo inside whatever shape is applied.
+write('icon.png',    resample(art, 1024, { background: true, inset: 0.66 }));
+write('favicon.png', resample(art, 196,  { background: true, inset: 0.78 }));  // browser tabs are not masked
 
 // Android masks the adaptive foreground to roughly the middle two-thirds, so
 // the mark is inset to survive the crop, and the colour lives on its own layer.
-write('android-icon-foreground.png', resample(art, 1024, { background: false, inset: 0.62 }));
+write('android-icon-foreground.png', resample(art, 1024, { background: false, inset: 0.56 }));
 write('android-icon-background.png', solid(1024));
-write('android-icon-monochrome.png', resample(art, 1024, { background: false, inset: 0.62, monochrome: true }));
+write('android-icon-monochrome.png', resample(art, 1024, { background: false, inset: 0.56, monochrome: true }));
 
 // The splash has room, so the artwork is shown whole and unbacked.
 write('splash-icon.png', resample(art, 512, { background: false, inset: 0.95 }));
