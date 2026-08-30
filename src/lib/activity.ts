@@ -274,3 +274,43 @@ export async function searchActivity(
 
   return rows.map(toItem);
 }
+
+/**
+ * THE TRANSACTIONS BEHIND ONE NUMBER.
+ *
+ * Monthly Breakdown says "Restaurants $184". This is the $184 — the actual
+ * rows, openable and correctable, so a total is never a dead end.
+ *
+ * Same union as everything else, so the rows add up to the figure the chart
+ * showed. A separate query written to answer this one question is how a
+ * drill-down starts disagreeing with the total it drilled into.
+ */
+export async function activityInCategory(
+  db: SQLiteDatabase, start: string, end: string, category: string
+): Promise<ActivityItem[]> {
+  const rows = await db.getAllAsync<Row>(
+    `SELECT * FROM (${ACTIVITY_SQL})
+      WHERE date >= ? AND date <= ? AND category = ?
+      ORDER BY date DESC, source_id DESC`,
+    [start, end, category]
+  ).catch(() => []);
+  return rows.map(toItem);
+}
+
+/**
+ * The bill and subscription payments behind "Bills paid".
+ *
+ * Bills carry no category, so they cannot come back from the query above —
+ * and the person tapping that slice is asking the same question about it.
+ */
+export async function billPaymentsInRange(
+  db: SQLiteDatabase, start: string, end: string
+): Promise<ActivityItem[]> {
+  const rows = await db.getAllAsync<Row>(
+    `SELECT * FROM (${ACTIVITY_SQL})
+      WHERE date >= ? AND date <= ? AND source IN ('bill', 'subscription')
+      ORDER BY date DESC, source_id DESC`,
+    [start, end]
+  ).catch(() => []);
+  return rows.map(toItem);
+}

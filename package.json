@@ -34,7 +34,8 @@
     "audit:donut": "node scripts/webtest/donut.js",
     "audit:bills": "node scripts/webtest/bills.js",
     "audit:language": "node scripts/webtest/language.js",
-    "audit:search": "node scripts/webtest/search.js"
+    "audit:search": "node scripts/webtest/search.js",
+    "audit:drilldown": "node scripts/webtest/drilldown.js"
   },
   "jest": {
     "preset": "jest-expo",

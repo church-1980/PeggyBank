@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Spacing, Typography } from '../../theme';
 import { useColors } from '../../context/ThemeContext';
 
@@ -22,20 +22,31 @@ interface Props {
   amount: string;
   /** Whole percent. Omitted when a share would be meaningless. */
   percent?: number;
+  /**
+   * Opens what the row stands for. A total nobody can open is a dead end:
+   * the person sees what Restaurants cost and not what it was spent on.
+   */
+  onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
-export default function PeggyLegendRow({ color, label, amount, percent, style, testID }: Props) {
+export default function PeggyLegendRow({ color, label, amount, percent, onPress, style, testID }: Props) {
   const C = useColors();
 
+  const Row: any = onPress ? TouchableOpacity : View;
+
   return (
-    <View
+    <Row
       testID={testID}
-      // Read as one sentence rather than four disconnected fragments.
+      onPress={onPress}
+      // Read as one sentence rather than four disconnected fragments, and say
+      // that it opens when it does — a swatch gives no hint that it is a button.
       accessible
+      accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={
         label + ', ' + amount + (percent != null ? ', ' + percent + ' percent' : '')
+        + (onPress ? '. Tap to see what this was.' : '')
       }
       style={[
         { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: Spacing.sm },
@@ -59,6 +70,6 @@ export default function PeggyLegendRow({ color, label, amount, percent, style, t
           {percent}%
         </Text>
       ) : null}
-    </View>
+    </Row>
   );
 }

@@ -12,7 +12,12 @@ import { CATEGORIES } from '../data/categories';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
-import { PeggyScreen, PeggyHeader, PeggyDonut, PeggyLegendRow } from '../components/peggy';
+import { PeggyScreen, PeggyHeader, PeggyDonut, PeggyLegendRow, PeggyModal } from '../components/peggy';
+import PeggyActivityRow from '../components/peggy/PeggyActivityRow';
+import { activityInCategory, billPaymentsInRange, type ActivityItem } from '../lib/activity';
+import { openActivityRecord } from '../lib/openRecord';
+import { BILLS_KEY, ELSE_KEY } from '../core/spendingChart';
+import { localMonthRange } from '../core/datetime';
 import IconBadge from '../components/IconBadge';
 import PeggyCard from '../components/peggy/PeggyCard';
 
@@ -39,6 +44,8 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
   const styles = useMemo(() => makeStyles(C), [C]);
   const [data, setData] = useState<MonthData | null>(null);
   const [monthOffset, setMonthOffset] = useState(0);
+  /** Which slice the person opened, and what was behind it. */
+  const [drill, setDrill] = useState<{ label: string; rows: ActivityItem[] } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -81,6 +88,24 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
       });
     } catch {}
   }, [monthOffset, C.bills, C.textHint]);
+
+  /**
+   * Show what one slice was actually made of.
+   *
+   * The rows come from the same union every other money view uses, so they add
+   * up to the figure on the chart — a drill-down showing $170 under a $184
+   * heading would tell the person one of the two is wrong without saying which.
+   */
+  const openSlice = async (key: string, label: string) => {
+    if (key === ELSE_KEY) return;          // a bucket, not a thing
+    const target = new Date(new Date().getFullYear(), new Date().getMonth() + monthOffset, 1);
+    const { start, end } = localMonthRange(target);
+    const db = await getDatabase();
+    const rows = key === BILLS_KEY
+      ? await billPaymentsInRange(db, start, end)
+      : await activityInCategory(db, start, end, key);
+    setDrill({ label, rows });
+  };
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
@@ -201,6 +226,9 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
                 label={seg.label}
                 amount={formatCurrency(seg.amount)}
                 percent={seg.percent}
+                // "Everything else" is a bucket of small things, not one thing;
+                // opening it would promise a story it cannot tell.
+                onPress={seg.key === ELSE_KEY ? undefined : () => openSlice(seg.key, seg.label)}
               />
             ))}
           </View>
@@ -213,6 +241,23 @@ export default function MonthlyBreakdownScreen({ navigation }: any) {
           <Text style={styles.emptyText}>No spending recorded this month.</Text>
         </View>
       )}
+
+      {/* What one slice was made of. Every row opens the real record. */}
+      <PeggyModal visible={!!drill} onClose={() => setDrill(null)} title={drill?.label}>
+        {drill?.rows.length ? drill.rows.map((row) => (
+          <PeggyActivityRow
+            key={row.key}
+            item={row}
+            onPress={async (item) => {
+              setDrill(null);
+              const db = await getDatabase();
+              await openActivityRecord(db, item, (screen, params) => navigation.navigate(screen, params));
+            }}
+          />
+        )) : (
+          <Text style={styles.cardLabel}>Nothing here this month.</Text>
+        )}
+      </PeggyModal>
 
       <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
         <Text style={styles.closeBtnText}>Close</Text>
