@@ -135,10 +135,10 @@ console.log('PeggyBank icon, from ' + SOURCE + ':');
 // mark filling 86% of the square loses the top of the P and the leaf to that
 // crop. Two thirds cleared the mask but left the logo looking lost in white.
 //
-// 78% is the middle: a squircle takes most of its bite out of the corners and
+// 82%: a squircle takes most of its bite out of the corners and
 // comparatively little from the middle of each edge, which is where the top of
 // the P and the leaf sit.
-write('icon.png',    resample(art, 1024, { background: true, inset: 0.78 }));
+write('icon.png',    resample(art, 1024, { background: true, inset: 0.82 }));
 write('favicon.png', resample(art, 196,  { background: true, inset: 0.86 }));  // browser tabs are not masked
 
 // Android masks the adaptive foreground to roughly the middle two-thirds, so
