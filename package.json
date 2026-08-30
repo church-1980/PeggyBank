@@ -33,7 +33,8 @@
     "android:build": "bash -c \"cd android && ANDROID_HOME=$ANDROID_HOME ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64 --no-daemon\"",
     "audit:donut": "node scripts/webtest/donut.js",
     "audit:bills": "node scripts/webtest/bills.js",
-    "audit:language": "node scripts/webtest/language.js"
+    "audit:language": "node scripts/webtest/language.js",
+    "audit:search": "node scripts/webtest/search.js"
   },
   "jest": {
     "preset": "jest-expo",

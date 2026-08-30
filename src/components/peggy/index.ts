@@ -35,6 +35,7 @@ export { default as PeggyIllustration } from './PeggyIllustration';
 export { default as PeggyGoalCard, goalProgressColor, goalEncouragement, goalEncouragementSecondary } from './PeggyGoalCard';
 export { default as PeggyQuickActionCard } from './PeggyQuickActionCard';
 export { default as PeggyListRow } from './PeggyListRow';
+export { default as PeggyActivityRow } from './PeggyActivityRow';
 export { default as PeggyStatCard } from './PeggyStatCard';
 export { default as PeggyPickerTile } from './PeggyPickerTile';
 export { default as PeggyChoiceTile } from './PeggyChoiceTile';

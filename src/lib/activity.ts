@@ -41,6 +41,7 @@
 
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { localMonthRange } from '../core/datetime';
+import { parseQuery, searchTerms } from '../core/searchQuery';
 
 /** Which table a piece of activity really lives in. */
 export type ActivitySource = 'expense' | 'income' | 'bill' | 'subscription';
@@ -203,4 +204,73 @@ export function activityTotals(items: ActivityItem[]): { in: number; out: number
     if (it.direction === 'in') cin += it.amount; else cout += it.amount;
   }
   return { in: Math.round(cin * 100) / 100, out: Math.round(cout * 100) / 100 };
+}
+
+/**
+ * FIND ONE THING.
+ *
+ * Search is a VIEW, not a second source of truth. It runs the SAME union every
+ * other money view runs, with a filter on top — so a row found here IS the row
+ * What Happened shows, and tapping it opens the real record.
+ *
+ * Matching is deliberately generous. Someone looking for a Tim Hortons coffee
+ * might type "tims", "tim", "coffee" or "11.60". The cost of one extra row is a
+ * glance; the cost of hiding the right one is that they stop trusting search.
+ *
+ * Every value is a bound parameter. Typed text never reaches the SQL.
+ */
+export async function searchActivity(
+  db: SQLiteDatabase, raw: string, limit = 60
+): Promise<ActivityItem[]> {
+  const q = parseQuery(raw);
+  if (q.empty) return [];
+
+  const where: string[] = [];
+  const args: (string | number)[] = [];
+
+  // Name, category or type. Every word must appear, so a second word narrows.
+  for (const term of searchTerms(q)) {
+    where.push(
+      `(LOWER(title) LIKE ? OR LOWER(COALESCE(subtitle, '')) LIKE ?)`);
+    const like = '%' + term + '%';
+    args.push(like, like);
+  }
+
+  const amountClause = q.amount != null ? 'ROUND(amount, 2) = ROUND(?, 2)' : null;
+
+  // Matched on the stored LOCAL date string. The whole app stores YYYY-MM-DD in
+  // local time; comparing against UTC here would shift a late-evening payment
+  // into the wrong day.
+  const dateClauses: string[] = [];
+  const dateArgs: number[] = [];
+  if (q.year != null)  { dateClauses.push(`CAST(strftime('%Y', date) AS INTEGER) = ?`); dateArgs.push(q.year); }
+  if (q.month != null) { dateClauses.push(`CAST(strftime('%m', date) AS INTEGER) = ?`); dateArgs.push(q.month + 1); }
+  if (q.day != null)   { dateClauses.push(`CAST(strftime('%d', date) AS INTEGER) = ?`); dateArgs.push(q.day); }
+
+  /**
+   * "20" is both twenty dollars and the twentieth, and nobody typing it knows
+   * which they meant. Requiring BOTH would find a $20 charge only if it also
+   * landed on the 20th — almost never, so search would look broken. Either
+   * reading is accepted.
+   *
+   * A date given in words is NOT ambiguous: "august 12" means that day, so its
+   * parts stay required together.
+   */
+  if (q.ambiguousNumber && amountClause && dateClauses.length) {
+    where.push('(' + amountClause + ' OR ' + dateClauses.join(' AND ') + ')');
+    args.push(q.amount as number, ...dateArgs);
+  } else {
+    if (amountClause) { where.push(amountClause); args.push(q.amount as number); }
+    dateClauses.forEach((c, i) => { where.push(c); args.push(dateArgs[i]); });
+  }
+
+  if (!where.length) return [];
+
+  const rows = await db.getAllAsync<Row>(
+    `SELECT * FROM (${ACTIVITY_SQL}) WHERE ${where.join(' AND ')}
+     ORDER BY date DESC, source_id DESC LIMIT ?`,
+    [...args, limit]
+  ).catch(() => []);
+
+  return rows.map(toItem);
 }

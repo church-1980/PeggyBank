@@ -3,6 +3,7 @@ import { View, Text, SectionList, StyleSheet, TouchableOpacity } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getDatabase } from '../database/database';
+import { openActivityRecord } from '../lib/openRecord';
 import { Spacing, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
@@ -49,27 +50,10 @@ export default function ActivityScreen({ navigation }: any) {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  /**
-   * Open the record behind a row. The person does not need to know which
-   * screen owns it; PeggyBank works that out.
-   */
+  /** Open the record behind a row. Shared, so Search opens the same things. */
   const open = async (item: ActivityItem) => {
-    try {
-      const db = await getDatabase();
-      if (item.source === 'expense') {
-        const row = await db.getFirstAsync<any>(`SELECT * FROM expenses WHERE id = ?`, [item.sourceId]);
-        if (row) navigation.navigate('AddExpense', { ...row });
-        return;
-      }
-      if (item.source === 'income') {
-        const row = await db.getFirstAsync<any>(`SELECT * FROM income WHERE id = ?`, [item.sourceId]);
-        if (row) navigation.navigate('AddIncome', { ...row });
-        return;
-      }
-      // A bill or subscription payment belongs to its recurring item, which is
-      // where the payment history and the paid state live.
-      navigation.navigate('Bills');
-    } catch { /* leaving them where they are beats crashing */ }
+    const db = await getDatabase();
+    await openActivityRecord(db, item, (screen, params) => navigation.navigate(screen, params));
   };
 
   const totals = activityTotals(items);
@@ -89,7 +73,14 @@ export default function ActivityScreen({ navigation }: any) {
             <Ionicons name="chevron-down" size={20} color={C.textSecondary} />
           </TouchableOpacity>
           <Text style={styles.title}>What happened</Text>
-          <View style={{ width: 36 }} />
+          <TouchableOpacity
+            style={styles.monthBtn}
+            onPress={() => navigation.navigate('Search')}
+            accessibilityRole="button"
+            accessibilityLabel="Search your money"
+          >
+            <Ionicons name="search" size={20} color={C.primary} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.monthRow}>
