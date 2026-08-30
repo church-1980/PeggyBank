@@ -133,15 +133,19 @@ console.log('PeggyBank icon, from ' + SOURCE + ':');
 //
 // Android launchers reshape the icon — Samsung squircles everything — and a
 // mark filling 86% of the square loses the top of the P and the leaf to that
-// crop. Two thirds leaves the whole logo inside whatever shape is applied.
-write('icon.png',    resample(art, 1024, { background: true, inset: 0.66 }));
-write('favicon.png', resample(art, 196,  { background: true, inset: 0.78 }));  // browser tabs are not masked
+// crop. Two thirds cleared the mask but left the logo looking lost in white.
+//
+// 78% is the middle: a squircle takes most of its bite out of the corners and
+// comparatively little from the middle of each edge, which is where the top of
+// the P and the leaf sit.
+write('icon.png',    resample(art, 1024, { background: true, inset: 0.78 }));
+write('favicon.png', resample(art, 196,  { background: true, inset: 0.86 }));  // browser tabs are not masked
 
 // Android masks the adaptive foreground to roughly the middle two-thirds, so
 // the mark is inset to survive the crop, and the colour lives on its own layer.
-write('android-icon-foreground.png', resample(art, 1024, { background: false, inset: 0.56 }));
+write('android-icon-foreground.png', resample(art, 1024, { background: false, inset: 0.66 }));
 write('android-icon-background.png', solid(1024));
-write('android-icon-monochrome.png', resample(art, 1024, { background: false, inset: 0.56, monochrome: true }));
+write('android-icon-monochrome.png', resample(art, 1024, { background: false, inset: 0.66, monochrome: true }));
 
 // The splash has room, so the artwork is shown whole and unbacked.
 write('splash-icon.png', resample(art, 512, { background: false, inset: 0.95 }));
