@@ -3,13 +3,14 @@ import { View, Text, RefreshControl, TouchableOpacity, Modal } from 'react-nativ
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
-import { currentCycleDate, paidCyclesFor, methodOf } from '../lib/billCycles';
-import { occurrenceState, describeOccurrence } from '../core/paymentState';
-import { localDateString } from '../core/datetime';
+import { currentCycleDate, paidCyclesFor, methodOf, nextCycleDate } from '../lib/billCycles';
+import { groupUpcoming, describeUpcoming, type UpcomingItem, type UpcomingDay } from '../core/comingUp';
+import { pendingIncome } from '../lib/incomeSchedules';
+import { localDateString, parseLocalDate } from '../core/datetime';
 import { loadFinanceSummary, loadSafeToSpendExplanation, type SafeToSpendExplanation } from '../lib/financeSummary';
 import { recentActivity, type ActivityItem } from '../lib/activity';
 import PeggyActivityRow from '../components/peggy/PeggyActivityRow';
-import { formatCurrency, getDaysUntil } from '../utils/helpers';
+import { formatCurrency } from '../utils/helpers';
 import { SavingsGoal, Bill, Category } from '../types';
 import { Spacing, Typography, IconSize, Radius } from '../theme';
 import { useColors } from '../context/ThemeContext';
@@ -55,12 +56,34 @@ function welcomeLine(name: string | undefined, tick: number): string {
   return WELCOME_LINES[tick % WELCOME_LINES.length](name);
 }
 
+/**
+ * A day, said the way a person would say it. Beyond a week a weekday name
+ * stops meaning anything ("Friday" — which Friday?), so it becomes a date.
+ */
+function upcomingDayLabel(iso: string): string {
+  const d = parseLocalDate(iso);
+  const today = new Date();
+  const days = Math.round(
+    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+      - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days < 7) return d.toLocaleDateString('en-US', { weekday: 'long' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/** The same day, lower case, for the middle of a sentence: "Due Friday". */
+function whenWord(iso: string): string {
+  const label = upcomingDayLabel(iso);
+  return label === 'Today' || label === 'Tomorrow' ? label.toLowerCase() : label;
+}
+
 export default function DashboardScreen({ navigation }: any) {
   const C = useColors();
   const [summary, setSummary] = useState<MonthSummary>({
     totalIncome: 0, totalSpending: 0, moneyLeft: 0, safeToSpend: 0,
   });
-  const [upcomingBills, setUpcomingBills] = useState<Bill[]>([]);
+  const [upcomingDays, setUpcomingDays] = useState<UpcomingDay[]>([]);
   const [pinnedGoals, setPinnedGoals] = useState<SavingsGoal[]>([]);
   const [suggestion, setSuggestion] = useState('');
   // What happened lately, and why Safe to Spend is what it is. Both are read
@@ -85,6 +108,7 @@ export default function DashboardScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     try {
       const db = await getDatabase();
+      const now = new Date();
 
       // Profile (shared with the Profile screen via the settings table)
       const nameRow = await db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'display_name'`);
@@ -124,10 +148,46 @@ export default function DashboardScreen({ navigation }: any) {
 
       setSummary({ totalIncome, totalSpending, moneyLeft, safeToSpend });
 
-      const sortedBills = [...unpaidBills].sort(
-        (a, b) => getDaysUntil(a.due_day ?? 1) - getDaysUntil(b.due_day ?? 1)
-      );
-      setUpcomingBills(sortedBills.slice(0, 3));
+      // WHAT'S HAPPENING NEXT — bills, subscriptions AND the money arriving to
+      // pay them. Coming Up knew about payday all along and never said so.
+      const subs = await db.getAllAsync<any>(`SELECT * FROM subscriptions`).catch(() => []);
+      const paidSubCycles = await paidCyclesFor(db, 'subscription');
+      const today = localDateString(now);
+
+      const next: UpcomingItem[] = [];
+
+      for (const b of unpaidBills) {
+        const due = currentCycleDate(b as any);
+        // A bill already past its date belongs to the next occurrence, or it
+        // would sit at the top of "coming up" forever.
+        const when = due >= today ? due : nextCycleDate(b as any);
+        next.push({
+          key: 'bill-' + b.id, kind: 'bill', name: b.name, amount: b.amount,
+          date: when, method: methodOf(b as any, 'manual'),
+        });
+      }
+
+      for (const s of subs) {
+        const cycle = currentCycleDate({ id: s.id, billing_day: s.billing_day });
+        if (paidSubCycles.get(s.id)?.has(cycle)) continue;
+        const when = cycle >= today ? cycle : nextCycleDate({ id: s.id, billing_day: s.billing_day });
+        next.push({
+          key: 'sub-' + s.id, kind: 'subscription', name: s.name, amount: s.amount,
+          date: when, method: methodOf(s as any, 'auto'),
+        });
+      }
+
+      // Expected paydays, from the schedule logic that already exists. Nothing
+      // is projected here; these are occurrences the schedules already define.
+      for (const inc of await pendingIncome(db, now).catch(() => [])) {
+        if (inc.cycleDate < today) continue;      // already arrived or missed
+        next.push({
+          key: 'inc-' + inc.schedule.id + '-' + inc.cycleDate, kind: 'income',
+          name: inc.schedule.label, amount: inc.expectedAmount, date: inc.cycleDate,
+        });
+      }
+
+      setUpcomingDays(groupUpcoming(next));
 
       // A few goal names, only so the suggestion below can mention one.
       // DISPLAY ONLY: Safe to Spend counts every goal via the shared engine,
@@ -311,42 +371,43 @@ export default function DashboardScreen({ navigation }: any) {
         </PeggyCard>
       )}
 
-      {/* ── Coming Up (§14) ────────────────────────────────────── */}
-      {upcomingBills.length > 0 && (
+      {/* ── Coming Up ─────────────────────────────────────────────
+          What is happening next, grouped by day: the money arriving as well
+          as the money leaving. Nothing here is forecast — every line is an
+          occurrence the schedules already define. */}
+      {upcomingDays.length > 0 && (
         <>
           <PeggySectionHeader title="Coming Up" onAction={() => navigation.navigate('Bills')} />
           <PeggyCard>
-            {upcomingBills.map((bill, i) => {
-              const days = getDaysUntil(bill.due_day ?? 1);
-              const cat = (bill.category as Category) ?? 'other';
-              const catInfo = CATEGORIES[cat] ?? CATEGORIES.other;
-              return (
-                <View key={bill.id}>
-                  {i > 0 ? <View style={{ height: 1, backgroundColor: C.borderLight }} /> : null}
-                  <PeggyListRow
-                    iconKey={categoryIconKey(cat)}
-                    iconColor={catInfo.color}
-                    title={bill.name}
-                    // What the person needs to know at a glance: is this one
-                    // MINE to pay, or does it happen on its own? Same wording
-                    // as the Bills screen, from the same function.
-                    subtitle={describeOccurrence(
-                      occurrenceState({
-                        method: methodOf(bill as any, 'manual'),
-                        cycleDate: currentCycleDate(bill as any),
-                        today: localDateString(new Date()),
-                        payment: null,       // Coming Up lists only what is still owed
-                      }),
-                      methodOf(bill as any, 'manual'),
-                      days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`,
-                    ).label}
-                    amount={formatCurrency(bill.amount)}
-                    amountColor={C.amount}
-                    onPress={() => navigation.navigate('Bills')}
-                  />
-                </View>
-              );
-            })}
+            {upcomingDays.map((day, d) => (
+              <View key={day.date}>
+                {d > 0 ? <View style={{ height: 1, backgroundColor: C.borderLight }} /> : null}
+                <Text style={[Typography.helper, {
+                  color: C.textSecondary, fontWeight: '700',
+                  letterSpacing: 0.5, paddingTop: Spacing.sm,
+                }]}>
+                  {upcomingDayLabel(day.date).toUpperCase()}
+                </Text>
+                {day.items.map((item, i) => {
+                  const cat = item.kind === 'income' ? null : ((item as any).category as Category ?? 'bills');
+                  const info = cat ? (CATEGORIES[cat] ?? CATEGORIES.other) : null;
+                  return (
+                    <View key={item.key}>
+                      {i > 0 ? <View style={{ height: 1, backgroundColor: C.borderLight }} /> : null}
+                      <PeggyListRow
+                        iconKey={item.kind === 'income' ? 'income' : categoryIconKey(cat as Category)}
+                        iconColor={item.kind === 'income' ? C.income : (info?.color ?? C.bills)}
+                        title={item.name}
+                        subtitle={describeUpcoming(item, whenWord(item.date), localDateString(new Date()))}
+                        amount={(item.kind === 'income' ? '+' : '-') + formatCurrency(item.amount)}
+                        amountColor={item.kind === 'income' ? C.income : C.amount}
+                        onPress={() => navigation.navigate(item.kind === 'income' ? 'Incomes' : 'Bills')}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
           </PeggyCard>
         </>
       )}
