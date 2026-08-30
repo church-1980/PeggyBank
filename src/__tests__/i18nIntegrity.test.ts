@@ -89,6 +89,10 @@ describe('Nothing was left in English', () => {
     'expense.note':           ['fr'],   // « Note » is the French word too
     'expense.date':           ['fr'],   // « Date » likewise
     'settings.notifications': ['fr'],   // « Notifications » likewise
+    // The language list names every language in ITS OWN language, so it is
+    // identical everywhere on purpose — translating it would defeat the point.
+    'settings.languageDesc':  ['fr', 'es', 'pt', 'zh'],
+    'settings.levelMinimal':  ['fr'],   // « Minimal » is the French word too
   };
 
   for (const locale of NON_ENGLISH) {

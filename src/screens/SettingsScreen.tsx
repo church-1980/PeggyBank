@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
+import { useT } from '../context/LanguageContext';
 import { PeggyScreen, PeggyHeader } from '../components/peggy';
 import { ICON_REGISTRY, IconKey } from '../data/iconRegistry';
 import PeggyAvatar from '../components/peggy/PeggyAvatar';
@@ -23,8 +24,8 @@ import {
 const APP_VERSION = '1.0.0';
 
 interface RowItem {
-  label: string;
-  sub: string;
+  labelKey: string;
+  subKey: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconKey?: IconKey;                 // matte concept icon (preferred when available)
   iconColorKey: keyof ColorPalette;
@@ -33,25 +34,23 @@ interface RowItem {
 
 const APP_ROWS: RowItem[] = [
   {
-    label: 'Appearance',
-    sub: 'Light, dark, or follow your device setting',
+    labelKey: 'settings.appearance',
+    subKey: 'settings.appearanceDesc',
     icon: 'contrast-outline',
     iconKey: 'appearance',
     iconColorKey: 'primary',
     screen: 'Appearance',
   },
   {
-    // Named in English here because Settings itself is not translated yet;
-    // the screen it opens names every language in its own language.
-    label: 'Language',
-    sub: 'English, Français, Español, Português, 中文',
+    labelKey: 'settings.language',
+    subKey: 'settings.languageDesc',
     icon: 'language-outline',
     iconColorKey: 'primary',
     screen: 'Language',
   },
   {
-    label: 'Export & Backup',
-    sub: 'Save or share a copy of your data',
+    labelKey: 'settings.export',
+    subKey: 'settings.exportDesc',
     icon: 'cloud-download-outline',
     iconKey: 'backup',
     iconColorKey: 'textSecondary',
@@ -61,8 +60,8 @@ const APP_ROWS: RowItem[] = [
 
 const SHARE_ROWS: RowItem[] = [
   {
-    label: 'Share with a Friend',
-    sub: 'Let someone know about PeggyBank',
+    labelKey: 'settings.share',
+    subKey: 'settings.shareDesc',
     icon: 'share-social-outline',
     iconKey: 'share',
     iconColorKey: 'income',
@@ -90,6 +89,7 @@ const MODE_DESCRIPTIONS: Record<NotificationMode, string> = {
 export default function SettingsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const C = useColors();
+  const t = useT();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [notifMode, setNotifMode] = useState<NotificationMode>('minimal');
   const [queued, setQueued] = useState<number | null>(null);
@@ -144,7 +144,7 @@ export default function SettingsScreen({ navigation }: any) {
     const iconColor = C[item.iconColorKey] as string;
     return (
       <TouchableOpacity
-        key={item.label}
+        key={item.labelKey}
         style={[styles.row, index === 0 && styles.rowFirst, index === total - 1 && styles.rowLast]}
         onPress={() => navigation.navigate(item.screen)}
         activeOpacity={0.7}
@@ -158,8 +158,8 @@ export default function SettingsScreen({ navigation }: any) {
             )}
           </View>
           <View style={styles.rowText}>
-            <Text style={styles.rowLabel}>{item.label}</Text>
-            <Text style={styles.rowSub}>{item.sub}</Text>
+            <Text style={styles.rowLabel}>{t(item.labelKey)}</Text>
+            <Text style={styles.rowSub}>{t(item.subKey)}</Text>
           </View>
         </View>
         <Ionicons name="chevron-forward" size={18} color={C.textHint} />
@@ -203,7 +203,7 @@ export default function SettingsScreen({ navigation }: any) {
               <Ionicons name="paper-plane-outline" size={20} color={C.income} />
             </View>
             <View style={styles.rowText}>
-              <Text style={styles.rowLabel}>Send a test reminder</Text>
+              <Text style={styles.rowLabel}>{t('settings.testReminder')}</Text>
               <Text style={styles.rowSub}>
                 {queued === null ? 'Check notifications are working' : `${queued} reminder${queued === 1 ? '' : 's'} scheduled`}
               </Text>
