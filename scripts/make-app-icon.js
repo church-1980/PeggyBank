@@ -47,14 +47,14 @@ function sample(u, v, { background }) {
   // THE COIN, drawn first so the slot can pass in front of it. A coin resting
   // above a bar is just a dot above a bar; a coin cut off BY the bar is a coin
   // going in, which is the whole idea.
-  const coinY = 0.455, coinR = 0.158;
+  const coinY = 0.435, coinR = 0.215;
   const dCoin = Math.hypot(u - 0.5, v - coinY);
   if (dCoin <= coinR) put(TEAL);
   // A lighter core, so it reads as a struck coin rather than a flat circle.
   if (dCoin <= coinR * 0.52) put([0x7E, 0xDA, 0xD2]);
 
   // THE SLOT, over the coin.
-  const slotY = 0.60, slotH = 0.098, slotW = 0.50;
+  const slotY = 0.665, slotH = 0.130, slotW = 0.66;
   const halfLen = (slotW - slotH) / 2;
   const dx = Math.max(0, Math.abs(u - 0.5) - halfLen);
   const dy = v - slotY;
@@ -104,8 +104,8 @@ write('icon.png',                     render(1024, { background: true }));
 write('favicon.png',                  render(196,  { background: true }));
 // Android masks the adaptive foreground, so the mark is inset into the safe
 // zone and the colour lives on the background layer.
-write('android-icon-foreground.png',  render(1024, { background: false, inset: 0.66 }));
+write('android-icon-foreground.png',  render(1024, { background: false, inset: 0.92 }));
 write('android-icon-background.png',  render(1024, { background: true, inset: 0.001 }));
-write('android-icon-monochrome.png',  render(1024, { background: false, inset: 0.66, monochrome: true }));
+write('android-icon-monochrome.png',  render(1024, { background: false, inset: 0.92, monochrome: true }));
 write('splash-icon.png',              render(512,  { background: false }));
 console.log('Done.');
