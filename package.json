@@ -37,7 +37,8 @@
     "audit:search": "node scripts/webtest/search.js",
     "audit:drilldown": "node scripts/webtest/drilldown.js",
     "audit:language-screens": "node scripts/webtest/language-screens.js",
-    "icon": "node scripts/make-app-icon.js"
+    "icon": "node scripts/make-app-icon.js",
+    "icon:preview": "node scripts/preview-icon.js"
   },
   "jest": {
     "preset": "jest-expo",

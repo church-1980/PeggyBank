@@ -143,9 +143,9 @@ write('favicon.png', resample(art, 196,  { background: true, inset: 0.86 }));  /
 
 // Android masks the adaptive foreground to roughly the middle two-thirds, so
 // the mark is inset to survive the crop, and the colour lives on its own layer.
-write('android-icon-foreground.png', resample(art, 1024, { background: false, inset: 0.66 }));
+write('android-icon-foreground.png', resample(art, 1024, { background: false, inset: 0.52 }));
 write('android-icon-background.png', solid(1024));
-write('android-icon-monochrome.png', resample(art, 1024, { background: false, inset: 0.66, monochrome: true }));
+write('android-icon-monochrome.png', resample(art, 1024, { background: false, inset: 0.52, monochrome: true }));
 
 // The splash has room, so the artwork is shown whole and unbacked.
 write('splash-icon.png', resample(art, 512, { background: false, inset: 0.95 }));
