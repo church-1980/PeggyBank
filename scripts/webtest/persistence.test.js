@@ -44,7 +44,7 @@ function check(name, ok, detail) {
   check('reaches the dashboard', await hasText(page, 'Safe to Spend'));
 
   // ---- 2. write ----
-  await clickText(page, 'Add Expense');
+  await clickText(page, 'Expense', { exact: true });
   await wait(2000);
   await typeInto(page, 0, AMOUNT);
   await clickText(page, 'Groceries');

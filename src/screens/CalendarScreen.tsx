@@ -17,6 +17,7 @@ import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { dueDayInMonth } from '../core/datetime';
 import { activeSchedules, occurrencesBetween } from '../lib/incomeSchedules';
+import { buildMonth, type CalendarEntry } from '../core/calendarMonth';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -212,23 +213,20 @@ interface MonthViewProps {
   styles: Styles; C: ColorPalette;
 }
 
+/** An amount short enough for a calendar cell. */
+function shortMoney(n: number): string {
+  const a = Math.abs(n);
+  if (a >= 1000) return '$' + (a / 1000).toFixed(a >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k';
+  if (a >= 100) return '$' + Math.round(a);
+  return '$' + a.toFixed(a % 1 === 0 ? 0 : 2);
+}
+
 function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onPrev, onNext, styles, C }: MonthViewProps) {
   const daysInMonth    = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
   const monthName      = new Date(year, month).toLocaleDateString('en-US', { month: 'long' });
 
-  const getPips = (day: number) => {
-    const ev = eventMap[`${year}-${pad(month + 1)}-${pad(day)}`] ?? [];
-    const types = new Set(ev.map(e => e.type));
-    const pips: string[] = [];
-    if (types.has('payday') || types.has('income')) pips.push(C.income);
-    if (types.has('bill')   || types.has('sub'))    pips.push(C.bills);
-    if (types.has('expense'))                        pips.push(C.spending);
-    if (types.has('goal'))                           pips.push(C.goals);
-    if (types.has('reminder'))                       pips.push(C.primary);
-    return pips.slice(0, 3);
-  };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
@@ -265,7 +263,9 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
           const dateStr = `${year}-${pad(month + 1)}-${pad(day)}`;
           const isToday = isCurrentMonth && today.getDate() === day;
           const isSel   = toDateStr(selectedDate) === dateStr;
-          const pips    = getPips(day);
+          const dayEvents = eventMap[dateStr] ?? [];
+          const shown = dayEvents.slice(0, 2);
+          const more = Math.max(0, dayEvents.length - 2);
 
           return (
             <TouchableOpacity key={day} style={styles.monthCell} onPress={() => onDayPress(day)} activeOpacity={0.65}>
@@ -278,11 +278,31 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
                   {day}
                 </Text>
               </View>
-              <View style={styles.pipsRow}>
-                {pips.map((color, idx) => (
-                  <View key={idx} style={[styles.pip, { backgroundColor: color }]} />
+              <View style={styles.cellLines}>
+                {shown.map((ev: CalEvent) => (
+                  <View key={ev.key} style={styles.cellLine}>
+                    <View style={[styles.cellDash, { backgroundColor: ev.colorHex }]} />
+                    {/* The NAME first. A calendar is scanned for recognition —
+                        "Hydro" tells you more at a glance than "$84" does. */}
+                    <Text style={styles.cellText} numberOfLines={1}>{ev.title}</Text>
+                  </View>
                 ))}
-                {pips.length === 0 && <View style={styles.pipSpacer} />}
+                {/* With only one thing on a day there is room to say how much,
+                    or that it is already settled. */}
+                {shown.length === 1 && (shown[0].amount != null || shown[0].subtitle) && (
+                  <Text style={styles.cellSub} numberOfLines={1}>
+                    {shown[0].subtitle && /^Paid/.test(shown[0].subtitle)
+                      // Already settled: the word is the whole story, and the
+                      // amount would only invite reading it as money owed.
+                      ? shown[0].subtitle
+                      // Otherwise both: how much, and whose job it is. "Due"
+                      // and "Auto" are the distinction the auto-pay work exists
+                      // for, and a calendar that hides it is back to guessing.
+                      : [shown[0].amount != null ? shortMoney(shown[0].amount) : null, shown[0].subtitle]
+                          .filter(Boolean).join(' · ')}
+                  </Text>
+                )}
+                {more > 0 && <Text style={styles.cellMore}>+{more}</Text>}
               </View>
             </TouchableOpacity>
           );
@@ -452,7 +472,7 @@ export default function CalendarScreen({ navigation }: any) {
       const startStr    = `${year}-${pad(month + 1)}-01`;
       const endStr      = `${year}-${pad(month + 1)}-${pad(daysInMonth)}`;
 
-      const [bills, subs, expenses, incomes, goals, reminders, paydaySetting, schedules] = await Promise.all([
+      const [bills, subs, expenses, incomes, goals, reminders, paydaySetting, schedules, payments] = await Promise.all([
         db.getAllAsync<Bill>(`SELECT * FROM bills`),
         db.getAllAsync<Subscription>(`SELECT * FROM subscriptions`),
         db.getAllAsync<Expense>(`SELECT * FROM expenses WHERE date >= ? AND date <= ?`, [startStr, endStr]),
@@ -465,6 +485,8 @@ export default function CalendarScreen({ navigation }: any) {
         ),
         db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'payday'`),
         activeSchedules(db),
+        db.getAllAsync<any>(`SELECT source, bill_id, cycle_date, paid, paid_at, amount, status FROM bill_payments`)
+          .catch(() => []),
       ]);
 
       const map: EventMap = {};
@@ -505,33 +527,52 @@ export default function CalendarScreen({ navigation }: any) {
           { key: 'payday', type: 'payday', title: 'Payday', colorHex: C.income });
       }
 
-      // Bills
-      for (const bill of bills) {
-        if (bill.frequency === 'monthly' && bill.due_day) {
-          const d = dueDayInMonth(bill.due_day, year, month);   // shared rule, not a local copy
-          add(`${year}-${pad(month + 1)}-${pad(d)}`,
-            { key: `bill-${bill.id}`, type: 'bill', title: bill.name,
-              subtitle: methodOf(bill as any, 'manual') === 'auto' ? 'Auto-pay' : 'You pay this',
-              amount: bill.amount, colorHex: C.bills });
-        } else if (bill.frequency === 'weekly' && bill.due_weekday !== undefined) {
-          for (let d = 1; d <= daysInMonth; d++) {
-            if (new Date(year, month, d).getDay() === bill.due_weekday) {
-              add(`${year}-${pad(month + 1)}-${pad(d)}`,
-                { key: `bill-${bill.id}-${d}`, type: 'bill', title: bill.name,
-                  subtitle: methodOf(bill as any, 'manual') === 'auto' ? 'Auto-pay · weekly' : 'weekly',
-                  amount: bill.amount, colorHex: C.bills });
-            }
-          }
+      // BILLS AND SUBSCRIPTIONS, and whether they were actually PAID.
+      //
+      // This used to draw every occurrence as though it were still owed,
+      // because the Calendar never read bill_payments. buildMonth is the one
+      // place that decides what an occurrence means — including a bill paid
+      // early, where the money belongs on the day it moved and the occurrence
+      // belongs on its due date, with the amount shown only once.
+      const derived = buildMonth({
+        year, month, today: toDateStr(new Date()),
+        bills: bills as any, subscriptions: subs as any,
+        payments: payments as any,
+        expenses: [], income: [],      // added below, with their own colours
+        paydays: [],                   // schedules already handled above
+      });
+
+      const STATE_WORD: Record<string, string> = {
+        due: 'Due', auto: 'Auto', paid: 'Paid',
+        paidEarly: 'Paid early', paidLate: 'Paid late',
+        expected: 'Expected', actual: '',
+      };
+
+      for (const [iso, entries] of derived) {
+        for (const e of entries as CalendarEntry[]) {
+          add(iso, {
+            key: e.key,
+            type: e.kind === 'subscription' ? 'sub' : 'bill',
+            title: e.label,
+            subtitle: STATE_WORD[e.state] || undefined,
+            amount: e.amount,
+            colorHex: e.kind === 'subscription' ? C.subs : C.bills,
+          });
         }
       }
 
-      // Subscriptions
-      for (const sub of subs) {
-        const d = dueDayInMonth(sub.billing_day, year, month);  // shared rule, not a local copy
-        add(`${year}-${pad(month + 1)}-${pad(d)}`,
-          { key: `sub-${sub.id}`, type: 'sub', title: sub.name,
-            subtitle: methodOf(sub as any, 'auto') === 'auto' ? 'Auto-charge' : 'You pay this',
-            amount: sub.amount, colorHex: C.subs });
+      // Weekly bills recur every week, which is a weekday walk rather than a
+      // monthly occurrence, so they stay here.
+      for (const bill of bills) {
+        if (bill.frequency !== 'weekly' || bill.due_weekday === undefined) continue;
+        for (let d = 1; d <= daysInMonth; d++) {
+          if (new Date(year, month, d).getDay() === bill.due_weekday) {
+            add(`${year}-${pad(month + 1)}-${pad(d)}`,
+              { key: `bill-${bill.id}-${d}`, type: 'bill', title: bill.name,
+                subtitle: methodOf(bill as any, 'manual') === 'auto' ? 'Auto' : 'Due',
+                amount: bill.amount, colorHex: C.bills });
+          }
+        }
       }
 
       // Expenses
@@ -811,6 +852,23 @@ function makeStyles(C: ColorPalette) {
     monthDayNum:     { fontFamily: 'DMSans_300Light', fontSize: 16, color: C.textPrimary },
     monthDayNumToday: { fontFamily: 'DMSans_700Bold', color: C.primary },
     monthDayNumSel:  { fontFamily: 'DMSans_700Bold', color: C.textOnPrimary },
+
+    // A day now reads as words. The coloured dash is a hint about WHICH kind
+
+    // of money it is; the text is what the person actually reads, so nothing
+
+    // here depends on telling colours apart.
+
+    cellLines:  { width: '100%', paddingHorizontal: 2, gap: 1, minHeight: 26 },
+
+    cellLine:   { flexDirection: 'row', alignItems: 'center', gap: 2 },
+
+    cellDash:   { width: 3, height: 3, borderRadius: 2 },
+
+    cellText:   { fontSize: 9, lineHeight: 11, color: C.textSecondary, flex: 1 },
+
+    cellSub:    { fontSize: 8, lineHeight: 10, color: C.textHint, paddingLeft: 5 },
+    cellMore:   { fontSize: 8, lineHeight: 10, color: C.textHint, paddingLeft: 5 },
 
     pipsRow:    { flexDirection: 'row', gap: 2, height: 8, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
     pip:        { width: 5, height: 5, borderRadius: 3 },
