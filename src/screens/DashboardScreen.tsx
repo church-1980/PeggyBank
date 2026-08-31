@@ -263,10 +263,10 @@ export default function DashboardScreen({ navigation }: any) {
         <TouchableOpacity
           onPress={() => navigation.navigate('Settings')}
           accessibilityRole="button"
-          accessibilityLabel="Notifications and settings"
+          accessibilityLabel="Settings"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <PeggyIconFrame iconKey="notifications" size={38} tinted={false} />
+          <PeggyIconFrame iconKey="settings" size={38} tinted={false} />
         </TouchableOpacity>
       </View>
 
