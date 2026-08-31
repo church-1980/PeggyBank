@@ -317,6 +317,25 @@ export default function DashboardScreen({ navigation }: any) {
         </PeggyCard>
       ) : null}
 
+      {/* ── Quick Add ─────────────────────────────────────────────
+          Sits directly under Safe to Spend because it is the only part of
+          this screen you ACT on; everything below it is reading. Compact,
+          because four utilities should not carry the same visual weight as
+          the number they sit beneath. */}
+      <View style={{ flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.lg }}>
+        <PeggyQuickActionCard compact tone="green"  iconKey="add-expense" label="Expense"
+          onPress={() => navigation.navigate('AddExpense')} />
+        <PeggyQuickActionCard compact tone="blue"   iconKey="add-income"  label="Income"
+          onPress={() => navigation.navigate('AddIncome')} />
+        {/* These two used to open a LIST while promising an action. Both
+            screens already knew how to open their form — Smart Capture uses
+            the same door — so they were simply never asked. */}
+        <PeggyQuickActionCard compact tone="peach"  iconKey="bills"       label="Bill"
+          onPress={() => navigation.navigate('Bills', { autoOpen: true })} />
+        <PeggyQuickActionCard compact tone="purple" iconKey="goals"       label="Goal"
+          onPress={() => navigation.navigate('Goals', { autoOpen: true })} />
+      </View>
+
       {/* ── What happened ─────────────────────────────────────── */}
       {activity.length > 0 && (
         <>
@@ -331,15 +350,6 @@ export default function DashboardScreen({ navigation }: any) {
           </PeggyCard>
         </>
       )}
-
-      {/* ── Quick Add (§6) ─────────────────────────────────────── */}
-      <PeggySectionHeader title="Quick Add" />
-      <View style={{ flexDirection: 'row', gap: Spacing.sm + 2 }}>
-        <PeggyQuickActionCard tone="green"  iconKey="add-expense" label="Add Expense" onPress={() => navigation.navigate('AddExpense')} />
-        <PeggyQuickActionCard tone="blue"   iconKey="add-income"  label="Add Income"  onPress={() => navigation.navigate('AddIncome')} />
-        <PeggyQuickActionCard tone="peach"  iconKey="bills"      label="Add Bill"    onPress={() => navigation.navigate('Bills')} />
-        <PeggyQuickActionCard tone="purple" iconKey="goals"       label="Add to Goal" onPress={() => navigation.navigate('Goals')} />
-      </View>
 
       {/* ── Your Goals (§4) ────────────────────────────────────── */}
       <PeggySectionHeader title="Your Goals" onAction={() => navigation.navigate('Goals')} />

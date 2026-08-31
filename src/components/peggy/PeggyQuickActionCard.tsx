@@ -16,6 +16,11 @@ import { IconKey } from '../../data/iconRegistry';
  *    They differ ONLY by pastel color and icon.
  *  - Never use an outline icon in a tile.
  *  - If one action needs emphasis over the others, it does not belong here.
+ *
+ * COMPACT is for a row of actions that sits near something more important.
+ * At full size these tiles carry as much visual weight as the Safe to Spend
+ * card, which is wrong for four utilities: the eye lands on them and gets
+ * nothing back. Compact keeps the same tap target and halves the presence.
  */
 
 export type PastelTone = 'green' | 'blue' | 'peach' | 'purple';
@@ -26,11 +31,13 @@ interface Props {
   onPress: () => void;
   iconKey?: IconKey;                              // concept icon (from registry)
   ionicon?: keyof typeof Ionicons.glyphMap;       // action-icon placeholder until PeggyBank action artwork exists
+  /** Smaller icon, one line of text. Same tap target. */
+  compact?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
 
-export default function PeggyQuickActionCard({ iconKey, ionicon, label, tone, onPress, style, testID }: Props) {
+export default function PeggyQuickActionCard({ iconKey, ionicon, label, tone, onPress, compact = false, style, testID }: Props) {
   const C = useColors();
 
   const tones: Record<PastelTone, { bg: string; tint: string }> = {
@@ -51,9 +58,12 @@ export default function PeggyQuickActionCard({ iconKey, ionicon, label, tone, on
           flex: 1,
           backgroundColor: bg,
           borderRadius: Radius.tile,
-          paddingVertical: Spacing.sm + 4,
+          paddingVertical: compact ? Spacing.sm : Spacing.sm + 4,
           paddingHorizontal: 6,
           alignItems: 'center',
+          // A tap target stays a tap target however small the art gets.
+          minHeight: 64,
+          justifyContent: 'center',
         },
         style,
       ]}
@@ -74,14 +84,16 @@ export default function PeggyQuickActionCard({ iconKey, ionicon, label, tone, on
           iconKey={iconKey ?? 'other'}
           color={tint}
           shape="square"
-          size={56}
+          size={compact ? 36 : 56}
           iconSize={IconSize.md}
           tinted={false}
         />
       )}
       <Text
         style={[Typography.helper, { color: C.textPrimary, fontWeight: '600', textAlign: 'center', marginTop: 2 }]}
-        numberOfLines={2}
+        // One line when compact: a row where some labels wrap and others do not
+        // reads as broken before anyone works out why.
+        numberOfLines={compact ? 1 : 2}
       >
         {label}
       </Text>
