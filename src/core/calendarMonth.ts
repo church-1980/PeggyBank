@@ -237,9 +237,8 @@ export function buildMonth(input: MonthInput): Map<string, CalendarEntry[]> {
  * A month grid has room for two lines on a phone. Showing the first two and
  * counting the rest beats shrinking the type until none of it can be read.
  */
-export function cellEntries(entries: CalendarEntry[], max = 2): {
-  shown: CalendarEntry[]; more: number;
-} {
+export function cellEntries<T>(entries: T[], max = 2): { shown: T[]; more: number } {
+  if (max <= 0) return { shown: [], more: entries.length };
   if (entries.length <= max) return { shown: entries, more: 0 };
   return { shown: entries.slice(0, max), more: entries.length - max };
 }

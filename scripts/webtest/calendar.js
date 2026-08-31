@@ -66,6 +66,30 @@ const back = async (page, wait_) => {
     const future = await screenText(page);
     check(/Hydro/.test(future), 'three months forward projects it too');
 
+
+    // Back to the current month before switching views.
+    for (let i = 0; i < 3; i++) {
+      await page.evaluate(() => {
+        const el = Array.from(document.querySelectorAll('[role="button"]'))
+          .find(n => /previous/i.test(n.getAttribute('aria-label') || ''));
+        if (el) el.click();
+      });
+      await wait(700);
+    }
+
+    await clickText(page, 'Week', { exact: true }); await wait(1800);
+    const week = await screenText(page);
+    check(/Hydro/.test(week), 'the WEEK strip names the bill, not a dot');
+    check(week.length > 20, 'week view renders');
+
+    await clickText(page, 'Day', { exact: true }); await wait(1800);
+    const day = await screenText(page);
+    check(/Hydro/.test(day) || /calm day/i.test(day),
+      'the DAY view shows the day it was given', day.slice(0, 40).replace(/\n/g, ' '));
+
+    await clickText(page, 'Month', { exact: true }); await wait(1500);
+    check(/Hydro/.test(await screenText(page)), 'switching back to Month keeps the facts');
+
     check(page.errors.length === 0, 'no errors in the browser console', page.errors.slice(0, 2).join(' | '));
   } catch (e) {
     check(false, 'ran to completion', String(e.message).slice(0, 150));

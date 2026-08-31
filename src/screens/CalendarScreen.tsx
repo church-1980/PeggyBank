@@ -17,7 +17,7 @@ import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { dueDayInMonth } from '../core/datetime';
 import { activeSchedules, occurrencesBetween } from '../lib/incomeSchedules';
-import { buildMonth, type CalendarEntry } from '../core/calendarMonth';
+import { buildMonth, cellEntries, type CalendarEntry } from '../core/calendarMonth';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -264,8 +264,7 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
           const isToday = isCurrentMonth && today.getDate() === day;
           const isSel   = toDateStr(selectedDate) === dateStr;
           const dayEvents = eventMap[dateStr] ?? [];
-          const shown = dayEvents.slice(0, 2);
-          const more = Math.max(0, dayEvents.length - 2);
+          const { shown, more } = cellEntries(dayEvents, 2);
 
           return (
             <TouchableOpacity key={day} style={styles.monthCell} onPress={() => onDayPress(day)} activeOpacity={0.65}>
@@ -319,7 +318,7 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
           { color: C.primary,  label: 'Reminder' },
         ] as { color: string; label: string }[]).map(({ color, label }) => (
           <View key={label} style={styles.legendItem}>
-            <View style={[styles.pip, { backgroundColor: color }]} />
+            <View style={[styles.legendDot, { backgroundColor: color }]} />
             <Text style={styles.legendText}>{label}</Text>
           </View>
         ))}
@@ -343,17 +342,6 @@ interface WeekViewProps {
 function WeekView({ weekStart, today, eventMap, selectedDate, onDayPress, onPrevWeek, onNextWeek, onAddReminder, styles, C }: WeekViewProps) {
   const days = getWeekDays(weekStart);
 
-  const getPips = (d: Date) => {
-    const ev = eventMap[toDateStr(d)] ?? [];
-    const types = new Set(ev.map(e => e.type));
-    const pips: string[] = [];
-    if (types.has('payday') || types.has('income')) pips.push(C.income);
-    if (types.has('bill')   || types.has('sub'))    pips.push(C.bills);
-    if (types.has('expense'))                        pips.push(C.spending);
-    if (types.has('goal'))                           pips.push(C.goals);
-    if (types.has('reminder'))                       pips.push(C.primary);
-    return pips.slice(0, 3);
-  };
 
   const selEvents = eventMap[toDateStr(selectedDate)] ?? [];
 
@@ -375,7 +363,8 @@ function WeekView({ weekStart, today, eventMap, selectedDate, onDayPress, onPrev
         {days.map((d, i) => {
           const isToday = isSameDay(d, today);
           const isSel   = isSameDay(d, selectedDate);
-          const pips    = getPips(d);
+          const dayEvents = eventMap[toDateStr(d)] ?? [];
+          const { shown, more } = cellEntries(dayEvents, 1);
 
           return (
             <TouchableOpacity
@@ -390,11 +379,20 @@ function WeekView({ weekStart, today, eventMap, selectedDate, onDayPress, onPrev
               <Text style={[styles.weekCardNum, isSel && styles.weekCardNumSel, isToday && !isSel && styles.weekCardNumToday]}>
                 {d.getDate()}
               </Text>
-              <View style={styles.weekPipsRow}>
-                {pips.map((color, idx) => (
-                  <View key={idx} style={[styles.weekPip, { backgroundColor: isSel ? 'rgba(255,255,255,0.7)' : color }]} />
+              <View style={styles.weekLines}>
+                {shown.map((ev) => (
+                  <Text
+                    key={ev.key}
+                    style={[styles.weekLineText, isSel && styles.weekCardTextSel]}
+                    numberOfLines={1}
+                  >
+                    {ev.title}
+                  </Text>
                 ))}
-                {pips.length === 0 && <View style={styles.weekPip} />}
+                {more > 0 && (
+                  <Text style={[styles.weekMore, isSel && styles.weekCardTextSel]}>+{more}</Text>
+                )}
+                {shown.length === 0 && <View style={styles.weekLineSpacer} />}
               </View>
             </TouchableOpacity>
           );
@@ -469,19 +467,23 @@ export default function CalendarScreen({ navigation }: any) {
       const db  = await getDatabase();
       const { year, month } = viewMonth;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const startStr    = `${year}-${pad(month + 1)}-01`;
-      const endStr      = `${year}-${pad(month + 1)}-${pad(daysInMonth)}`;
+      // Real money is fetched for the month either side as well, so a week that
+      // spans a boundary is not half empty.
+      const spanStart = new Date(year, month - 1, 1);
+      const spanEnd   = new Date(year, month + 2, 0);
+      const spanStartStr = toDateStr(spanStart);
+      const spanEndStr   = toDateStr(spanEnd);
 
       const [bills, subs, expenses, incomes, goals, reminders, paydaySetting, schedules, payments] = await Promise.all([
         db.getAllAsync<Bill>(`SELECT * FROM bills`),
         db.getAllAsync<Subscription>(`SELECT * FROM subscriptions`),
-        db.getAllAsync<Expense>(`SELECT * FROM expenses WHERE date >= ? AND date <= ?`, [startStr, endStr]),
+        db.getAllAsync<Expense>(`SELECT * FROM expenses WHERE date >= ? AND date <= ?`, [spanStartStr, spanEndStr]),
         db.getAllAsync<{ id: number; amount: number; label?: string; date: string }>(
-          `SELECT * FROM income WHERE date >= ? AND date <= ?`, [startStr, endStr]
+          `SELECT * FROM income WHERE date >= ? AND date <= ?`, [spanStartStr, spanEndStr]
         ),
         db.getAllAsync<SavingsGoal>(`SELECT * FROM savings_goals WHERE deadline IS NOT NULL`),
         db.getAllAsync<CalReminder>(
-          `SELECT * FROM calendar_reminders WHERE date >= ? AND date <= ?`, [startStr, endStr]
+          `SELECT * FROM calendar_reminders WHERE date >= ? AND date <= ?`, [spanStartStr, spanEndStr]
         ),
         db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'payday'`),
         activeSchedules(db),
@@ -505,8 +507,8 @@ export default function CalendarScreen({ navigation }: any) {
       // Income schedules are the canonical answer, and occurrencesBetween is the
       // same function the Income screen uses, so the two cannot drift apart.
       // No new payday arithmetic is introduced here.
-      const monthStartDate = new Date(year, month, 1);
-      const monthEndDate = new Date(year, month + 1, 0);
+      const monthStartDate = spanStart;
+      const monthEndDate = spanEnd;
       if (schedules.length) {
         for (const s of schedules) {
           for (const iso of occurrencesBetween(s, monthStartDate, monthEndDate)) {
@@ -534,13 +536,17 @@ export default function CalendarScreen({ navigation }: any) {
       // place that decides what an occurrence means — including a bill paid
       // early, where the money belongs on the day it moved and the occurrence
       // belongs on its due date, with the amount shown only once.
-      const derived = buildMonth({
-        year, month, today: toDateStr(new Date()),
-        bills: bills as any, subscriptions: subs as any,
-        payments: payments as any,
-        expenses: [], income: [],      // added below, with their own colours
-        paydays: [],                   // schedules already handled above
-      });
+      const derived = new Map<string, CalendarEntry[]>();
+      for (const offset of [-1, 0, 1]) {
+        const d = new Date(year, month + offset, 1);
+        for (const [iso, list] of buildMonth({
+          year: d.getFullYear(), month: d.getMonth(), today: toDateStr(new Date()),
+          bills: bills as any, subscriptions: subs as any,
+          payments: payments as any,
+          expenses: [], income: [],    // added below, with their own colours
+          paydays: [],                 // schedules already handled above
+        })) derived.set(iso, list);
+      }
 
       const STATE_WORD: Record<string, string> = {
         due: 'Due', auto: 'Auto', paid: 'Paid',
@@ -870,15 +876,13 @@ function makeStyles(C: ColorPalette) {
     cellSub:    { fontSize: 8, lineHeight: 10, color: C.textHint, paddingLeft: 5 },
     cellMore:   { fontSize: 8, lineHeight: 10, color: C.textHint, paddingLeft: 5 },
 
-    pipsRow:    { flexDirection: 'row', gap: 2, height: 8, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-    pip:        { width: 5, height: 5, borderRadius: 3 },
-    pipSpacer:  { width: 5, height: 5 },
 
     legend: {
       flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
       gap: 14, paddingHorizontal: Spacing.lg, paddingVertical: 14,
       borderTopWidth: 1, borderTopColor: C.border, marginTop: 4,
     },
+    legendDot:  { width: 6, height: 6, borderRadius: 3 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     legendText: { ...Typography.caption, color: C.textSecondary },
 
@@ -913,8 +917,10 @@ function makeStyles(C: ColorPalette) {
     weekCardNum:    { fontFamily: 'DMSans_400Regular', fontSize: 18, color: C.textPrimary },
     weekCardNumToday: { fontFamily: 'DMSans_700Bold', color: C.primary },
     weekCardNumSel: { fontFamily: 'DMSans_700Bold', color: C.textOnPrimary },
-    weekPipsRow:    { flexDirection: 'row', gap: 2, height: 6, alignItems: 'center', marginTop: 1 },
-    weekPip:        { width: 4, height: 4, borderRadius: 2 },
+    weekLines:      { width: '100%', alignItems: 'center', minHeight: 14, paddingHorizontal: 1 },
+    weekLineText:   { fontSize: 8, lineHeight: 10, color: C.textSecondary, textAlign: 'center' },
+    weekMore:       { fontSize: 8, lineHeight: 10, color: C.textHint },
+    weekLineSpacer: { height: 10 },
 
     weekDetail:        { flex: 1 },
     weekDetailContent: { padding: Spacing.md, paddingBottom: 48 },
