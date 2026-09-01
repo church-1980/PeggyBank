@@ -39,25 +39,43 @@ const SOURCE = path.join('assets', 'brand', 'peggy-mascot.png');
  */
 const GROUND = [0xFF, 0xFF, 0xFF];
 
-/** The artwork with its empty margin removed. */
+/**
+ * The artwork, trimmed of empty margin and centred on its WEIGHT.
+ *
+ * Centring the bounding box is not the same as looking centred. This mark is a
+ * heavy solid P on the left and a thin leaf on the right, so with the box
+ * perfectly centred — 13.6% margin on each side — the ink still sat 4% left,
+ * and on a phone the tail nearly touched the edge.
+ *
+ * The crop is centred on the alpha-weighted centroid instead, and the square is
+ * then grown until the whole bounding box still fits inside it: optical
+ * centring, without cropping anything to achieve it.
+ */
 function loadTrimmed() {
   const src = PNG.sync.read(fs.readFileSync(SOURCE));
   let minX = src.width, minY = src.height, maxX = 0, maxY = 0;
+  let sumX = 0, sumY = 0, weight = 0;
+
   for (let y = 0; y < src.height; y++) {
     for (let x = 0; x < src.width; x++) {
-      if (src.data[((src.width * y + x) << 2) + 3] > 16) {
-        if (x < minX) minX = x; if (x > maxX) maxX = x;
-        if (y < minY) minY = y; if (y > maxY) maxY = y;
-      }
+      const a = src.data[((src.width * y + x) << 2) + 3];
+      if (a <= 16) continue;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      const w = a / 255;
+      sumX += x * w; sumY += y * w; weight += w;
     }
   }
-  // Keep it square so nothing stretches, centred on the artwork.
-  const w = maxX - minX + 1, h = maxY - minY + 1;
-  const side = Math.max(w, h);
-  const ox = minX - Math.floor((side - w) / 2);
-  const oy = minY - Math.floor((side - h) / 2);
-  return { src, ox, oy, side };
+
+  const cx = weight ? sumX / weight : (minX + maxX) / 2;
+  const cy = weight ? sumY / weight : (minY + maxY) / 2;
+
+  // Big enough that the furthest ink from the centroid still fits inside.
+  const side = 2 * Math.max(cx - minX, maxX - cx, cy - minY, maxY - cy);
+
+  return { src, ox: cx - side / 2, oy: cy - side / 2, side };
 }
+
 
 /**
  * Area-averaged downsample with alpha weighting.
