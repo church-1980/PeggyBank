@@ -18,6 +18,7 @@ import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import { dueDayInMonth } from '../core/datetime';
 import { activeSchedules, occurrencesBetween } from '../lib/incomeSchedules';
 import { buildMonth, cellEntries, type CalendarEntry } from '../core/calendarMonth';
+import { cellTreatment, cellHeadline, isMoneyIn, type ActivityTone } from '../core/calendarVisual';
 
 // ─────────────────────────────────────────────
 // Local types
@@ -27,6 +28,11 @@ type CalView = 'day' | 'week' | 'month';
 interface CalEvent {
   key:       string;
   type:      'payday' | 'bill' | 'sub' | 'expense' | 'income' | 'goal' | 'reminder';
+  /** The semantic kind and state, kept so the shared calendar helpers can read
+   *  them. Flattening these into display strings was how the cell ended up
+   *  asking for a label that no longer existed. */
+  kind?:     CalendarEntry['kind'];
+  state?:    CalendarEntry['state'];
   title:     string;
   subtitle?: string;
   amount?:   number;
@@ -184,7 +190,7 @@ function EventList({ date, events, onAddReminder, styles, C }: EventListProps) {
                   </View>
                   {ev.amount !== undefined && (
                     <Text style={[styles.eventAmt, { color: ev.colorHex }]}>
-                      {ev.type === 'expense' ? '-' : '+'}{formatCurrency(ev.amount)}
+                      {isMoneyIn(ev.kind) ? '+' : '-'}{formatCurrency(ev.amount)}
                     </Text>
                   )}
                 </View>
@@ -219,6 +225,55 @@ function shortMoney(n: number): string {
   if (a >= 1000) return '$' + (a / 1000).toFixed(a >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k';
   if (a >= 100) return '$' + Math.round(a);
   return '$' + a.toFixed(a % 1 === 0 ? 0 : 2);
+}
+
+/**
+ * Which existing colour token stands for each kind of activity.
+ *
+ * NOTE: bills and subs are the SAME token in the theme — "unified bills/subs
+ * identity", deliberately. The brief asked for them to be tellable apart on
+ * the grid, so subscriptions borrow primaryLight here rather than a new colour
+ * being invented in a screen. Worth revisiting in the design system rather
+ * than settling in a calendar.
+ */
+function toneColor(tone: ActivityTone, C: ColorPalette): string {
+  switch (tone) {
+    case 'payday':       return C.income;
+    case 'bill':         return C.bills;
+    case 'subscription': return C.primaryLight;
+    case 'spending':     return C.spending;
+    case 'goal':         return C.goals;
+    default:             return C.textHint;
+  }
+}
+
+/**
+ * The tinted bands behind a day.
+ *
+ * Painted as absolutely-positioned halves or thirds rather than a gradient or
+ * an SVG: it is the one approach that renders identically on every Android
+ * version, and a calendar with 42 of these cannot afford surprises.
+ *
+ * The tint is low-alpha so the words on top stay readable — the colour is the
+ * glance, the words are the answer.
+ */
+function CellBands({ tones, C }: { tones: ActivityTone[]; C: ColorPalette }) {
+  if (!tones.length) return null;
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {tones.map((tone, i) => (
+        <View
+          key={tone}
+          style={{
+            position: 'absolute', top: 0, bottom: 0,
+            left: ((i / tones.length) * 100 + '%') as any,
+            width: ((100 / tones.length) + '%') as any,
+            backgroundColor: toneColor(tone, C) + '4D',
+          }}
+        />
+      ))}
+    </View>
+  );
 }
 
 function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onPrev, onNext, styles, C }: MonthViewProps) {
@@ -264,10 +319,35 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
           const isToday = isCurrentMonth && today.getDate() === day;
           const isSel   = toDateStr(selectedDate) === dateStr;
           const dayEvents = eventMap[dateStr] ?? [];
-          const { shown, more } = cellEntries(dayEvents, 2);
+          const { shown, more } = cellEntries(dayEvents, 1);
+          const treat = cellTreatment(dayEvents.map(ev => ({ kind: ev.kind ?? 'expense' })));
+          const head = shown[0]
+            ? cellHeadline({
+                key: shown[0].key, kind: shown[0].kind ?? 'expense',
+                label: shown[0].title, amount: shown[0].amount,
+                state: shown[0].state ?? 'actual', rank: 0,
+              }, shortMoney)
+            : null;
 
           return (
-            <TouchableOpacity key={day} style={styles.monthCell} onPress={() => onDayPress(day)} activeOpacity={0.65}>
+            <TouchableOpacity
+              key={day}
+              style={[
+                styles.monthCell,
+                !treat.quiet && styles.monthCellActive,
+                // Selected is a RING, not a fill. Filling it would paint over
+                // the very thing the cell is trying to say.
+                isSel && styles.monthCellSel,
+              ]}
+              onPress={() => onDayPress(day)}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={
+                day + (head ? ', ' + head.name + (head.detail ? ', ' + head.detail : '') : ', nothing scheduled')
+                + (more > 0 ? ', and ' + more + ' more' : '')
+              }
+            >
+              <CellBands tones={treat.bands} C={C} />
               <View style={[styles.monthCircle, isToday && !isSel && styles.monthCircleToday, isSel && styles.monthCircleSel]}>
                 <Text style={[
                   styles.monthDayNum,
@@ -277,31 +357,16 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
                   {day}
                 </Text>
               </View>
+              {/* The coloured dot is gone: the CELL now says what kind of day
+                  this is, so a dot spent horizontal space repeating it. */}
               <View style={styles.cellLines}>
-                {shown.map((ev: CalEvent) => (
-                  <View key={ev.key} style={styles.cellLine}>
-                    <View style={[styles.cellDash, { backgroundColor: ev.colorHex }]} />
-                    {/* The NAME first. A calendar is scanned for recognition —
-                        "Hydro" tells you more at a glance than "$84" does. */}
-                    <Text style={styles.cellText} numberOfLines={1}>{ev.title}</Text>
-                  </View>
-                ))}
-                {/* With only one thing on a day there is room to say how much,
-                    or that it is already settled. */}
-                {shown.length === 1 && (shown[0].amount != null || shown[0].subtitle) && (
-                  <Text style={styles.cellSub} numberOfLines={1}>
-                    {shown[0].subtitle && /^Paid/.test(shown[0].subtitle)
-                      // Already settled: the word is the whole story, and the
-                      // amount would only invite reading it as money owed.
-                      ? shown[0].subtitle
-                      // Otherwise both: how much, and whose job it is. "Due"
-                      // and "Auto" are the distinction the auto-pay work exists
-                      // for, and a calendar that hides it is back to guessing.
-                      : [shown[0].amount != null ? shortMoney(shown[0].amount) : null, shown[0].subtitle]
-                          .filter(Boolean).join(' · ')}
-                  </Text>
+                {head && (
+                  <Text style={styles.cellName} numberOfLines={1}>{head.name}</Text>
                 )}
-                {more > 0 && <Text style={styles.cellMore}>+{more}</Text>}
+                {head?.detail && (
+                  <Text style={styles.cellSub} numberOfLines={1}>{head.detail}</Text>
+                )}
+                {more > 0 && <Text style={styles.cellMore}>+{more} more</Text>}
               </View>
             </TouchableOpacity>
           );
@@ -311,11 +376,11 @@ function MonthView({ year, month, today, eventMap, selectedDate, onDayPress, onP
       {/* Legend */}
       <View style={styles.legend}>
         {([
-          { color: C.income,   label: 'Payday' },
-          { color: C.bills,    label: 'Bills' },
-          { color: C.spending, label: 'Spending' },
-          { color: C.goals,    label: 'Goal' },
-          { color: C.primary,  label: 'Reminder' },
+          { color: C.income,       label: 'Payday' },
+          { color: C.bills,        label: 'Bills' },
+          { color: C.primaryLight, label: 'Subscription' },
+          { color: C.spending,     label: 'Spending' },
+          { color: C.goals,        label: 'Goal' },
         ] as { color: string; label: string }[]).map(({ color, label }) => (
           <View key={label} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -365,6 +430,20 @@ function WeekView({ weekStart, today, eventMap, selectedDate, onDayPress, onPrev
           const isSel   = isSameDay(d, selectedDate);
           const dayEvents = eventMap[toDateStr(d)] ?? [];
           const { shown, more } = cellEntries(dayEvents, 1);
+          const treat = cellTreatment(dayEvents.map((ev) => ({ kind: ev.kind ?? 'expense' })));
+          const head  = shown[0]
+            ? cellHeadline(
+                {
+                  key:    shown[0].key,
+                  kind:   shown[0].kind ?? 'expense',
+                  label:  shown[0].title,
+                  amount: shown[0].amount,
+                  state:  shown[0].state ?? 'actual',
+                  rank:   0,
+                },
+                shortMoney,
+              )
+            : null;
 
           return (
             <TouchableOpacity
@@ -372,26 +451,23 @@ function WeekView({ weekStart, today, eventMap, selectedDate, onDayPress, onPrev
               style={[styles.weekCard, isToday && !isSel && styles.weekCardToday, isSel && styles.weekCardSel]}
               onPress={() => onDayPress(d)}
               activeOpacity={0.7}
+              accessibilityLabel={
+                DAY_SHORT[i] + ' ' + d.getDate() +
+                (head ? ', ' + head.name + (head.detail ? ', ' + head.detail : '') : ', nothing scheduled') +
+                (more > 0 ? ', and ' + more + ' more' : '')
+              }
             >
-              <Text style={[styles.weekCardLetter, isSel && styles.weekCardTextSel, isToday && !isSel && { color: C.primary }]}>
+              <CellBands tones={treat.bands} C={C} />
+              <Text style={[styles.weekCardLetter, isToday && !isSel && { color: C.primary }]}>
                 {DAY_SHORT[i].charAt(0)}
               </Text>
-              <Text style={[styles.weekCardNum, isSel && styles.weekCardNumSel, isToday && !isSel && styles.weekCardNumToday]}>
+              <Text style={[styles.weekCardNum, isToday && !isSel && styles.weekCardNumToday]}>
                 {d.getDate()}
               </Text>
               <View style={styles.weekLines}>
-                {shown.map((ev) => (
-                  <Text
-                    key={ev.key}
-                    style={[styles.weekLineText, isSel && styles.weekCardTextSel]}
-                    numberOfLines={1}
-                  >
-                    {ev.title}
-                  </Text>
-                ))}
-                {more > 0 && (
-                  <Text style={[styles.weekMore, isSel && styles.weekCardTextSel]}>+{more}</Text>
-                )}
+                {head && <Text style={styles.weekLineText} numberOfLines={1}>{head.name}</Text>}
+                {head?.detail && <Text style={styles.weekLineSub} numberOfLines={1}>{head.detail}</Text>}
+                {more > 0 && <Text style={styles.weekMore}>+{more}</Text>}
                 {shown.length === 0 && <View style={styles.weekLineSpacer} />}
               </View>
             </TouchableOpacity>
@@ -514,7 +590,7 @@ export default function CalendarScreen({ navigation }: any) {
           for (const iso of occurrencesBetween(s, monthStartDate, monthEndDate)) {
             add(iso, {
               key: 'payday-' + s.id + '-' + iso,
-              type: 'payday',
+              type: 'payday', kind: 'payday', state: 'expected',
               title: s.label || 'Payday',
               amount: s.amount,
               colorHex: C.income,
@@ -526,7 +602,7 @@ export default function CalendarScreen({ navigation }: any) {
         // payday setting rather than showing them nothing.
         const pd = parseInt(paydaySetting.value, 10) || 1;
         add(`${year}-${pad(month + 1)}-${pad(dueDayInMonth(pd, year, month))}`,
-          { key: 'payday', type: 'payday', title: 'Payday', colorHex: C.income });
+          { key: 'payday', type: 'payday', kind: 'payday', state: 'expected', title: 'Payday', colorHex: C.income });
       }
 
       // BILLS AND SUBSCRIPTIONS, and whether they were actually PAID.
@@ -559,6 +635,7 @@ export default function CalendarScreen({ navigation }: any) {
           add(iso, {
             key: e.key,
             type: e.kind === 'subscription' ? 'sub' : 'bill',
+            kind: e.kind, state: e.state,
             title: e.label,
             subtitle: STATE_WORD[e.state] || undefined,
             amount: e.amount,
@@ -575,6 +652,8 @@ export default function CalendarScreen({ navigation }: any) {
           if (new Date(year, month, d).getDay() === bill.due_weekday) {
             add(`${year}-${pad(month + 1)}-${pad(d)}`,
               { key: `bill-${bill.id}-${d}`, type: 'bill', title: bill.name,
+                kind: 'bill',
+                state: methodOf(bill as any, 'manual') === 'auto' ? 'auto' : 'due',
                 subtitle: methodOf(bill as any, 'manual') === 'auto' ? 'Auto' : 'Due',
                 amount: bill.amount, colorHex: C.bills });
           }
@@ -584,13 +663,15 @@ export default function CalendarScreen({ navigation }: any) {
       // Expenses
       for (const exp of expenses) {
         add(exp.date,
-          { key: `exp-${exp.id}`, type: 'expense', title: exp.note || exp.category, amount: exp.amount, colorHex: C.spending });
+          { key: `exp-${exp.id}`, type: 'expense', kind: 'expense', state: 'actual',
+            title: exp.note || exp.category, amount: exp.amount, colorHex: C.spending });
       }
 
       // Income
       for (const inc of incomes) {
         add(inc.date,
-          { key: `inc-${inc.id}`, type: 'income', title: inc.label || 'Income', amount: inc.amount, colorHex: C.income });
+          { key: `inc-${inc.id}`, type: 'income', kind: 'income', state: 'actual',
+            title: inc.label || 'Income', amount: inc.amount, colorHex: C.income });
       }
 
       // Goal deadlines
@@ -599,7 +680,7 @@ export default function CalendarScreen({ navigation }: any) {
         const [gy, gm] = goal.deadline.split('-').map(Number);
         if (gy === year && gm === month + 1) {
           add(goal.deadline, {
-            key: `goal-${goal.id}`, type: 'goal',
+            key: `goal-${goal.id}`, type: 'goal', kind: 'goal', state: 'expected',
             title: goal.name,
             subtitle: `${formatCurrency(goal.current_amount)} of ${formatCurrency(goal.target_amount)}`,
             colorHex: C.goals,
@@ -851,7 +932,18 @@ function makeStyles(C: ColorPalette) {
     },
 
     monthGrid:       { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.md },
-    monthCell:       { width: '14.28%', alignItems: 'center', paddingVertical: 3 },
+    // A day is a CARD now, not a number floating in space. The cell needs to
+    // hold a tint and two lines of text without either touching an edge.
+    monthCell: {
+      width: '14.28%', alignItems: 'center', paddingVertical: 4, paddingHorizontal: 1,
+      minHeight: 62, borderRadius: Radius.sm, overflow: 'hidden',
+    },
+    // An active day gets a faint outline as well as its tint, so it is still
+    // distinguishable where colour cannot be seen at all.
+    monthCellActive: { borderWidth: 1, borderColor: C.borderLight },
+    // Selected is a RING. A filled purple square would paint over exactly the
+    // information the cell exists to show.
+    monthCellSel: { borderWidth: 2, borderColor: C.primary },
     monthCircle:     { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     monthCircleToday: { borderWidth: 2, borderColor: C.primary },
     monthCircleSel:  { backgroundColor: C.primary },
@@ -865,7 +957,10 @@ function makeStyles(C: ColorPalette) {
 
     // here depends on telling colours apart.
 
-    cellLines:  { width: '100%', paddingHorizontal: 2, gap: 1, minHeight: 26 },
+    cellLines:  { width: '100%', paddingHorizontal: 2, minHeight: 24, alignItems: 'center' },
+    // Readable at arm's length, outdoors. The old 9px textSecondary was
+    // technically present and practically invisible.
+    cellName:   { fontSize: 10, lineHeight: 12, color: C.textPrimary, fontWeight: '600', textAlign: 'center' },
 
     cellLine:   { flexDirection: 'row', alignItems: 'center', gap: 2 },
 
@@ -873,8 +968,8 @@ function makeStyles(C: ColorPalette) {
 
     cellText:   { fontSize: 9, lineHeight: 11, color: C.textSecondary, flex: 1 },
 
-    cellSub:    { fontSize: 8, lineHeight: 10, color: C.textHint, paddingLeft: 5 },
-    cellMore:   { fontSize: 8, lineHeight: 10, color: C.textHint, paddingLeft: 5 },
+    cellSub:    { fontSize: 9, lineHeight: 11, color: C.textSecondary, textAlign: 'center' },
+    cellMore:   { fontSize: 8, lineHeight: 10, color: C.textSecondary, textAlign: 'center' },
 
 
     legend: {
@@ -905,21 +1000,20 @@ function makeStyles(C: ColorPalette) {
       paddingVertical: 10, borderRadius: 14,
       backgroundColor: C.bgCard,
       borderWidth: 1, borderColor: C.border,
-      gap: 2,
+      gap: 2, overflow: 'hidden',
     },
     weekCardToday: { borderColor: C.primary, borderWidth: 1.5 },
-    weekCardSel:   { backgroundColor: C.primary, borderColor: C.primary },
+    weekCardSel:   { borderColor: C.primary, borderWidth: 2 },
     weekCardLetter: {
       fontSize: 13, fontWeight: '700',
       color: C.textHint, letterSpacing: 0.5,
     },
-    weekCardTextSel: { color: C.textOnPrimary },
     weekCardNum:    { fontFamily: 'DMSans_400Regular', fontSize: 18, color: C.textPrimary },
     weekCardNumToday: { fontFamily: 'DMSans_700Bold', color: C.primary },
-    weekCardNumSel: { fontFamily: 'DMSans_700Bold', color: C.textOnPrimary },
-    weekLines:      { width: '100%', alignItems: 'center', minHeight: 14, paddingHorizontal: 1 },
-    weekLineText:   { fontSize: 8, lineHeight: 10, color: C.textSecondary, textAlign: 'center' },
-    weekMore:       { fontSize: 8, lineHeight: 10, color: C.textHint },
+    weekLines:      { width: '100%', alignItems: 'center', minHeight: 22, paddingHorizontal: 1 },
+    weekLineText:   { fontSize: 10, lineHeight: 12, color: C.textPrimary, fontWeight: '600', textAlign: 'center' },
+    weekLineSub:    { fontSize: 9, lineHeight: 11, color: C.textSecondary, textAlign: 'center' },
+    weekMore:       { fontSize: 9, lineHeight: 11, color: C.textSecondary, textAlign: 'center' },
     weekLineSpacer: { height: 10 },
 
     weekDetail:        { flex: 1 },
