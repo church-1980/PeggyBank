@@ -16,7 +16,7 @@ import { saveAcceptedImage, deleteTempImage } from '../lib/receiptStorage';
 import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
 import { Category } from '../types';
-import { resolveReview, formParams, Corrections } from '../lib/recognition/review';
+import { resolveReview, formParams, Corrections, ReviewState } from '../lib/recognition/review';
 import { decideRoute, type FieldKey } from '../core/captureRoute';
 import { createExpense, undoExpense } from '../lib/saveExpense';
 import { getDatabase } from '../database/database';
@@ -96,14 +96,21 @@ export default function QuickCaptureScreen({ navigation }: any) {
   const { merchant: merchantValue, amount: amountValue, date: dateValue, category: categoryValue } = review;
   const confOf = (key: 'merchant' | 'amount' | 'date' | 'category') => review.confidence[key];
 
-  const commitDraft = () => {
+  /** The corrections as they stand INCLUDING an edit still being typed. */
+  const editsWithDraft = (): Corrections => {
     if (editing === 'merchant') {
       const v = draft.trim();
-      setEdits(e => ({ ...e, merchant: v || undefined }));
-    } else if (editing === 'amount') {
-      const v = parseFloat(draft.replace(',', '.').replace(/[^0-9.]/g, ''));
-      setEdits(e => ({ ...e, amount: Number.isFinite(v) && v > 0 ? v : undefined }));
+      return { ...edits, merchant: v || undefined };
     }
+    if (editing === 'amount') {
+      const v = parseFloat(draft.replace(',', '.').replace(/[^0-9.]/g, ''));
+      return { ...edits, amount: Number.isFinite(v) && v > 0 ? v : undefined };
+    }
+    return edits;
+  };
+
+  const commitDraft = () => {
+    setEdits(editsWithDraft());
     setEditing(null);
     setDraft('');
   };
@@ -287,9 +294,9 @@ export default function QuickCaptureScreen({ navigation }: any) {
   };
 
   // Continue → prefilled form (or manual = photo only)
-  const goToForm = (type: DocType, prefill: boolean) => {
+  const goToForm = (type: DocType, prefill: boolean, state: ReviewState = review) => {
     if (!ownedUri || type === 'unknown') return;
-    const params = formParams(review, type, ownedUri, prefill);
+    const params = formParams(state, type, ownedUri, prefill);
     if (type === 'expense') {
       navigation.replace('AddExpense', params);
     } else {
@@ -564,7 +571,9 @@ export default function QuickCaptureScreen({ navigation }: any) {
                 onSubmitEditing={commitDraft}
                 returnKeyType="done"
                 accessibilityLabel="Merchant name"
+                testID="capture-merchant-input"
               />
+              <DoneButton C={C} onPress={commitDraft} testID="capture-merchant-done" />
             </View>
           ) : (
             <EditableField
@@ -585,7 +594,11 @@ export default function QuickCaptureScreen({ navigation }: any) {
                 value={draft}
                 onChangeText={setDraft}
                 autoFocus
+                onBlur={commitDraft}
+                onSubmitEditing={commitDraft}
+                testID="capture-amount-input"
               />
+              <DoneButton C={C} onPress={commitDraft} testID="capture-amount-done" />
             </View>
           ) : (
             <EditableField
@@ -645,7 +658,14 @@ export default function QuickCaptureScreen({ navigation }: any) {
         <TouchableOpacity
           style={[styles.continueBtn, { backgroundColor: chosenType === 'unknown' ? C.primary + '55' : C.primary }]}
           disabled={chosenType === 'unknown'}
-          onPress={() => goToForm(chosenType, review.shouldPrefill)}
+          onPress={() => {
+            // Whatever is half-typed counts. Continuing used to navigate with
+            // the pre-edit values, so a correction could be silently dropped.
+            const merged = editsWithDraft();
+            const finalReview = resolveReview(result, known, merged);
+            commitDraft();
+            goToForm(chosenType, finalReview.shouldPrefill, finalReview);
+          }}
         >
           <Text style={{ color: C.textOnPrimary, fontWeight: '700' }}>Continue</Text>
         </TouchableOpacity>
@@ -669,6 +689,31 @@ function buildSummary(r: RecognitionResult | null, type: DocType, merchant?: str
     return `${who} looks like a bill${amt}${due}. Review and add it to Bills?`;
   }
   return `${who}${amt} looks like an expense. Review and add it to Spending?`;
+}
+
+/**
+ * FINISHING AN EDIT MUST BE VISIBLE.
+ *
+ * The amount field could be opened and typed into but not accepted: there was
+ * no Done key on the number pad and nothing on screen to tap. A phone user
+ * needs a target, not a gesture.
+ */
+function DoneButton({ C, onPress, testID }: { C: ColorPalette; onPress: () => void; testID?: string }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel="Done editing"
+      style={{
+        minWidth: 64, height: 48, paddingHorizontal: 14, marginLeft: 8,
+        borderRadius: Radius.md, backgroundColor: C.primary,
+        alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <Text style={{ color: C.textOnPrimary, fontWeight: '700' }}>Done</Text>
+    </TouchableOpacity>
+  );
 }
 
 function TypeChip({ C, label, icon, active, onPress }: { C: ColorPalette; label: string; icon: any; active: boolean; onPress: () => void }) {

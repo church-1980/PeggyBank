@@ -1,5 +1,6 @@
 import { Category } from '../../types';
 import { ExtractedFields, DocType, Confidence, EMPTY_CONFIDENCE } from './types';
+import { chooseAmount, chooseMerchant, namePlausibility } from '../../core/documentFields';
 
 /**
  * Heuristic extraction over OCR text. NO fabrication: every field is only set
@@ -35,101 +36,14 @@ const CATEGORY_KEYWORDS: { re: RegExp; category: Category }[] = [
 ];
 
 // ── Amount ────────────────────────────────────────────────────────────────────
-/**
- * A money-looking token. Accepts a decimal point OR a decimal comma, because
- * Quebec receipts print 23,45 as often as 23.45, and the old pattern demanded
- * a point and so read French receipts as having no amounts at all.
- */
-/**
- * A money-looking token. Accepts a decimal point OR a decimal comma, because
- * Quebec receipts print 23,45 as often as 23.45. The old pattern demanded a
- * point, so a French receipt looked to it like a page with no amounts on it.
- */
-const AMOUNT_RE = new RegExp('-?\\$?\\s?\\d{1,3}(?:[,\\s]\\d{3})*[.,]\\d{2}|-?\\$?\\s?\\d+[.,]\\d{2}', 'g');
+// Scoring lives in core/documentFields, where it can be tested against text
+// alone and where the label vocabulary is shared rather than duplicated.
 
-/** "1 234,56" / "$1,234.56" / "-112.10" -> number. */
-function toNumber(s: string): number {
-  let v = s.replace(/[^0-9.,-]/g, '').trim();
-  const lastDot = v.lastIndexOf('.');
-  const lastComma = v.lastIndexOf(',');
-  // Whichever separator comes last is the decimal one; the other groups thousands.
-  if (lastComma > lastDot) v = v.split('.').join('').replace(',', '.');
-  else v = v.split(',').join('');
-  return parseFloat(v);
-}
-
-/**
- * Lines carrying a number that is NOT what the purchase cost.
- *
- * "sous-total" is why this exists. The old rule tested for the word "total"
- * with word boundaries, and a hyphen IS a word boundary, so "SOUS-TOTAL 41.60"
- * matched, was taken as the total, and the search stopped there. "TOTAL DES
- * TAXES" did the same.
- */
-const NOT_THE_TOTAL: RegExp[] = [
-  new RegExp('sous[-\s]?total', 'i'),
-  new RegExp("\\bsub[-\\s]?total\\b", 'i'),
-  new RegExp('total\s+des\s+taxes', 'i'),
-  new RegExp("\\btotal\\s+tax(es)?\\b", 'i'),
-  new RegExp("\\b(gst|hst|pst|qst|tps|tvq|tvh|taxes?)\\b", 'i'),
-  new RegExp("\\b(change|monnaie)\\b", 'i'),
-  new RegExp("\\b(cash|comptant|tendered|tender|especes)\\b", 'i'),
-  new RegExp("\\b(litres?|price)\\b\\s*/?\\s*l?", 'i'),
-  new RegExp('(previous balance|payment received|solde pr)', 'i'),
-  new RegExp("\\b(points|loyalty|reward|carte|account)\\b", 'i'),
-];
-
-/** Lines whose number IS the purchase amount, strongest first. */
-const IS_THE_TOTAL: RegExp[] = [
-  new RegExp("\\b(grand\\s+total|total\\s+due|amount\\s+due|balance\\s+due|amount\\s+owing|montant\\s+d[uu])\\b", 'i'),
-  new RegExp("\\b(total|montant|solde)\\b", 'i'),
-];
-
-/**
- * The amount actually paid.
- *
- * Scores every money token in context rather than taking the first line that
- * mentions "total" or, failing that, the biggest number on the page. The
- * biggest number is frequently the cash tendered, and the first "total" is
- * frequently the subtotal.
- */
 function findAmount(lines: string[]): { value?: number; conf: Confidence } {
-  type Cand = { value: number; score: number };
-  const cands: Cand[] = [];
-
-  lines.forEach((line, i) => {
-    const matches = line.match(AMOUNT_RE);
-    if (!matches) return;
-    const excluded = NOT_THE_TOTAL.some(re => re.test(line));
-    let label = -1;
-    IS_THE_TOTAL.forEach((re, rank) => { if (label === -1 && re.test(line)) label = rank; });
-
-    for (const raw of matches) {
-      const value = toNumber(raw);
-      if (!Number.isFinite(value) || value <= 0) continue;   // a negative is a credit
-      let score = 0;
-      if (label === 0) score += 100;                          // "amount due", "grand total"
-      else if (label === 1) score += 60;                      // a plain "total"
-      if (excluded) score -= 120;                             // subtotal, tax, change, cash
-      score += (i / Math.max(1, lines.length)) * 10;          // later lines are likelier
-      cands.push({ value, score });
-    }
-  });
-
-  if (!cands.length) return { conf: 'none' };
-  cands.sort((a, b) => b.score - a.score || b.value - a.value);
-  const best = cands[0];
-
-  // A labelled, non-excluded line is a real reading. Anything else is a guess,
-  // and the person should be invited to check it rather than trust it.
-  if (best.score >= 60) return { value: best.value, conf: 'high' };
-  if (best.score >= 0) return { value: best.value, conf: 'low' };
-
-  // Everything was excluded. Offer the largest positive figure, clearly marked
-  // as unreliable rather than presented as though it had been read.
-  const largest = cands.reduce((m, c) => (c.value > m.value ? c : m), cands[0]);
-  return { value: largest.value, conf: 'low' };
+  const choice = chooseAmount(lines);
+  return { value: choice.value, conf: choice.confidence };
 }
+
 // ── Dates ─────────────────────────────────────────────────────────────────────
 const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
@@ -230,61 +144,36 @@ const MERCHANT_BRANDS: { name: string; re: RegExp }[] = [
   { name: "Mondou", re: new RegExp("\\bmondou\\b", 'i') },
 ];
 
-/** Lines that are never the shop name. */
-const NOT_A_MERCHANT: RegExp[] = [
-  new RegExp("\\b(receipt|invoice|facture|tel|telephone|fax|www|http|store|magasin|order|commande|no|num)\\b", 'i'),
-  new RegExp("^[0-9\\\\s#*.,:/-]+$", 'i'),                 // pure numbers, dividers
-  new RegExp("\\b(boul|blvd|rue|street|st|ave|avenue|chemin|road|rd|suite|app)\\b[\\\\s.,]", 'i'),
-  new RegExp("^(qc|on|bc|ab|quebec|ontario|canada)$", 'i'),
-  new RegExp("\\b(merci|thank\\\\s?you|bienvenue|welcome)\\b", 'i'),
-];
-
 /**
  * Who the money went to.
  *
- * Three passes, strongest first:
- *   1. a bill payee (Bell, Hydro) -- these are unambiguous
- *   2. a brand the app already knows
- *   3. the structure of the receipt itself
- *
- * The old rule was "the first substantial line in the top four", which happily
- * returned a street address, a store number or "THANK YOU", and always at low
- * confidence -- so the review screen could not present it as read.
+ * The brand and payee tables above are a CONVENIENCE, not the mechanism: they
+ * are handed to the scorer as a lookup so that an unknown company is still
+ * named by the structure of its own document. Real-phone testing produced a QR
+ * payload where a company name belonged, so plausibility is now scored in
+ * core/documentFields and an implausible string is not offered at all.
  */
 function findMerchant(lines: string[]): { name?: string; conf: Confidence } {
-  const joined = lines.join(" ");
+  const joined = lines.join(' ');
 
-  // 1. A known bill payee.
+  // A known bill payee anywhere on the page — these are unambiguous.
   for (const p of BILL_PAYEES) {
     if (p.re.test(joined)) return { name: p.name, conf: 'high' };
   }
 
-  // 2. A brand we can name. Checked against the top of the receipt, where a
-  //    shop puts its name, so a passing mention further down does not win.
-  const header = lines.slice(0, 8).join(' ');
-  for (const b of MERCHANT_BRANDS) {
-    if (b.re.test(header)) return { name: b.name, conf: 'high' };
-  }
-
-  // 3. An unknown shop: score the top lines on how much they look like a name.
-  let best: { name: string; score: number } | null = null;
-  lines.slice(0, 6).forEach((raw, i) => {
-    const line = raw.trim().replace(/\s{2,}/g, ' ');
-    if (line.length < 3) return;
-    if (NOT_A_MERCHANT.some(re => re.test(line))) return;
-    const letters = (line.match(new RegExp('[A-Za-z]', 'g')) || []).length;
-    if (letters < 3) return;
-
-    let score = 10 - i * 2;                                  // higher up is likelier
-    if (letters / line.length > 0.6) score += 4;             // mostly words, not digits
-    if (line === line.toUpperCase()) score += 2;             // shop names are often shouted
-    if (line.length <= 28) score += 2;                       // a name, not a sentence
-    if (!best || score > best.score) best = { name: line.slice(0, 40), score };
+  const choice = chooseMerchant(lines, (row) => {
+    for (const b of MERCHANT_BRANDS) if (b.re.test(row)) return b.name;
+    return undefined;
   });
 
-  if (best) return { name: (best as { name: string }).name, conf: 'low' };
-  return { conf: 'none' };
+  // A name we cannot believe in is worse than no name: the review screen can
+  // ask a question, but it cannot un-save a wrong one.
+  if (choice.name && namePlausibility(choice.name) === 0) {
+    return { conf: 'none' };
+  }
+  return { name: choice.name, conf: choice.confidence };
 }
+
 // ── Doc type ──────────────────────────────────────────────────────────────────
 function classify(text: string): { type: DocType; conf: Confidence } {
   const billSignals = /\b(amount due|due date|account number|statement|billing period|invoice|amount owing|total due|autopay)\b/i;

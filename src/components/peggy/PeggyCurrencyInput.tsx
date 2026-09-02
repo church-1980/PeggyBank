@@ -16,10 +16,21 @@ interface Props {
   autoFocus?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /**
+   * Finishing an amount.
+   *
+   * These were missing, and on a decimal keypad there is no return key to fall
+   * back on, so an inline amount editor built on this component had no way at
+   * all to commit what was typed. Smart Capture's amount field could be edited
+   * and then not accepted, which stranded the user mid-correction.
+   */
+  onBlur?: () => void;
+  onSubmitEditing?: () => void;
 }
 
 export default function PeggyCurrencyInput({
   value, onChangeText, currency = '$', placeholder = '0.00', autoFocus, style, testID,
+  onBlur, onSubmitEditing,
 }: Props) {
   const C = useColors();
   return (
@@ -45,6 +56,9 @@ export default function PeggyCurrencyInput({
         placeholderTextColor={C.textHint}
         keyboardType="decimal-pad"
         autoFocus={autoFocus}
+        onBlur={onBlur}
+        onSubmitEditing={onSubmitEditing}
+        returnKeyType="done"
         style={[Typography.heroAmount, { flex: 1, marginLeft: 4, color: C.textPrimary, fontSize: 34, paddingVertical: 0 }]}
       />
     </View>

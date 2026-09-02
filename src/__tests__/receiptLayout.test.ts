@@ -97,10 +97,25 @@ describe('THE PAYOFF: a split receipt becomes readable', () => {
     expect(r.merchant).toBe('Tim Hortons');
   });
 
-  it('and WITHOUT rejoining, the same receipt loses its total', () => {
-    // This is the failure mode: the flat text has the numbers, but nothing
-    // connects them to their labels, so no confident total can be read.
+  /**
+   * This assertion used to read "without rejoining, the receipt loses its
+   * total". That was true, and it was the bug: on a real phone the geometry
+   * is not always usable, and a printed TOTAL was losing to the SUBTOTAL
+   * above it. core/documentFields now zips a run of labels onto the run of
+   * amounts that follows it, so the flat text recovers on its own. Geometry
+   * remains the better path -- it copes with crooked and interleaved layouts
+   * this cannot -- so what matters now is that the two agree.
+   */
+  it('recovers the same total from the flat text, without any geometry', () => {
     const flat = SPLIT_BLOCKS.map(b => b.text).join('\n');
-    expect(parseDocument(flat).confidence.amount).not.toBe('high');
+    const fromFlat = parseDocument(flat);
+    expect(fromFlat.amount).toBe(11.60);
+    expect(fromFlat.confidence.amount).toBe('high');
+  });
+
+  it('geometry and the text-only fallback reach the same answer', () => {
+    const flat = SPLIT_BLOCKS.map(b => b.text).join('\n');
+    const withGeometry = parseDocument(readableText(SPLIT_BLOCKS, flat));
+    expect(parseDocument(flat).amount).toBe(withGeometry.amount);
   });
 });

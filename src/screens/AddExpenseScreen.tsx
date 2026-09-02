@@ -6,6 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { recognizer } from '../lib/recognition';
 import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
 import { getTodayString } from '../utils/helpers';
@@ -108,13 +109,55 @@ export default function AddExpenseScreen({ navigation, route }: any) {
     }
   };
 
+  /**
+   * SAME PIPELINE, EVERY ENTRY POINT.
+   *
+   * Photographing a receipt from here used to attach the picture and read
+   * nothing, so the identical photo produced Smart Capture from the Home
+   * camera and a blank form from this one. It now runs the same recogniser.
+   *
+   * It only ever FILLS A BLANK. Anything already typed is the person's own
+   * work and is never overwritten, so this cannot take a correction away.
+   */
+  const readIntoBlanks = async (uri: string) => {
+    try {
+      const r = await recognizer.recognize(uri);
+      if (!r.ok) return;
+
+      const filled: string[] = [];
+      if (!amount && r.amount != null && r.confidence.amount !== 'none') {
+        setAmount(String(r.amount)); filled.push('the amount');
+      }
+      if (!note.trim() && r.merchant && r.confidence.merchant !== 'none') {
+        setNote(r.merchant); filled.push('who it was');
+      }
+      if (r.date && r.confidence.date === 'high' && date === getTodayString()) {
+        setDate(r.date); filled.push('the date');
+      }
+      if (r.category && !prefill.category) setCategory(r.category);
+
+      if (filled.length) {
+        Alert.alert(
+          'Read from your receipt',
+          'PeggyBank filled in ' + filled.join(' and ') + '. Please check it before saving.',
+        );
+      }
+    } catch (e) {
+      // Reading is a bonus; failing to read must never cost the photo.
+      console.warn('[capture] could not read receipt:', e);
+    }
+  };
+
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) { Alert.alert('Camera needed', 'Please allow camera access.'); return; }
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.7,
     });
-    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+      await readIntoBlanks(result.assets[0].uri);
+    }
   };
 
   const pickPhoto = async () => {
@@ -123,7 +166,10 @@ export default function AddExpenseScreen({ navigation, route }: any) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.7,
     });
-    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri);
+      await readIntoBlanks(result.assets[0].uri);
+    }
   };
 
   const handleCameraPress = () => {
