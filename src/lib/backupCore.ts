@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { BACKUP_TABLES, BACKUP_VERSION, IMAGE_REFERENCE_COLUMNS } from './backupSchema';
+import { BACKUP_TABLES, BACKUP_VERSION, IMAGE_REFERENCE_COLUMNS, IMAGE_SETTING_KEYS } from './backupSchema';
 
 /**
  * The database half of backup/restore, with no file picker or sharing in it, so
@@ -147,4 +147,50 @@ export async function restoreBackup(db: SQLiteDatabase, parsed: unknown): Promis
     restored,
     missingImageRefs,
   };
+}
+
+/**
+ * WHAT A BACKUP HOLDS, in the words the user would use.
+ *
+ * Not statistics for their own sake — reassurance. Someone who has just tapped
+ * "Create Backup" wants one thing confirmed: that their information is really
+ * in there. Only categories that actually have something are listed, so an
+ * empty PeggyBank does not produce a wall of zeroes.
+ */
+export interface BackupSummaryLine { label: string; count: number }
+
+const SUMMARY_LABELS: { table: string; one: string; many: string }[] = [
+  { table: 'expenses',          one: 'expense',            many: 'expenses' },
+  { table: 'income',            one: 'income record',      many: 'income records' },
+  { table: 'income_schedules',  one: 'pay schedule',       many: 'pay schedules' },
+  { table: 'bills',             one: 'bill',               many: 'bills' },
+  { table: 'bill_payments',     one: 'bill payment',       many: 'bill payments' },
+  { table: 'subscriptions',     one: 'subscription',       many: 'subscriptions' },
+  { table: 'savings_goals',     one: 'savings goal',       many: 'savings goals' },
+  { table: 'debts',             one: 'debt',               many: 'debts' },
+  { table: 'calendar_reminders',one: 'reminder',           many: 'reminders' },
+];
+
+export function summarizeBackup(backup: BackupData): BackupSummaryLine[] {
+  const lines: BackupSummaryLine[] = [];
+  for (const s of SUMMARY_LABELS) {
+    const rows = backup[s.table];
+    const count = Array.isArray(rows) ? rows.length : 0;
+    if (count > 0) lines.push({ label: count === 1 ? s.one : s.many, count });
+  }
+  return lines;
+}
+
+/** How many photo references the backup carries but cannot carry the files for. */
+export function countImageReferences(backup: BackupData): number {
+  let n = 0;
+  for (const { table, column } of IMAGE_REFERENCE_COLUMNS) {
+    const rows = (backup[table] as Record<string, unknown>[] | undefined) ?? [];
+    for (const row of rows) if (row[column]) n++;
+  }
+  const settings = (backup.settings as Record<string, unknown>[] | undefined) ?? [];
+  for (const row of settings) {
+    if (IMAGE_SETTING_KEYS.includes(String(row.key)) && row.value) n++;
+  }
+  return n;
 }

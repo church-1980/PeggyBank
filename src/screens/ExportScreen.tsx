@@ -9,6 +9,7 @@ import {
   exportDebts, exportSubscriptions, exportAll,
 } from '../lib/csvExport';
 import { exportBackup, importBackup } from '../lib/backup';
+import type { BackupSummaryLine } from '../lib/backupCore';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { PeggyScreen, PeggyHeader } from '../components/peggy';
@@ -22,7 +23,7 @@ interface ExportDef {
 }
 
 const CSV_EXPORT_DEFS: ExportDef[] = [
-  { label: 'All Data',       icon: 'albums-outline',           description: 'Everything in one file',        action: exportAll,           colorKey: 'primary' },
+  { label: 'All Data',       icon: 'albums-outline',           description: 'A summary of your records',      action: exportAll,           colorKey: 'primary' },
   { label: 'Expenses',       icon: 'arrow-up-circle-outline',  description: 'All spending records',           action: exportExpenses,      colorKey: 'spending' },
   { label: 'Income',         icon: 'arrow-down-circle-outline',description: 'All income records',             action: exportIncome,        colorKey: 'income' },
   { label: 'Bills',          icon: 'receipt-outline',          description: 'Your recurring bills',           action: exportBills,         colorKey: 'bills' },
@@ -44,7 +45,42 @@ export default function ExportScreen({ navigation }: any) {
     try {
       await action();
     } catch (e) {
-      Alert.alert('Could not export', String(e));
+      // The reason belongs in the log, not in front of someone who just
+      // wanted a spreadsheet.
+      console.warn('[export] csv export failed:', e);
+      Alert.alert(
+        "Couldn't create the file",
+        'PeggyBank could not save that file. Nothing on your phone was changed. Please try again.',
+      );
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  /**
+   * Nobody should have to read JSON to believe their information is safe. So
+   * the confirmation says what was saved, in words, and says plainly what a
+   * backup file is for: keeping, not opening.
+   */
+  const handleBackup = async () => {
+    setLoading('backup');
+    try {
+      const result = await exportBackup();
+      const lines = result.summary.map((s: BackupSummaryLine) => `${s.count} ${s.label}`).join('\n');
+      const photos = result.photoRefs > 0
+        ? `\n\nYour ${result.photoRefs} saved photo${result.photoRefs === 1 ? '' : 's'} stay on this phone. They are not inside the backup file.`
+        : '';
+      Alert.alert(
+        'Backup created ✓',
+        `Your PeggyBank information is ready to save somewhere safe.\n\n${lines}\n\nKeep this file somewhere safe. You don't need to open it — PeggyBank uses it to put your information back.${photos}`,
+        [{ text: 'OK' }],
+      );
+    } catch (e) {
+      console.warn('[backup] export failed:', e);
+      Alert.alert(
+        "Couldn't create the backup",
+        'PeggyBank could not save the file. Nothing on your phone was changed. Please try again.',
+      );
     } finally {
       setLoading(null);
     }
@@ -52,20 +88,27 @@ export default function ExportScreen({ navigation }: any) {
 
   const handleImport = () => {
     Alert.alert(
-      'Restore Backup',
-      'This will replace all your current PeggyBank data with the backup file. Are you sure?',
+      'Restore from a backup?',
+      'PeggyBank will replace what is on this phone now with what is in the backup file.\n\nAnything you have added since that backup was made will be gone. If the file cannot be read, nothing is changed.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Yes, restore',
+          text: 'Restore',
           style: 'destructive',
           onPress: async () => {
             setLoading('import');
             try {
               const result = await importBackup();
-              Alert.alert(result.success ? 'Done' : 'Could not restore', result.message);
+              Alert.alert(
+                result.success ? 'Backup restored ✓' : "PeggyBank couldn't restore this backup",
+                result.message,
+              );
             } catch (e) {
-              Alert.alert('Error', String(e));
+              console.warn('[backup] restore failed:', e);
+              Alert.alert(
+                "PeggyBank couldn't restore this backup",
+                'Nothing on your phone was changed. Please check you picked the right file and try again.',
+              );
             } finally {
               setLoading(null);
             }
@@ -85,12 +128,14 @@ export default function ExportScreen({ navigation }: any) {
       <Text style={styles.sectionLabel}>FULL BACKUP</Text>
       <View style={styles.section}>
         <Text style={styles.sectionSub}>
-          Saves everything in one file. Use this to move to a new phone or keep a safe copy.
+          Saves all your PeggyBank information — money in and out, bills, payments, goals,
+          debts, reminders and your settings — in one file. Use it to move to a new phone or
+          keep a safe copy. Photos you have taken stay on this phone.
         </Text>
 
         <TouchableOpacity
           style={styles.backupBtn}
-          onPress={() => run('backup', exportBackup)}
+          onPress={handleBackup}
           disabled={loading !== null}
           activeOpacity={0.8}
         >
@@ -102,8 +147,8 @@ export default function ExportScreen({ navigation }: any) {
                 <Ionicons name="cloud-download-outline" size={22} color={C.textOnPrimary} />
               </View>
               <View style={styles.backupMiddle}>
-                <Text style={styles.backupLabel}>Export Backup File</Text>
-                <Text style={styles.backupDesc}>Saves a .json file you can share or email to yourself</Text>
+                <Text style={styles.backupLabel}>Create Backup</Text>
+                <Text style={styles.backupDesc}>Save a copy of your information somewhere safe</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={C.textOnPrimary} />
             </>
@@ -124,8 +169,8 @@ export default function ExportScreen({ navigation }: any) {
                 <Ionicons name="folder-open-outline" size={22} color={C.primary} />
               </View>
               <View style={styles.backupMiddle}>
-                <Text style={styles.importLabel}>Restore from Backup</Text>
-                <Text style={[styles.backupDesc, { color: C.textSecondary }]}>Choose a backup file to restore your data</Text>
+                <Text style={styles.importLabel}>Restore Backup</Text>
+                <Text style={[styles.backupDesc, { color: C.textSecondary }]}>Put your information back from a saved copy</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={C.textHint} />
             </>
@@ -136,7 +181,9 @@ export default function ExportScreen({ navigation }: any) {
       <Text style={styles.sectionLabel}>EXPORT AS CSV</Text>
       <View style={styles.section}>
         <Text style={styles.sectionSub}>
-          CSV files open in Excel, Google Sheets, or Numbers. Good for checking your numbers on a computer.
+          CSV files open in Excel, Google Sheets, or Numbers. Good for checking your numbers on a
+          computer. These are for reading only — PeggyBank cannot put your information back from a
+          CSV file. Use Create Backup for that.
         </Text>
 
         {CSV_EXPORTS.map((item, index) => (
@@ -165,13 +212,16 @@ export default function ExportScreen({ navigation }: any) {
 
       <View style={styles.infoCard}>
         <View style={styles.infoTitleRow}>
-          <Ionicons name="lock-closed-outline" size={16} color={C.primary} />
+          <Ionicons name="information-circle-outline" size={16} color={C.primary} />
           <Text style={styles.infoTitle}>How this works</Text>
         </View>
         {[
-          'Nothing is sent to the internet. Everything stays on your phone.',
-          "When you tap Export, your phone's share sheet opens. You can email the file to yourself, save it to Google Drive, or send it anywhere.",
-          'To restore a backup, tap "Restore from Backup" and choose the .json file you saved earlier.',
+          'Nothing is sent to the internet. PeggyBank only saves the file where you tell it to.',
+          "When you tap Create Backup, your phone asks where to put the file. You can email it to yourself, save it to Google Drive, or keep it anywhere you trust.",
+          'You never need to open the backup file. If you do open it, it will look like computer text — that is normal, and it does not mean anything is wrong.',
+          'To put your information back, tap Restore Backup and choose the file you saved.',
+          'The file is not password protected. Anyone who opens it can read your financial information, so keep it somewhere private.',
+          'Photos of receipts and bills are not inside the file. They stay on this phone, so save any you want to keep separately.',
         ].map((tip) => (
           <View key={tip} style={styles.infoRow}>
             <View style={styles.infoDot} />
