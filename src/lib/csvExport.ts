@@ -1,8 +1,9 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDatabase } from '../database/database';
 
-function rowsToCsv(headers: string[], rows: Record<string, unknown>[]): string {
+export function rowsToCsv(headers: string[], rows: Record<string, unknown>[]): string {
   const escape = (v: unknown): string => {
     const s = v === null || v === undefined ? '' : String(v);
     return s.includes(',') || s.includes('"') || s.includes('\n')
@@ -31,12 +32,25 @@ async function shareFile(uri: string): Promise<void> {
   }
 }
 
-export async function exportExpenses(): Promise<void> {
-  const db = await getDatabase();
-  const rows = await db.getAllAsync<Record<string, unknown>>(
+export const EXPENSE_CSV_HEADERS = ['date', 'amount', 'category', 'note', 'is_recurring'];
+
+/**
+ * The rows the expense CSV is built from.
+ *
+ * Split out so a test can assert what the export really contains without
+ * writing a file or re-typing the query — a test with its own copy of the SQL
+ * proves only that the test agrees with itself.
+ */
+export async function expenseCsvRows(db: SQLiteDatabase): Promise<Record<string, unknown>[]> {
+  return db.getAllAsync<Record<string, unknown>>(
     `SELECT date, amount, category, note, is_recurring FROM expenses ORDER BY date DESC`
   );
-  const csv = rowsToCsv(['date', 'amount', 'category', 'note', 'is_recurring'], rows);
+}
+
+export async function exportExpenses(): Promise<void> {
+  const db = await getDatabase();
+  const rows = await expenseCsvRows(db);
+  const csv = rowsToCsv(EXPENSE_CSV_HEADERS, rows);
   const uri = await writeCsvFile('peggybank_expenses.csv', csv);
   await shareFile(uri);
 }

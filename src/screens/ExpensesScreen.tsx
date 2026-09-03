@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import { getDatabase } from '../database/database';
+import { deleteExpense as deleteExpenseRecord } from '../lib/saveExpense';
 import { CATEGORIES } from '../data/categories';
 import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Expense, Category } from '../types';
@@ -47,7 +48,10 @@ export default function ExpensesScreen({ navigation }: any) {
     setSelectedExpense(null);
     try {
       const db = await getDatabase();
-      await db.runAsync(`DELETE FROM expenses WHERE id = ?`, [item.id]);
+      // The shared deletion, not a second copy of the SQL: this screen had
+      // its own DELETE, which meant the receipt image was cleaned up from one
+      // route and orphaned from the other.
+      await deleteExpenseRecord(db, item.id);
       undoData.current = item;
       setUndoVisible(true);
       loadExpenses();

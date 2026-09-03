@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { rememberMerchant } from './merchantMemory';
+import { isOwnedReceipt, deleteReceiptImage } from './receiptStorage';
 
 /**
  * WRITING ONE EXPENSE.
@@ -52,17 +53,60 @@ export async function createExpense(db: SQLiteDatabase, e: NewExpense): Promise<
 }
 
 /**
- * Remove an expense created moments ago.
+ * REMOVE AN EXPENSE. THE ONE PLACE THAT DOES IT.
  *
- * Undo deletes the ROW. It does not hide a banner and it does not write a
- * reversing entry — every view reads the expenses table, so removing the row
- * removes it from Safe to Spend, What Happened, Search, the category totals
- * and the breakdown at once, with nothing to keep in step.
+ * Deleting is the sharpest test of whether PeggyBank has one financial brain,
+ * so it is deliberately not clever: it removes the ROW. It does not hide a
+ * card, zero an amount, set a flag, or write a reversing entry. Every view —
+ * Safe to Spend, Money Out, What Happened, the Calendar, Search, the category
+ * totals, the breakdown, the CSV and the backup — reads the expenses table, so
+ * the row leaving is the only event any of them need.
  *
- * Merchant memory is deliberately left alone. It records that this person
+ * If this function ever grows a list of screens to notify, the architecture
+ * has drifted and the notification is the wrong fix.
+ *
+ * Merchant memory is deliberately left alone: it records that this person
  * shops at Tim Hortons, which stays true whether or not they kept this
  * particular receipt.
+ *
+ * THE PHOTO. A receipt image is owned by exactly one expense — every accepted
+ * capture is copied to a uniquely named file — so deleting the expense should
+ * take the image with it rather than leaving it on the phone forever. But
+ * "should" is not "must be assumed": the file is only removed once nothing
+ * else in the database still points at it, and only when it lives inside
+ * PeggyBank's own receipts folder. A gallery picture the person chose is never
+ * touched.
+ */
+export async function deleteExpense(db: SQLiteDatabase, id: number): Promise<void> {
+  const row = await db.getFirstAsync<{ photo_uri: string | null }>(
+    `SELECT photo_uri FROM expenses WHERE id = ?`, [id],
+  );
+
+  // The row goes first. If this throws, nothing has been lost and the caller
+  // reports a failure rather than a success.
+  await db.runAsync(`DELETE FROM expenses WHERE id = ?`, [id]);
+
+  const uri = row?.photo_uri ?? null;
+  if (!isOwnedReceipt(uri)) return;
+
+  try {
+    const stillUsed = await db.getFirstAsync<{ n: number }>(
+      `SELECT
+         (SELECT COUNT(*) FROM expenses WHERE photo_uri = ?) +
+         (SELECT COUNT(*) FROM bills    WHERE photo_uri = ?) AS n`,
+      [uri, uri],
+    );
+    if ((stillUsed?.n ?? 0) === 0) await deleteReceiptImage(uri);
+  } catch {
+    // An orphaned image costs storage. Failing the delete over it would cost
+    // the person their correction, which is worse.
+  }
+}
+
+/**
+ * Undo a save made moments ago. The same deletion — undo is not a second
+ * concept, and giving it its own implementation is how the two drift apart.
  */
 export async function undoExpense(db: SQLiteDatabase, id: number): Promise<void> {
-  await db.runAsync(`DELETE FROM expenses WHERE id = ?`, [id]);
+  await deleteExpense(db, id);
 }

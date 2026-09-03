@@ -2,14 +2,20 @@ import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ExpensesScreen from '../screens/ExpensesScreen';
+import { deleteExpense as deleteExpenseRecord } from '../lib/saveExpense';
+
+jest.mock('../lib/saveExpense', () => ({
+  deleteExpense: jest.fn().mockResolvedValue(undefined),
+}));
 
 jest.mock('../database/database', () => ({
   getDatabase: jest.fn(),
 }));
 
 const mockDb = {
-  getAllAsync: jest.fn(),
-  runAsync:   jest.fn().mockResolvedValue({ changes: 1 }),
+  getAllAsync:   jest.fn(),
+  getFirstAsync: jest.fn().mockResolvedValue(null),
+  runAsync:      jest.fn().mockResolvedValue({ changes: 1 }),
 };
 
 const mockNav = {
@@ -104,10 +110,11 @@ describe('ExpensesScreen', () => {
     await act(async () => {
       fireEvent.press(getByText('Delete'));
     });
-    expect(mockDb.runAsync).toHaveBeenCalledWith(
-      expect.stringContaining('DELETE FROM expenses'),
-      expect.arrayContaining([1])
-    );
+    expect(deleteExpenseRecord).toHaveBeenCalledWith(expect.anything(), 1);
+    // And the screen does NOT write the SQL itself any more.
+    const ownSql = mockDb.runAsync.mock.calls
+      .filter((c: any[]) => String(c[0]).includes('DELETE FROM expenses'));
+    expect(ownSql).toEqual([]);
   });
 
   it('shows undo toast after deleting an expense', async () => {

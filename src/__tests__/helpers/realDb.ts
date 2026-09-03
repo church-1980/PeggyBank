@@ -70,6 +70,26 @@ export const TEST_SCHEMA = `
     name TEXT NOT NULL, target_amount REAL NOT NULL,
     current_amount REAL DEFAULT 0, created_at TEXT DEFAULT (datetime('now'))
   );
+
+  -- The remaining user-owned tables. A backup restores into ALL of them, so a
+  -- schema missing these made a perfectly good restore look like a failure.
+  CREATE TABLE settings (
+    key TEXT PRIMARY KEY, value TEXT NOT NULL
+  );
+  CREATE TABLE debts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL, total_amount REAL NOT NULL, amount_paid REAL DEFAULT 0,
+    minimum_payment REAL DEFAULT 0, monthly_payment REAL DEFAULT 0,
+    apr REAL DEFAULT 0, notes TEXT, created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE calendar_reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL, time TEXT NOT NULL, title TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE custom_logos (
+    key TEXT PRIMARY KEY, uri TEXT NOT NULL, updated_at INTEGER
+  );
 `;
 
 /** Fresh in-memory database with the schema applied. */

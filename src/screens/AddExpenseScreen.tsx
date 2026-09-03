@@ -7,9 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recognizer } from '../lib/recognition';
+import { deleteExpense } from '../lib/saveExpense';
 import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
-import { getTodayString } from '../utils/helpers';
+import { getTodayString, formatCurrency } from '../utils/helpers';
 import { Category } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
@@ -66,6 +67,51 @@ export default function AddExpenseScreen({ navigation, route }: any) {
     if (returnTo) navigation.navigate('Home', { screen: returnTo });
     else if (navigation.canGoBack()) navigation.goBack();
     else navigation.navigate('Home');
+  };
+
+  /**
+   * REMOVING THE RECORD, FROM THE RECORD'S OWN SCREEN.
+   *
+   * Deliberately only here. A delete on a Home card or a What Happened row
+   * would put a destructive action one careless thumb away from a list people
+   * scroll; opening the authoritative expense first is the confirmation that
+   * matters most.
+   *
+   * The work itself is one line, and that is the point: the row leaves, and
+   * every view that reads expenses forgets it. Nothing here notifies Safe to
+   * Spend, the breakdown or the calendar.
+   */
+  const handleDelete = () => {
+    if (!editingId) return;
+    Alert.alert(
+      'Delete this expense?',
+      'This will remove ' + formatCurrency(parsedAmount || prefill.amount || 0) +
+      ' from your spending and totals.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            try {
+              const db = await getDatabase();
+              await deleteExpense(db, editingId);
+              handleBack();
+            } catch (e) {
+              // Never say deleted when the row is still there.
+              console.warn('[expense] delete failed:', e);
+              Alert.alert(
+                "Couldn't delete this expense",
+                'It is still saved. Please try again.',
+              );
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleSave = async () => {
@@ -348,6 +394,21 @@ export default function AddExpenseScreen({ navigation, route }: any) {
           </TouchableOpacity>
 
         </View>
+
+        {editingId ? (
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={handleDelete}
+            disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel="Delete this expense"
+            testID="delete-expense"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash-outline" size={18} color={C.spending} />
+            <Text style={styles.deleteBtnText}>Delete expense</Text>
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
       </PeggyScreen>
     </KeyboardAvoidingView>
@@ -356,6 +417,17 @@ export default function AddExpenseScreen({ navigation, route }: any) {
 
 function makeStyles(C: ColorPalette) {
   return StyleSheet.create({
+    // Destructive, and deliberately not competing with Update: no fill, no
+    // shout, but a full-width target and the spending colour so it cannot be
+    // mistaken for a neutral action.
+    deleteBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+      marginTop: Spacing.xl, marginBottom: Spacing.lg,
+      paddingVertical: 16, borderRadius: Radius.md,
+      borderWidth: 1, borderColor: C.spending + '55',
+      backgroundColor: 'transparent',
+    },
+    deleteBtnText: { ...Typography.body, color: C.spending, fontWeight: '600' },
     // PeggyScreen paints the background and owns the safe-area inset.
     root:   { flex: 1 },
     shell:  { flex: 1, paddingBottom: 0 },
