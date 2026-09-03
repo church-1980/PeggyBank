@@ -40,7 +40,8 @@
     "icon": "node scripts/make-app-icon.js",
     "icon:preview": "node scripts/preview-icon.js",
     "audit:quickadd": "node scripts/webtest/quickadd.js",
-    "audit:calendar": "node scripts/webtest/calendar.js"
+    "audit:calendar": "node scripts/webtest/calendar.js",
+    "audit:delete": "node scripts/webtest/delete.js"
   },
   "jest": {
     "preset": "jest-expo",

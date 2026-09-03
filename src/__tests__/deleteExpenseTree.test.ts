@@ -399,8 +399,28 @@ describe('Deleting is reachable only from the record itself', () => {
     const s = screen('AddExpenseScreen.tsx');
     expect(s).toContain('Delete this expense?');
     expect(s).toContain('from your spending and totals');
-    expect(s).toContain("style: 'destructive'");
-    expect(s).toContain("{ text: 'Cancel', style: 'cancel' }");
+  });
+
+  it('asks with the design system destructive confirm, not a raw Alert', () => {
+    // PeggyDeleteConfirmation calls itself "the ONE destructive confirm", and
+    // Alert.alert renders NOTHING on web — so a raw Alert was both a design
+    // system violation and a confirmation nobody could see outside a phone.
+    const s = screen('AddExpenseScreen.tsx');
+    expect(s).toContain('<PeggyDeleteConfirmation');
+    const at = s.indexOf('const confirmDelete');
+    const body = s.slice(at, s.indexOf('const handleSave', at));
+    // The failure path still uses an Alert, which is right: it is rare and
+    // matches the rest of the app. What must NOT be an Alert is the question.
+    expect(s).toContain('title="Delete this expense?"');
+    expect(s).toContain('onPress={() => setConfirmingDelete(true)}');
+  });
+
+  it('names the right money even when the amount box has been cleared', () => {
+    // The reported screen: the person emptied the amount trying to zero the
+    // expense out, so parsedAmount is NaN and only the saved value is left.
+    const s = screen('AddExpenseScreen.tsx');
+    expect(s).toContain('const deletingAmount');
+    expect(s).toContain('Number(prefill.amount) || 0');
   });
 
   it('only offers it when a real record is open', () => {
@@ -418,7 +438,7 @@ describe('Deleting is reachable only from the record itself', () => {
 
   it('never claims success when the row is still there', () => {
     const s = screen('AddExpenseScreen.tsx');
-    const at = s.indexOf('const handleDelete');
+    const at = s.indexOf('const confirmDelete');
     const body = s.slice(at, s.indexOf('const handleSave', at));
     expect(body).toContain("Couldn't delete this expense");
     expect(body).toContain('It is still saved');

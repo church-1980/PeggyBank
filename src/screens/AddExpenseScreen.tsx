@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recognizer } from '../lib/recognition';
 import { deleteExpense } from '../lib/saveExpense';
+import PeggyDeleteConfirmation from '../components/peggy/PeggyDeleteConfirmation';
 import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
 import { getTodayString, formatCurrency } from '../utils/helpers';
@@ -46,6 +47,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
   const [isRecurring,   setIsRecurring]   = useState<boolean>(!!prefill.is_recurring);
   const [saving,        setSaving]        = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const parsedAmount = parseFloat(amount);
   const isValid = !isNaN(parsedAmount) && parsedAmount > 0;
@@ -81,37 +83,29 @@ export default function AddExpenseScreen({ navigation, route }: any) {
    * every view that reads expenses forgets it. Nothing here notifies Safe to
    * Spend, the breakdown or the calendar.
    */
-  const handleDelete = () => {
+  /** The amount the person would recognise, even mid-edit with the box cleared. */
+  const deletingAmount = Number.isFinite(parsedAmount) && parsedAmount > 0
+    ? parsedAmount
+    : Number(prefill.amount) || 0;
+
+  const confirmDelete = async () => {
     if (!editingId) return;
-    Alert.alert(
-      'Delete this expense?',
-      'This will remove ' + formatCurrency(parsedAmount || prefill.amount || 0) +
-      ' from your spending and totals.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setSaving(true);
-            try {
-              const db = await getDatabase();
-              await deleteExpense(db, editingId);
-              handleBack();
-            } catch (e) {
-              // Never say deleted when the row is still there.
-              console.warn('[expense] delete failed:', e);
-              Alert.alert(
-                "Couldn't delete this expense",
-                'It is still saved. Please try again.',
-              );
-            } finally {
-              setSaving(false);
-            }
-          },
-        },
-      ],
-    );
+    setConfirmingDelete(false);
+    setSaving(true);
+    try {
+      const db = await getDatabase();
+      await deleteExpense(db, editingId);
+      handleBack();
+    } catch (e) {
+      // Never say deleted when the row is still there.
+      console.warn('[expense] delete failed:', e);
+      Alert.alert(
+        "Couldn't delete this expense",
+        'It is still saved. Please try again.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -398,7 +392,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
         {editingId ? (
           <TouchableOpacity
             style={styles.deleteBtn}
-            onPress={handleDelete}
+            onPress={() => setConfirmingDelete(true)}
             disabled={saving}
             accessibilityRole="button"
             accessibilityLabel="Delete this expense"
@@ -409,6 +403,15 @@ export default function AddExpenseScreen({ navigation, route }: any) {
             <Text style={styles.deleteBtnText}>Delete expense</Text>
           </TouchableOpacity>
         ) : null}
+
+        <PeggyDeleteConfirmation
+          visible={confirmingDelete}
+          title="Delete this expense?"
+          message={'This will remove ' + formatCurrency(deletingAmount) + ' from your spending and totals.'}
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       </ScrollView>
       </PeggyScreen>
     </KeyboardAvoidingView>
