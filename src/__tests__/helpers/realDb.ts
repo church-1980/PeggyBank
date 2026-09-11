@@ -69,7 +69,9 @@ export const TEST_SCHEMA = `
   CREATE TABLE savings_goals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL, target_amount REAL NOT NULL,
-    current_amount REAL DEFAULT 0, created_at TEXT DEFAULT (datetime('now'))
+    current_amount REAL DEFAULT 0, deadline TEXT,
+    goal_type TEXT, pinned INTEGER DEFAULT 0, custom_image_uri TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
   );
 
   -- The remaining user-owned tables. A backup restores into ALL of them, so a

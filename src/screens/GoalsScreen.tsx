@@ -164,14 +164,26 @@ export default function GoalsScreen({ navigation, route }: any) {
     }
   };
 
+  /**
+   * D6 — restores the COMPLETE row that was captured before delete, not a
+   * hand-picked subset. The previous INSERT named four columns explicitly;
+   * every column added to savings_goals since (goal_type, pinned,
+   * custom_image_uri) was silently dropped by Undo, so a goal came back
+   * with its progress and deadline but a default icon and no pin. Only `id`
+   * is intentionally regenerated -- the restored row is a new row, not a
+   * resurrection of the exact same one, matching what the INSERT already
+   * did before this fix.
+   */
   const handleUndo = async () => {
     const g = undoData.current;
     if (!g) return;
     try {
       const db = await getDatabase();
+      const { id, ...rest } = g;
+      const cols = Object.keys(rest);
       await db.runAsync(
-        `INSERT INTO savings_goals (name, target_amount, current_amount, deadline) VALUES (?, ?, ?, ?)`,
-        [g.name, g.target_amount, g.current_amount, g.deadline ?? null]
+        `INSERT INTO savings_goals (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+        cols.map(c => (rest as Record<string, unknown>)[c] ?? null) as any[]
       );
       loadGoals();
     } catch (e) {
