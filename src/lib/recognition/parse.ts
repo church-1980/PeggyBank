@@ -48,6 +48,30 @@ function findAmount(lines: string[]): { value?: number; conf: Confidence } {
 const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
 };
+/**
+ * French month names, by FULL lowercase word rather than a 3-letter slice
+ * like MONTHS above — juin/juillet and mai/mars would collide at 3 letters
+ * ("jui", "mai"/"mar" aren't actually the same, but juin and juillet both
+ * slice to "jui"). Short forms bills commonly print are included too.
+ */
+const FRENCH_MONTHS: Record<string, number> = {
+  janvier: 1, janv: 1,
+  février: 2, fevrier: 2, févr: 2, fevr: 2,
+  mars: 3,
+  avril: 4, avr: 4,
+  mai: 5,
+  juin: 6,
+  juillet: 7, juil: 7,
+  août: 8, aout: 8,
+  septembre: 9, sept: 9,
+  octobre: 10, oct: 10,
+  novembre: 11, nov: 11,
+  décembre: 12, decembre: 12, déc: 12, dec: 12,
+};
+function monthNumber(word: string): number | undefined {
+  const w = word.toLowerCase().replace(/\.$/, '');
+  return FRENCH_MONTHS[w] ?? MONTHS[w.slice(0, 3)];
+}
 function pad(n: number) { return n < 10 ? '0' + n : '' + n; }
 
 /** Parse the first date found in text → YYYY-MM-DD, or undefined. */
@@ -78,17 +102,31 @@ function parseDateInner(text: string): { date?: string; certain: boolean } {
       return { date: `${m[3]}-${pad(month)}-${pad(day)}`, certain: !ambiguous };
     }
   }
-  // Jul 28, 2026  /  July 28 2026  /  28 Jul 2026
-  m = text.match(/\b([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(20\d{2})\b/);
-  if (m && MONTHS[m[1].slice(0, 3).toLowerCase()]) return { date: `${m[3]}-${pad(MONTHS[m[1].slice(0, 3).toLowerCase()])}-${pad(+m[2])}`, certain: true };
-  m = text.match(/\b(\d{1,2})\s+([A-Za-z]{3,9})\.?\s+(20\d{2})\b/);
-  if (m && MONTHS[m[2].slice(0, 3).toLowerCase()]) return { date: `${m[3]}-${pad(MONTHS[m[2].slice(0, 3).toLowerCase()])}-${pad(+m[1])}`, certain: true };
+  // Jul 28, 2026  /  July 28 2026  /  28 Jul 2026  /  28 juil. 2026 / 28 juillet 2026
+  // [A-Za-zÀ-ÿ] (not [A-Za-z]) so an accented month name like "février" or
+  // "août" is matched at all, not silently skipped over.
+  m = text.match(/\b([A-Za-zÀ-ÿ]{3,10})\.?\s+(\d{1,2}),?\s+(20\d{2})\b/);
+  if (m) { const mo = monthNumber(m[1]); if (mo) return { date: `${m[3]}-${pad(mo)}-${pad(+m[2])}`, certain: true }; }
+  m = text.match(/\b(\d{1,2})\s+([A-Za-zÀ-ÿ]{3,10})\.?\s+(20\d{2})\b/);
+  if (m) { const mo = monthNumber(m[2]); if (mo) return { date: `${m[3]}-${pad(mo)}-${pad(+m[1])}`, certain: true }; }
   return { certain: false };
 }
 
+// DUE_WORD is its own small pattern rather than reusing classify()'s bill
+// signals below, since a due DATE line needs only the word that names it,
+// not the fuller phrases ("date d'échéance") that make classify() confident
+// this is a bill at all.
+//
+// No \b around the accented terms: JS regex \b is ASCII-only ([A-Za-z0-9_]),
+// so 'é' is treated as a non-word character and \b can never match directly
+// beside one — \béchéance\b silently matches nothing, ever, regardless of
+// what surrounds it. core/documentFields.ts already established this same
+// convention for its own French terms; followed here rather than reinvented.
+const DUE_WORD = /\bdue\b|[eé]ch[eé]ance|[eé]chu|\bexigible\b/i;
+
 function findDueDate(lines: string[]): string | undefined {
   for (const line of lines) {
-    if (/\bdue\b/i.test(line)) {
+    if (DUE_WORD.test(line)) {
       const d = parseDate(line);
       if (d) return d;
     }
@@ -175,11 +213,48 @@ function findMerchant(lines: string[]): { name?: string; conf: Confidence } {
 }
 
 // ── Doc type ──────────────────────────────────────────────────────────────────
+//
+// D4 — this was English-only, so a French bill or receipt (a Hydro-Québec
+// statement, a dépanneur receipt) classified as 'unknown' even with perfectly
+// clean OCR text: docType never got past "unknown" and a document written
+// entirely in French had no path to a bill/expense suggestion at all.
+//
+// French terms are added here directly rather than reused from
+// core/documentFields.ts's label vocabulary, because that file answers a
+// different question (which NUMBER is the total) from this one (is this
+// document a BILL or a RECEIPT at all) — "numéro de compte" and "période de
+// facturation" are strong bill structure, not amount labels, and have no
+// equivalent there to share.
+// \b is applied per-term, only on the side(s) whose edge character is plain
+// ASCII — the same constraint documentFields.ts's own French vocabulary
+// works around. A term whose edge is an accented character (montant D[UÛ],
+// [ÉÀ]TAT...) drops the boundary on that side rather than silently
+// matching nothing.
+const BILL_SIGNALS = new RegExp(
+  [
+    '\\bamount due\\b', '\\bdue date\\b', '\\baccount number\\b', '\\bstatement\\b',
+    '\\bbilling period\\b', '\\binvoice\\b', '\\bamount owing\\b', '\\btotal due\\b', '\\bautopay\\b',
+    // French — Québec utility/telecom bill structure.
+    '\\bmontant\\s*d[uû]', '\\bdate\\s*d[\'’]?[eé]ch[eé]ance\\b', '\\bnum[eé]ro\\s*de\\s*compte\\b',
+    '\\brelev[eé]', '[eé]tat\\s*de\\s*compte\\b', '\\bp[eé]riode\\s*de\\s*facturation\\b',
+    '\\bfacture\\b', '\\bsolde\\s*d[uû]', '\\bpr[eé]l[eè]vement\\s*automatique\\b',
+  ].join('|'),
+  'i',
+);
+const RECEIPT_SIGNALS = new RegExp(
+  [
+    '\\btotal\\b', '\\bsubtotal\\b', '\\btax\\b', '\\bgst\\b', '\\bhst\\b', '\\bpst\\b', '\\bqst\\b',
+    '\\bchange\\b', '\\bcash\\b', '\\bdebit\\b', '\\bvisa\\b', '\\bmastercard\\b', '\\bapproved\\b',
+    // French — grocery/restaurant/dépanneur receipt structure.
+    '\\bsous[\\s-]*total\\b', '\\btaxes?\\b', '\\btps\\b', '\\btvq\\b', '\\btvh\\b',
+    '\\bmonnaie\\b', '\\bcomptant\\b', '\\bd[eé]bit\\b', '\\bapprouv[eé]', '\\besp[eè]ces\\b', '\\bre[cç]u\\b',
+  ].join('|'),
+  'i',
+);
+
 function classify(text: string): { type: DocType; conf: Confidence } {
-  const billSignals = /\b(amount due|due date|account number|statement|billing period|invoice|amount owing|total due|autopay)\b/i;
-  const receiptSignals = /\b(total|subtotal|tax|gst|hst|pst|qst|change|cash|debit|visa|mastercard|approved)\b/i;
-  const bill = billSignals.test(text);
-  const receipt = receiptSignals.test(text);
+  const bill = BILL_SIGNALS.test(text);
+  const receipt = RECEIPT_SIGNALS.test(text);
   if (bill && !receipt) return { type: 'bill', conf: 'high' };
   if (receipt && !bill) return { type: 'expense', conf: 'high' };
   if (bill && receipt)  return { type: 'bill', conf: 'low' }; // "amount due" usually wins
