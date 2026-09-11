@@ -163,6 +163,21 @@ export async function setupDatabase(): Promise<void> {
       status     TEXT DEFAULT 'confirmed',   -- 'confirmed' | 'assumed' | 'failed'
       UNIQUE(source, bill_id, cycle_date)
     );
+
+    -- ONE ACTUAL PAYMENT towards a debt. Cash that genuinely left the account,
+    -- the same kind of event as a bill payment or an expense -- not a
+    -- cumulative counter. debts.amount_paid is legacy display-only history
+    -- (see the migration below); this table is the authoritative ledger, so a
+    -- payment can be dated, edited, deleted and counted by the finance engine
+    -- individually, and deleting the debt PLAN later does not erase it.
+    CREATE TABLE IF NOT EXISTS debt_payments (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      debt_id    INTEGER NOT NULL,
+      date       TEXT NOT NULL,          -- local YYYY-MM-DD, the day the money moved
+      amount     REAL NOT NULL,
+      debt_name  TEXT,                   -- snapshot at payment time; see bill_payments.bill_name
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // Safe migrations — silently skip if column already exists
@@ -295,6 +310,37 @@ export async function setupDatabase(): Promise<void> {
   } catch (e) {
     console.warn('[db] paycheck dedupe skipped:', e);
   }
+  // ── ONE-TIME MIGRATION: debts.amount_paid -> a real payment ledger ─────────
+  // amount_paid was a cumulative counter: it could say HOW MUCH had been paid
+  // but never WHEN, so no individual payment could be dated, edited or
+  // deleted, and Safe to Spend never knew debt payments had happened at all.
+  // Every debt with progress gets exactly ONE debt_payments row for the total
+  // paid so far, dated today (the earliest date this migration can honestly
+  // claim). amount_paid itself is left untouched -- nothing is deleted, so
+  // this is reversible and no figure is lost. Guarded so it runs once.
+  try {
+    const migrated = await database.getFirstAsync<{ value: string }>(
+      `SELECT value FROM settings WHERE key = 'debt_payments_migrated_v1'`
+    );
+    if (!migrated) {
+      const paidDebts = await database.getAllAsync<{ id: number; name: string; amount_paid: number }>(
+        `SELECT id, name, amount_paid FROM debts WHERE amount_paid > 0`
+      ).catch(() => []);
+      const today = localDateString(new Date());
+      for (const d of paidDebts) {
+        await database.runAsync(
+          `INSERT INTO debt_payments (debt_id, date, amount, debt_name) VALUES (?, ?, ?, ?)`,
+          [d.id, today, d.amount_paid, d.name]
+        );
+      }
+      await database.runAsync(
+        `INSERT OR REPLACE INTO settings (key, value) VALUES ('debt_payments_migrated_v1', 'done')`
+      );
+      if (paidDebts.length > 0) console.log(`[db] migrated ${paidDebts.length} debt(s) to the payment ledger`);
+    }
+  } catch (e) {
+    console.warn('[db] debt payment migration skipped:', e);
+  }
 }
 
 // Every PeggyBank-owned table. Used by the destructive wipe.
@@ -306,7 +352,7 @@ export async function setupDatabase(): Promise<void> {
 const ALL_TABLES = [
   'expenses', 'income', 'bills', 'savings_goals',
   'debts', 'subscriptions', 'calendar_reminders', 'settings', 'custom_logos',
-  'merchant_memory', 'bill_payments',
+  'merchant_memory', 'bill_payments', 'debt_payments',
   'currency_rates', 'conversion_history',
   'income_schedules',
 ];

@@ -44,7 +44,7 @@ import { localMonthRange } from '../core/datetime';
 import { parseQuery, searchTerms } from '../core/searchQuery';
 
 /** Which table a piece of activity really lives in. */
-export type ActivitySource = 'expense' | 'income' | 'bill' | 'subscription';
+export type ActivitySource = 'expense' | 'income' | 'bill' | 'subscription' | 'debt';
 
 /** Money coming in, or money going out. Never a plan. */
 export type ActivityDirection = 'in' | 'out';
@@ -125,6 +125,24 @@ const ACTIVITY_SQL = `
   LEFT JOIN bills b         ON p.source = 'bill'         AND b.id = p.bill_id
   LEFT JOIN subscriptions s ON p.source = 'subscription' AND s.id = p.bill_id
   WHERE p.paid = 1
+
+  UNION ALL
+
+  -- A real payment towards a debt (D1). Same reasoning as bill_payments just
+  -- above: the live debt's name wins if it still exists, otherwise the name
+  -- snapshotted when the payment was made.
+  SELECT
+    'debt',
+    dp.id,
+    dp.date,
+    dp.amount,
+    'out',
+    COALESCE(d.name, dp.debt_name, 'Payment'),
+    'Debt',
+    NULL,
+    NULL
+  FROM debt_payments dp
+  LEFT JOIN debts d ON d.id = dp.debt_id
 `;
 
 interface Row {

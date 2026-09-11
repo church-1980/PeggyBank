@@ -105,6 +105,8 @@ function seed(db: any) {
        VALUES (1, 'Vacation', 2000, 250.75, '2026-12-01', 'vacation', 1, 'file:///receipts/goal.jpg', 'x')`);
   run(`INSERT INTO debts (id, name, total_amount, amount_paid, minimum_payment, monthly_payment, apr, notes, created_at)
        VALUES (1, 'Visa', 2500, 100, 50, 150, 19.99, 'card', 'x')`);
+  run(`INSERT INTO debt_payments (id, debt_id, date, amount, debt_name, created_at)
+       VALUES (1, 1, '2026-01-10', 100, 'Visa', 'x')`);
   run(`INSERT INTO calendar_reminders (id, date, time, title, created_at)
        VALUES (1, '2026-02-29', '09:00', 'Leap day reminder', 'x')`);
   run(`INSERT INTO custom_logos (key, uri, updated_at) VALUES ('bell', 'file:///logos/bell.png', 1)`);

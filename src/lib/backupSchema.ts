@@ -13,7 +13,7 @@
 export type TableName =
   | 'expenses' | 'income' | 'bills' | 'savings_goals' | 'debts'
   | 'subscriptions' | 'settings' | 'custom_logos' | 'merchant_memory'
-  | 'calendar_reminders' | 'bill_payments' | 'income_schedules';
+  | 'calendar_reminders' | 'bill_payments' | 'income_schedules' | 'debt_payments';
 
 export interface TableSpec {
   table: TableName;
@@ -105,6 +105,15 @@ export const BACKUP_TABLES: TableSpec[] = [
     primaryKey: 'id',
     // Not required: databases created before recurring income existed have none,
     // and an older backup must still restore rather than be rejected.
+    required: false,
+  },
+  {
+    // The authoritative debt-payment ledger (D1 repair). debt_name is a
+    // snapshot, same reasoning as bill_payments.bill_name.
+    table: 'debt_payments',
+    columns: ['id', 'debt_id', 'date', 'amount', 'debt_name', 'created_at'],
+    primaryKey: 'id',
+    // Not required: databases created before this ledger existed have none.
     required: false,
   },
 ];

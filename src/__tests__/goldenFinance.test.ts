@@ -124,9 +124,9 @@ describe('Spending breakdown', () => {
     expect(total).toBe(GOLDEN_EXPECTED.everydaySpending);
   });
 
-  it('and the two halves of money out add up to the whole', () => {
-    // everyday spending + bills actually paid = all money out.
-    expect(cents(GOLDEN_EXPECTED.everydaySpending + GOLDEN_EXPECTED.billsPaidTotal))
+  it('and the three parts of money out add up to the whole', () => {
+    // everyday spending + bills actually paid + debt payments made = all money out.
+    expect(cents(GOLDEN_EXPECTED.everydaySpending + GOLDEN_EXPECTED.billsPaidTotal + GOLDEN_EXPECTED.debtPaymentsTotal))
       .toBe(GOLDEN_EXPECTED.monthSpending);
   });
 });
@@ -182,7 +182,7 @@ describe('Arithmetic safety', () => {
   it('handles an empty database without crashing or showing NaN', () => {
     const empty = computeFinanceSummary({
       today: GOLDEN_NOW, monthStart: GOLDEN_MONTH_START, monthEnd: GOLDEN_MONTH_END,
-      expenses: [], income: [], bills: [], paidCycles: [], goals: [],
+      expenses: [], income: [], bills: [], paidCycles: [], goals: [], debtPayments: [],
     });
     for (const [k, v] of Object.entries(empty)) {
       expect(Number.isFinite(v as number)).toBe(true);

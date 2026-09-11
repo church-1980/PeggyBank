@@ -134,7 +134,7 @@ function month(paidCycles: FinanceInput['paidCycles'], today = new Date(2026, 7,
     today,
     monthStart: '2026-08-01', monthEnd: '2026-08-31',
     expenses: [], income: [{ amount: 1000, date: '2026-08-01' }],
-    bills: [BELL], paidCycles, goals: [],
+    bills: [BELL], paidCycles, goals: [], debtPayments: [],
   };
 }
 
@@ -227,7 +227,7 @@ describe('The next cycle always survives', () => {
       expenses: [], income: [{ amount: 1000, date: '2026-09-01' }],
       bills: [BELL],
       paidCycles: [{ bill_id: 1, cycle_date: '2026-08-28', amount: 117 }],
-      goals: [],
+      goals: [], debtPayments: [],
     });
     expect(september.unpaidBillsTotal).toBe(117);   // owed again; it did not vanish
     expect(september.safeToSpend).toBe(883);

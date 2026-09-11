@@ -38,7 +38,7 @@ export type { FinanceSummary, SafeToSpendExplanation };
 export async function buildFinanceInput(db: SQLiteDatabase, now: Date = new Date()): Promise<FinanceInput> {
   const { start, end } = localMonthRange(now);
 
-  const [expenses, income, bills, subs, paid, goals] = await Promise.all([
+  const [expenses, income, bills, subs, paid, goals, debtPayments] = await Promise.all([
     db.getAllAsync<{ amount: number; category: string; date: string }>(
       `SELECT amount, category, date FROM expenses WHERE date >= ? AND date <= ?`, [start, end]),
     db.getAllAsync<{ amount: number; date: string }>(
@@ -51,6 +51,10 @@ export async function buildFinanceInput(db: SQLiteDatabase, now: Date = new Date
       `SELECT source, bill_id, cycle_date, paid, amount FROM bill_payments WHERE paid = 1`).catch(() => []),
     db.getAllAsync<{ target_amount: number; current_amount: number }>(
       `SELECT target_amount, current_amount FROM savings_goals`),
+    // debt_payments, the authoritative ledger of real payments towards debt
+    // (D1). Without it, paying down a debt never touched Safe to Spend.
+    db.getAllAsync<{ amount: number; date: string }>(
+      `SELECT amount, date FROM debt_payments WHERE date >= ? AND date <= ?`, [start, end]).catch(() => []),
   ]);
 
   // bill ids and subscription ids live in separate namespaces; keep them apart
@@ -88,6 +92,7 @@ export async function buildFinanceInput(db: SQLiteDatabase, now: Date = new Date
     bills: allBills,
     paidCycles,
     goals,
+    debtPayments,
   };
 }
 

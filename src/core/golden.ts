@@ -21,7 +21,7 @@
  * to filter by month is caught.
  */
 
-import type { FinanceInput, FinanceExpense, FinanceIncome, FinanceBill, FinanceGoal, PaidCycle } from './finance';
+import type { FinanceInput, FinanceExpense, FinanceIncome, FinanceBill, FinanceGoal, PaidCycle, FinanceDebtPayment } from './finance';
 
 /** Pinned clock: Wednesday 19 August 2026, 8:01 PM local. */
 export const GOLDEN_NOW = new Date(2026, 7, 19, 20, 1, 0);
@@ -79,6 +79,16 @@ export const GOLDEN_GOALS: FinanceGoal[] = [
   { target_amount:  500, current_amount:  800 }, // OVER-funded -> 0, never negative
 ];
 
+/**
+ * One real payment towards debt, made in August (D1). Plus one row outside
+ * the month, same deliberate pattern as every other GOLDEN_* array here: any
+ * function that forgets to filter by month is caught.
+ */
+export const GOLDEN_DEBT_PAYMENTS: FinanceDebtPayment[] = [
+  { amount: 200.00, date: '2026-08-10' },
+  { amount: 500.00, date: '2026-07-28' }, // OUT OF RANGE - must not count
+];
+
 export const GOLDEN_INPUT: FinanceInput = {
   today: GOLDEN_NOW,
   monthStart: GOLDEN_MONTH_START,
@@ -88,6 +98,7 @@ export const GOLDEN_INPUT: FinanceInput = {
   bills: GOLDEN_BILLS,
   paidCycles: GOLDEN_PAID_CYCLES,
   goals: GOLDEN_GOALS,
+  debtPayments: GOLDEN_DEBT_PAYMENTS,
 };
 
 /**
@@ -155,17 +166,38 @@ export const GOLDEN_INPUT: FinanceInput = {
  * GOLDEN_PAID_CYCLES carries no amounts, so this also exercises the fallback to
  * each bill's planned amount. Explicit paid amounts are covered separately.
  */
+/**
+ * CORRECTED 11 September 2026 — a debt payment is money that has GONE (D1).
+ *
+ * debtPaymentsTotal was previously not a field at all: FinanceInput had no
+ * way to receive debt payments, so a real $200 that left the account for a
+ * debt was invisible to Safe to Spend everywhere in the app, always, not
+ * just as an edge case. debts.amount_paid tracked cumulative progress on the
+ * debt itself, but nothing read it into the money-movement side of the
+ * engine.
+ *
+ *   debtPaymentsTotal        n/a ->  200.00   NEW: the 2026-08-10 payment.
+ *                                              2026-07-28's $500 is excluded.
+ *   monthSpending          628.29 ->  828.29   478.30 + 149.99 + 200.00
+ *   moneyLeft             3771.71 -> 3571.71   4400.00 - 828.29
+ *   safeToSpend            3230.72 -> 3030.72   4400 - 828.29 - 240.99 - 300
+ *   dailyAllowance          269.23 ->  252.56   3030.72 / 12
+ *
+ * Nothing else changes. unpaidBillsTotal and goalsSavingsNeeded are
+ * untouched by this repair; only the money-out side gained a category.
+ */
 export const GOLDEN_EXPECTED = {
   monthIncome: 4400.00,
   everydaySpending: 478.30,
   billsPaidTotal: 149.99,
-  monthSpending: 628.29,
-  moneyLeft: 3771.71,
+  debtPaymentsTotal: 200.00,
+  monthSpending: 828.29,
+  moneyLeft: 3571.71,
   unpaidBillsTotal: 240.99,
   goalsSavingsNeeded: 300.00,
-  safeToSpend: 3230.72,
+  safeToSpend: 3030.72,
   daysLeftInMonth: 12,
-  dailyAllowance: 269.23,
+  dailyAllowance: 252.56,
 } as const;
 
 /** Which bills are still owed, by name, on the golden date. */

@@ -24,6 +24,13 @@ import { clampDueDay } from './datetime';
 export interface FinanceExpense { amount: number; category?: string; date: string }
 export interface FinanceIncome  { amount: number; date: string }
 export interface FinanceGoal    { target_amount: number; current_amount: number }
+/**
+ * One actual payment towards a debt. The same kind of event as a bill
+ * payment or an expense: cash that genuinely left the account, dated the
+ * day it happened -- not debts.amount_paid, which is a cumulative counter
+ * with no date and no way to correct a single payment.
+ */
+export interface FinanceDebtPayment { amount: number; date: string }
 export interface FinanceBill {
   id?: number;
   name?: string;
@@ -168,22 +175,35 @@ export interface FinanceInput {
   bills: FinanceBill[];       // includes subscriptions -- they are the same thing
   paidCycles: PaidCycle[];
   goals: FinanceGoal[];
+  /**
+   * Real payments made towards debts this month. A debt payment is cash
+   * leaving spendable money -- financially the same kind of event as a bill
+   * payment or an expense -- so it is counted the same way. See D1 in the
+   * repair diagnostic for why: PeggyBank has no other place that treats a
+   * debt payment as money moving, so Safe to Spend silently ignored it.
+   */
+  debtPayments: FinanceDebtPayment[];
 }
 
 export interface FinanceSummary {
   monthIncome: number;
   /**
-   * ALL money out this month: everyday spending plus bills actually paid.
+   * ALL money out this month: everyday spending, bills actually paid, and
+   * debt payments actually made.
    *
    * It used to mean everyday spending only. That was the defect: a paid bill
    * left "still owed" and was never added here, so it fell out of the sum
-   * entirely and paying a bill made Safe to Spend go UP by its amount.
+   * entirely and paying a bill made Safe to Spend go UP by its amount. Debt
+   * payments had the same defect in a different shape: nothing added them at
+   * all, anywhere, so paying down a debt never touched Safe to Spend.
    */
   monthSpending: number;
   /** Everyday expenses only -- the expenses table. Kept separate for the breakdown. */
   everydaySpending: number;
   /** Bills and subscriptions actually paid this month. */
   billsPaidTotal: number;
+  /** Real debt payments made this month. */
+  debtPaymentsTotal: number;
   moneyLeft: number;          // may be negative: this is the honest number
   unpaidBillsTotal: number;
   goalsSavingsNeeded: number;
@@ -206,9 +226,11 @@ export function computeFinanceSummary(input: FinanceInput): FinanceSummary {
   const monthIncome = sumAmounts(inRange(input.income, input.monthStart, input.monthEnd));
   const everydaySpending = sumAmounts(inRange(input.expenses, input.monthStart, input.monthEnd));
   const billsPaidTotal = paidBillsTotalInMonth(input);
-  // Money out is both halves. A bill that has been paid has GONE; it must not
-  // vanish from the arithmetic just because it is no longer owed.
-  const monthSpending = cents(everydaySpending + billsPaidTotal);
+  const debtPaymentsTotal = sumAmounts(inRange(input.debtPayments, input.monthStart, input.monthEnd));
+  // Money out is every kind of real outflow. A bill that has been paid, or a
+  // debt payment that has been made, has GONE; it must not vanish from the
+  // arithmetic just because nothing is "owed" on it any more.
+  const monthSpending = cents(everydaySpending + billsPaidTotal + debtPaymentsTotal);
   const unpaid = unpaidBillsTotal(input.bills, input.paidCycles, input.today);
   const goalsNeeded = goalsSavingsNeeded(input.goals);
   const moneyLeft = cents(monthIncome - monthSpending);
@@ -220,6 +242,7 @@ export function computeFinanceSummary(input: FinanceInput): FinanceSummary {
     monthSpending,
     everydaySpending,
     billsPaidTotal,
+    debtPaymentsTotal,
     moneyLeft,
     unpaidBillsTotal: unpaid,
     goalsSavingsNeeded: goalsNeeded,
@@ -330,6 +353,12 @@ export function explainSafeToSpend(input: FinanceInput): SafeToSpendExplanation 
     .filter(d => d.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 
+  const debtDetail = input.debtPayments
+    .filter(p => p.date >= input.monthStart && p.date <= input.monthEnd)
+    .map(p => ({ label: 'Debt payment', amount: cents(p.amount) }))
+    .filter(d => d.amount > 0)
+    .sort((a, b) => b.amount - a.amount);
+
   const lines: SafeToSpendLine[] = [
     { key: 'income', label: 'Money in this month', amount: summary.monthIncome },
     { key: 'spending', label: 'Everyday spending', amount: cents(-summary.everydaySpending) },
@@ -338,6 +367,12 @@ export function explainSafeToSpend(input: FinanceInput): SafeToSpendExplanation 
       label: 'Bills already paid',
       amount: cents(-summary.billsPaidTotal),
       detail: paidDetail.length ? paidDetail : undefined,
+    },
+    {
+      key: 'debtPayments',
+      label: 'Paid towards debt',
+      amount: cents(-summary.debtPaymentsTotal),
+      detail: debtDetail.length ? debtDetail : undefined,
     },
     {
       key: 'bills',
@@ -358,6 +393,7 @@ export function explainSafeToSpend(input: FinanceInput): SafeToSpendExplanation 
     summary.monthIncome
     - summary.everydaySpending
     - summary.billsPaidTotal
+    - summary.debtPaymentsTotal
     - summary.unpaidBillsTotal
     - summary.goalsSavingsNeeded
   );

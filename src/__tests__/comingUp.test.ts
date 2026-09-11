@@ -120,7 +120,7 @@ describe('Why Coming Up shows no "about $X after these" figure', () => {
     monthStart: '2026-09-01', monthEnd: '2026-09-30',
     expenses: [], income: [{ amount: 1000, date: '2026-09-01' }],
     bills: [{ id: 1, name: 'Bell', amount: 117, frequency: 'monthly' as const, due_day: 4 }],
-    paidCycles, goals: [],
+    paidCycles, goals: [], debtPayments: [],
   });
 
   it('an upcoming bill is ALREADY deducted from Safe to Spend', () => {

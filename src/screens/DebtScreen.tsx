@@ -16,6 +16,10 @@ import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
+import PeggyDateField from '../components/peggy/PeggyDateField';
+import { localDateString } from '../core/datetime';
+
+interface DebtPaymentRow { id: number; date: string; amount: number }
 
 interface Debt {
   id?: number;
@@ -97,6 +101,9 @@ export default function DebtScreen({ navigation }: any) {
   const [monthlyPayment, setMonthlyPayment] = useState('');
   const [apr, setApr] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(localDateString(new Date()));
+  const [paymentHistory, setPaymentHistory] = useState<DebtPaymentRow[]>([]);
+  const [editingPaymentId, setEditingPaymentId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
@@ -105,9 +112,29 @@ export default function DebtScreen({ navigation }: any) {
     try {
       const db = await getDatabase();
       const result = await db.getAllAsync<Debt>(`SELECT * FROM debts ORDER BY created_at DESC`);
-      setDebts(result);
+      // amount_paid on the row itself is legacy display-only history (D1) --
+      // debt_payments is the authoritative ledger, so what is shown here is
+      // always derived from it, never the stored column.
+      const paidRows = await db.getAllAsync<{ debt_id: number; total: number }>(
+        `SELECT debt_id, SUM(amount) AS total FROM debt_payments GROUP BY debt_id`
+      );
+      const paidMap = new Map(paidRows.map(r => [r.debt_id, r.total]));
+      setDebts(result.map(d => ({ ...d, amount_paid: paidMap.get(d.id as number) ?? 0 })));
     } catch {}
   }, []);
+
+  const loadPaymentHistory = async (debtId: number) => {
+    try {
+      const db = await getDatabase();
+      const rows = await db.getAllAsync<DebtPaymentRow>(
+        `SELECT id, date, amount FROM debt_payments WHERE debt_id=? ORDER BY date DESC, id DESC`,
+        [debtId]
+      );
+      setPaymentHistory(rows);
+    } catch {
+      setPaymentHistory([]);
+    }
+  };
 
   useFocusEffect(useCallback(() => { loadDebts(); }, [loadDebts]));
 
@@ -131,7 +158,34 @@ export default function DebtScreen({ navigation }: any) {
   const openPayment = (debt: Debt) => {
     setSelectedDebt(debt);
     setPaymentAmount(String(debt.monthly_payment || debt.minimum_payment || ''));
+    setPaymentDate(localDateString(new Date()));
+    setEditingPaymentId(null);
     setPayModalVisible(true);
+    if (debt.id) loadPaymentHistory(debt.id);
+  };
+
+  const startEditPayment = (p: DebtPaymentRow) => {
+    setEditingPaymentId(p.id);
+    setPaymentDate(p.date);
+    setPaymentAmount(String(p.amount));
+  };
+
+  const deletePayment = (id: number) => {
+    setConfirm({
+      title: 'Delete this payment?',
+      message: 'It will be removed and the debt balance will update.',
+      onConfirm: async () => {
+        try {
+          const db = await getDatabase();
+          await db.runAsync(`DELETE FROM debt_payments WHERE id=?`, [id]);
+          if (editingPaymentId === id) { setEditingPaymentId(null); setPaymentAmount(''); }
+          if (selectedDebt?.id) await loadPaymentHistory(selectedDebt.id);
+          loadDebts();
+        } catch (e) {
+          console.error('[Debt] delete payment error:', e);
+        }
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -172,10 +226,24 @@ export default function DebtScreen({ navigation }: any) {
     setSaving(true);
     try {
       const db = await getDatabase();
-      const newPaid = Math.min(selectedDebt.total_amount, selectedDebt.amount_paid + pay);
-      await db.runAsync(`UPDATE debts SET amount_paid=? WHERE id=?`, [newPaid, selectedDebt.id]);
-      console.log('[Debt] payment $' + pay + ' recorded for debt id', selectedDebt.id);
+      // The authoritative record: one dated, correctable row per payment (D1).
+      // debts.amount_paid is no longer written to; loadDebts() derives it from
+      // this table every time so there is exactly one source of truth.
+      if (editingPaymentId) {
+        await db.runAsync(
+          `UPDATE debt_payments SET date=?, amount=? WHERE id=?`,
+          [paymentDate, pay, editingPaymentId]
+        );
+        console.log('[Debt] payment', editingPaymentId, 'updated to $' + pay);
+      } else {
+        await db.runAsync(
+          `INSERT INTO debt_payments (debt_id, date, amount, debt_name) VALUES (?, ?, ?, ?)`,
+          [selectedDebt.id, paymentDate, pay, selectedDebt.name]
+        );
+        console.log('[Debt] payment $' + pay + ' recorded for debt id', selectedDebt.id);
+      }
       setPayModalVisible(false);
+      setEditingPaymentId(null);
       loadDebts();
     } catch (e) {
       console.error('[Debt] payment error:', e);
@@ -441,24 +509,59 @@ export default function DebtScreen({ navigation }: any) {
 
       <Modal visible={payModalVisible} transparent animationType="slide" onRequestClose={() => setPayModalVisible(false)}>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <View style={[styles.modalCard, { paddingBottom: insets.bottom + 40 }]}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Make a Payment</Text>
-            <Text style={styles.modalSub}>{selectedDebt?.name}</Text>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <View style={[styles.modalCard, { paddingBottom: insets.bottom + 40 }]}>
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>{editingPaymentId ? 'Edit Payment' : 'Make a Payment'}</Text>
+              <Text style={styles.modalSub}>{selectedDebt?.name}</Text>
 
-            <Text style={styles.modalLabel}>How much are you paying?</Text>
-            <View style={styles.amountRow}>
-              <Text style={styles.dollar}>$</Text>
-              <TextInput style={styles.amountInput} value={paymentAmount} onChangeText={setPaymentAmount} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.textHint} autoFocus />
+              <Text style={styles.modalLabel}>How much are you paying?</Text>
+              <View style={styles.amountRow}>
+                <Text style={styles.dollar}>$</Text>
+                <TextInput style={styles.amountInput} value={paymentAmount} onChangeText={setPaymentAmount} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={C.textHint} autoFocus />
+              </View>
+
+              <PeggyDateField value={paymentDate} onChange={setPaymentDate} label="When" />
+
+              <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handlePayment} disabled={saving}>
+                <Text style={styles.saveBtnText}>
+                  {saving ? 'Saving...' : editingPaymentId ? 'Update Payment' : 'Record Payment'}
+                </Text>
+              </TouchableOpacity>
+              {editingPaymentId ? (
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => { setEditingPaymentId(null); setPaymentAmount(''); setPaymentDate(localDateString(new Date())); }}>
+                  <Text style={styles.cancelBtnText}>Add a new payment instead</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setPayModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              {paymentHistory.length > 0 && (
+                <View style={styles.historySection}>
+                  <Text style={styles.modalLabel}>Payment history</Text>
+                  {paymentHistory.map(p => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.historyRow, editingPaymentId === p.id && { borderColor: C.primary }]}
+                      onPress={() => startEditPayment(p)}
+                      activeOpacity={0.7}
+                    >
+                      <View>
+                        <Text style={styles.historyDate}>{p.date}</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+                        <Text style={styles.historyAmount}>{formatCurrency(p.amount)}</Text>
+                        <TouchableOpacity onPress={() => deletePayment(p.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                          <Ionicons name="trash-outline" size={16} color={C.spending} />
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
-
-            <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handlePayment} disabled={saving}>
-              <Text style={styles.saveBtnText}>{saving ? 'Recording...' : 'Record Payment'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setPayModalVisible(false)}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
     </PeggyScreen>
@@ -551,6 +654,15 @@ function makeStyles(C: ColorPalette) {
     saveBtnText:       { ...Typography.bodyBold, color: C.textOnPrimary, fontSize: 17 },
     cancelBtn:         { paddingVertical: 14, alignItems: 'center' },
     cancelBtnText:     { ...Typography.small, color: C.textHint },
+
+    historySection:    { marginTop: Spacing.lg, borderTopWidth: 1, borderTopColor: C.border, paddingTop: Spacing.md },
+    historyRow: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      paddingVertical: 10, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm,
+      borderWidth: 1, borderColor: 'transparent', marginBottom: 4,
+    },
+    historyDate:       { ...Typography.small, color: C.textSecondary },
+    historyAmount:     { ...Typography.smallBold, color: C.textPrimary },
 
     confirmOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
     confirmSheet: {

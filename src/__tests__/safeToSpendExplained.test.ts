@@ -36,8 +36,9 @@ describe('The explanation reconciles to the number on screen', () => {
     expect(by.billsPaid).toBe(cents(-s.billsPaidTotal));
     expect(by.bills).toBe(cents(-s.unpaidBillsTotal));
     expect(by.goals).toBe(cents(-s.goalsSavingsNeeded));
-    // The two halves still account for every dollar of money out.
-    expect(cents(-(by.spending + by.billsPaid))).toBe(s.monthSpending);
+    expect(by.debtPayments).toBe(cents(-s.debtPaymentsTotal));
+    // The three parts still account for every dollar of money out.
+    expect(cents(-(by.spending + by.billsPaid + by.debtPayments))).toBe(s.monthSpending);
   });
 
   it('the headline it explains IS the headline the app shows', () => {
@@ -80,15 +81,15 @@ describe('Awkward months still reconcile', () => {
     expect(sumLines(e.lines)).toBe(e.rawTotal);
   });
 
-  it('with no bills, no goals and no spending it is just the income', () => {
-    const e = explainSafeToSpend({ ...base, bills: [], paidCycles: [], goals: [], expenses: [] });
+  it('with no bills, no goals, no spending and no debt payments it is just the income', () => {
+    const e = explainSafeToSpend({ ...base, bills: [], paidCycles: [], goals: [], expenses: [], debtPayments: [] });
     expect(e.safeToSpend).toBe(GOLDEN_EXPECTED.monthIncome);
     expect(sumLines(e.lines)).toBe(GOLDEN_EXPECTED.monthIncome);
   });
 
   it('an empty month explains zero without inventing anything', () => {
     const e = explainSafeToSpend({
-      ...base, income: [], expenses: [], bills: [], paidCycles: [], goals: [],
+      ...base, income: [], expenses: [], bills: [], paidCycles: [], goals: [], debtPayments: [],
     });
     expect(e.safeToSpend).toBe(0);
     expect(sumLines(e.lines)).toBe(0);
@@ -152,7 +153,7 @@ describe('The explanation obeys the same invariant as the headline', () => {
   const bell = { id: 1, name: 'Bell', amount: 425, frequency: 'monthly' as const, due_day: 15 };
   const make = (paidCycles: any[]) => explainSafeToSpend({
     ...AUG, income: [{ amount: 1000, date: '2026-08-01' }],
-    expenses: [], bills: [bell], goals: [], paidCycles,
+    expenses: [], bills: [bell], goals: [], paidCycles, debtPayments: [],
   });
 
   const owed = make([]);

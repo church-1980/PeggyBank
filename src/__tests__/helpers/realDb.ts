@@ -83,6 +83,11 @@ export const TEST_SCHEMA = `
     minimum_payment REAL DEFAULT 0, monthly_payment REAL DEFAULT 0,
     apr REAL DEFAULT 0, notes TEXT, created_at TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE debt_payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debt_id INTEGER NOT NULL, date TEXT NOT NULL, amount REAL NOT NULL,
+    debt_name TEXT, created_at TEXT DEFAULT (datetime('now'))
+  );
   CREATE TABLE calendar_reminders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL, time TEXT NOT NULL, title TEXT NOT NULL,

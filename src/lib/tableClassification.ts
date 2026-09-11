@@ -43,6 +43,7 @@ export const TABLE_CLASSIFICATION: TableFact[] = [
   { table: 'bill_payments',      classification: 'BACKED_UP', reason: 'Which bill occurrence was paid, and when. Losing this would make paid bills look unpaid.', createdIn: 'src/database/database.ts' },
   { table: 'savings_goals',      classification: 'BACKED_UP', reason: 'What the user is saving for and how far along.',   createdIn: 'src/database/database.ts' },
   { table: 'debts',              classification: 'BACKED_UP', reason: 'What the user owes, and the payoff plan built around it.',                              createdIn: 'src/database/database.ts' },
+  { table: 'debt_payments',      classification: 'BACKED_UP', reason: 'Real payments made towards a debt, dated and individually correctable. Losing this would make paid-down debt look untouched.', createdIn: 'src/database/database.ts' },
   { table: 'calendar_reminders', classification: 'BACKED_UP', reason: 'Reminders the user set themselves.',               createdIn: 'src/database/database.ts' },
   { table: 'settings',           classification: 'BACKED_UP', reason: 'Name, theme, payday and other choices. Cheap to store, annoying to redo.', createdIn: 'src/database/database.ts' },
   { table: 'custom_logos',       classification: 'BACKED_UP', reason: 'Logos the user picked for their bills.',           createdIn: 'src/database/database.ts' },

@@ -27,7 +27,7 @@ const hydro = { id: 2, name: 'Hydro', amount: 143, frequency: 'monthly' as const
 const scenario = (over: any = {}) => computeFinanceSummary({
   ...AUG,
   income: [{ amount: 1000, date: '2026-08-01' }],
-  expenses: [], bills: [bell], paidCycles: [], goals: [],
+  expenses: [], bills: [bell], paidCycles: [], goals: [], debtPayments: [],
   ...over,
 });
 
@@ -109,7 +109,7 @@ describe('Months do not contaminate each other', () => {
     const jan = computeFinanceSummary({
       today: new Date(2027, 0, 20), monthStart: '2027-01-01', monthEnd: '2027-01-31',
       income: [{ amount: 1000, date: '2027-01-02' }], expenses: [], bills: [bell],
-      paidCycles: [{ bill_id: 1, cycle_date: '2026-12-15', amount: 425 }], goals: [],
+      paidCycles: [{ bill_id: 1, cycle_date: '2026-12-15', amount: 425 }], goals: [], debtPayments: [],
     });
     expect(jan.billsPaidTotal).toBe(0);
   });
@@ -188,7 +188,7 @@ describe('Empty cases stay sane', () => {
   });
   it('the helper ignores payments outside the window', () => {
     expect(paidBillsTotalInMonth({
-      ...AUG, income: [], expenses: [], bills: [bell], goals: [],
+      ...AUG, income: [], expenses: [], bills: [bell], goals: [], debtPayments: [],
       paidCycles: [{ bill_id: 1, cycle_date: '2026-07-31', amount: 425 }],
     })).toBe(0);
   });

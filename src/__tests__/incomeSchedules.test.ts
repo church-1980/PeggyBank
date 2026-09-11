@@ -174,7 +174,7 @@ describe('Expected income never reaches Safe to Spend', () => {
     computeFinanceSummary({
       today: new Date(2026, 7, 19),
       monthStart: '2026-08-01', monthEnd: '2026-08-31',
-      expenses: [], income: rows, bills: [], paidCycles: [], goals: [],
+      expenses: [], income: rows, bills: [], paidCycles: [], goals: [], debtPayments: [],
     });
 
   it('an unconfirmed payday adds nothing', async () => {
