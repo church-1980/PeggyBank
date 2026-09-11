@@ -17,7 +17,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import { categoryIconKey } from '../data/iconRegistry';
-import { rememberMerchant } from '../lib/merchantMemory';
+import { rememberMerchant, recallMerchant } from '../lib/merchantMemory';
 import IconBadge from '../components/IconBadge';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyDateField from '../components/peggy/PeggyDateField';
@@ -188,6 +188,23 @@ export default function AddExpenseScreen({ navigation, route }: any) {
     }
   };
 
+  /**
+   * D5 — the merchant memory Smart Capture has always used now also assists
+   * TYPED entry, once the person finishes typing a merchant name.
+   *
+   * Same rule as readIntoBlanks above, and for the same reason: it only
+   * fills a blank. If the category has already been set from route params
+   * (this is a pre-filled/edit context), the memory never touches it — an
+   * editing person's own choice, or the value they are correcting, is
+   * never silently replaced by a guess. Only the category is suggested;
+   * amounts are never invented from history, only ever typed.
+   */
+  const recallFromNote = async () => {
+    if (!note.trim() || prefill.category) return;
+    const m = await recallMerchant(note);
+    if (m?.category) setCategory(m.category as Category);
+  };
+
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) { Alert.alert('Camera needed', 'Please allow camera access.'); return; }
@@ -282,6 +299,7 @@ export default function AddExpenseScreen({ navigation, route }: any) {
           style={styles.whereInput}
           value={note}
           onChangeText={setNote}
+          onBlur={recallFromNote}
           placeholder="Dunn's, Shell, Metro…"
           placeholderTextColor={C.textHint}
           returnKeyType="done"
