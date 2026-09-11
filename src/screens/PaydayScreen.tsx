@@ -8,15 +8,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getDatabase } from '../database/database';
 import { formatCurrency, getTodayString, WEEKDAY_NAMES, WEEKDAY_SHORT } from '../utils/helpers';
-import { Bill } from '../types';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import { loadFinanceSummary, type FinanceSummary } from '../lib/financeSummary';
 
+/**
+ * Bills owed and savings needed come from the SAME canonical engine Home
+ * reads (core/finance.ts, via loadFinanceSummary) -- not a second
+ * calculation. This screen used to sum every bill regardless of whether it
+ * was already paid, invent a 5% "emergency fund" slice with no product rule
+ * behind it, and divide by a fixed 30 days. All three were removed: a
+ * duplicated Safe-to-Spend-shaped calculation that could silently disagree
+ * with Home is the exact failure this repair closes.
+ *
+ * Payday still answers a genuinely different question from Home's Safe to
+ * Spend -- "what's left from THIS paycheck after bills and savings", not
+ * "what's left for the rest of the month" -- so the two numbers are not
+ * expected to be equal. What they can never do is disagree about what is
+ * owed or what saving needs, because both screens ask the same engine.
+ */
 interface Plan {
   bills: number;
   savings: number;
-  emergency: number;
   spending: number;
 }
 
@@ -72,23 +86,16 @@ export default function PaydayScreen({ navigation }: any) {
   const [selectedDay, setSelectedDay] = useState<number>(1);
   const [selectedWeekday, setSelectedWeekday] = useState<number>(5);
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [savingsGoalMonthly, setSavingsGoalMonthly] = useState(0);
+  const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [saved, setSaved] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const db = await getDatabase();
 
-      const billsResult = await db.getAllAsync<Bill>(`SELECT * FROM bills`);
-      setBills(billsResult);
-
-      const goalsResult = await db.getAllAsync<{ target_amount: number; current_amount: number }>(
-        `SELECT target_amount, current_amount FROM savings_goals`
-      );
-      const monthlyNeeded = goalsResult.reduce((sum, g) =>
-        sum + Math.max(0, g.target_amount - g.current_amount) / 12, 0);
-      setSavingsGoalMonthly(monthlyNeeded);
+      // The one place bills-still-owed and savings-still-needed are worked
+      // out. Home reads the same function.
+      setSummary(await loadFinanceSummary(db));
 
       const paydaySetting = await db.getFirstAsync<{ value: string }>(
         `SELECT value FROM settings WHERE key = 'payday'`
@@ -120,11 +127,13 @@ export default function PaydayScreen({ navigation }: any) {
       Alert.alert('Oops', 'Please enter your paycheck amount first.');
       return;
     }
-    const billsTotal = bills.reduce((sum, b) => sum + b.amount, 0);
-    const savingsAmount = Math.min(savingsGoalMonthly, income * 0.1);
-    const emergencyAmount = income * 0.05;
-    const spending = Math.max(0, income - billsTotal - savingsAmount - emergencyAmount);
-    setPlan({ bills: billsTotal, savings: savingsAmount, emergency: emergencyAmount, spending });
+    if (!summary) return;
+    // Bills still owed for their current cycle, and what goals need this
+    // month -- both read straight off summary, never recomputed here.
+    const billsTotal = summary.unpaidBillsTotal;
+    const savingsAmount = summary.goalsSavingsNeeded;
+    const spending = Math.max(0, income - billsTotal - savingsAmount);
+    setPlan({ bills: billsTotal, savings: savingsAmount, spending });
   };
 
   const savePlan = async () => {
@@ -261,15 +270,16 @@ export default function PaydayScreen({ navigation }: any) {
             <Text style={styles.planTitle}>Here is how to divide your money</Text>
             <Text style={styles.planSub}>Based on your paycheck {paydayDescription()}</Text>
 
-            <PlanRow icon="receipt-outline"   iconColor={C.bills}   label="Bills"           amount={plan.bills}     pct={pct(plan.bills)}     borderColor={C.border} />
-            <PlanRow icon="flag-outline"       iconColor={C.goals}   label="Savings goals"   amount={plan.savings}   pct={pct(plan.savings)}   borderColor={C.border} />
-            <PlanRow icon="shield-outline"     iconColor={C.primary} label="Emergency fund"  amount={plan.emergency} pct={pct(plan.emergency)} borderColor={C.border} />
-            <PlanRow icon="wallet-outline"     iconColor={C.income}  label="Spending money"  amount={plan.spending}  pct={pct(plan.spending)}  borderColor={C.border} />
+            <PlanRow icon="receipt-outline"   iconColor={C.bills}   label="Bills you still owe"  amount={plan.bills}     pct={pct(plan.bills)}     borderColor={C.border} />
+            <PlanRow icon="flag-outline"       iconColor={C.goals}   label="Savings goals"        amount={plan.savings}   pct={pct(plan.savings)}   borderColor={C.border} />
+            <PlanRow icon="wallet-outline"     iconColor={C.income}  label="Spending money"       amount={plan.spending}  pct={pct(plan.spending)}  borderColor={C.border} />
 
             <View style={styles.safeBox}>
               <Text style={styles.safeLabel}>Your safe daily spend</Text>
-              <Text style={styles.safeAmount}>{formatCurrency(plan.spending / 30)}</Text>
-              <Text style={styles.safeSub}>per day for the month</Text>
+              <Text style={styles.safeAmount}>
+                {formatCurrency(plan.spending / Math.max(1, summary?.daysLeftInMonth ?? 1))}
+              </Text>
+              <Text style={styles.safeSub}>per day for the rest of the month</Text>
             </View>
 
             <TouchableOpacity
