@@ -11,6 +11,7 @@ import { getDatabase } from '../database/database';
 import { formatCurrency } from '../utils/helpers';
 import { SavingsGoal } from '../types';
 import { GOAL_TYPES, GoalType } from '../data/goalTypes';
+import { goalProgressPercent } from '../core/finance';
 import { Spacing, Radius, Typography, IconSize, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import IconBadge from '../components/IconBadge';
@@ -192,9 +193,10 @@ export default function GoalsScreen({ navigation, route }: any) {
   };
 
   const renderGoal = ({ item }: { item: SavingsGoal }) => {
-    const pct = item.target_amount > 0
-      ? Math.min(100, Math.round((item.current_amount / item.target_amount) * 100))
-      : 0;
+    // D8 — the canonical engine (core/finance.ts), not a second calculation.
+    // Rounded for display only; the underlying figure is the same one Home
+    // would compute for this same goal.
+    const pct = Math.round(goalProgressPercent(item.target_amount, item.current_amount));
     const remaining = Math.max(0, item.target_amount - item.current_amount);
     const done = pct >= 100;
 
@@ -448,7 +450,7 @@ export default function GoalsScreen({ navigation, route }: any) {
         <View style={[styles.actionSheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.modalHandle} />
           <Text style={styles.actionTitle}>{actionGoal?.name}</Text>
-          {actionGoal && !( Math.min(100, Math.round((actionGoal.current_amount / actionGoal.target_amount) * 100)) >= 100) && (
+          {actionGoal && !(Math.round(goalProgressPercent(actionGoal.target_amount, actionGoal.current_amount)) >= 100) && (
             <TouchableOpacity
               style={styles.actionBtn}
               onPress={() => { setActionGoal(null); openDepositModal(actionGoal); }}
