@@ -26,6 +26,7 @@
     "ship": "bash scripts/ship.sh",
     "verify": "bash scripts/ship.sh --verify",
     "audit:all": "node scripts/audit/run.js",
+    "diagnostic": "node scripts/audit/run.js",
     "audit:parity": "jest --config jest.parity.config.js && node scripts/audit/parity-compare.js",
     "web:build": "expo export --platform web --output-dir dist-web",
     "audit:web": "node scripts/webtest/run.js",
