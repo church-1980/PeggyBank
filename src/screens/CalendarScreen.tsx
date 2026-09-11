@@ -15,7 +15,6 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
-import { dueDayInMonth } from '../core/datetime';
 import { activeSchedules, occurrencesBetween } from '../lib/incomeSchedules';
 import { buildMonth, cellEntries, type CalendarEntry } from '../core/calendarMonth';
 import { cellTreatment, cellHeadline, isMoneyIn, type ActivityTone } from '../core/calendarVisual';
@@ -550,7 +549,7 @@ export default function CalendarScreen({ navigation }: any) {
       const spanStartStr = toDateStr(spanStart);
       const spanEndStr   = toDateStr(spanEnd);
 
-      const [bills, subs, expenses, incomes, goals, reminders, paydaySetting, schedules, payments] = await Promise.all([
+      const [bills, subs, expenses, incomes, goals, reminders, schedules, payments] = await Promise.all([
         db.getAllAsync<Bill>(`SELECT * FROM bills`),
         db.getAllAsync<Subscription>(`SELECT * FROM subscriptions`),
         db.getAllAsync<Expense>(`SELECT * FROM expenses WHERE date >= ? AND date <= ?`, [spanStartStr, spanEndStr]),
@@ -561,7 +560,6 @@ export default function CalendarScreen({ navigation }: any) {
         db.getAllAsync<CalReminder>(
           `SELECT * FROM calendar_reminders WHERE date >= ? AND date <= ?`, [spanStartStr, spanEndStr]
         ),
-        db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'payday'`),
         activeSchedules(db),
         db.getAllAsync<any>(`SELECT source, bill_id, cycle_date, paid, paid_at, amount, status, bill_name FROM bill_payments`)
           .catch(() => []),
@@ -580,29 +578,24 @@ export default function CalendarScreen({ navigation }: any) {
       // monthly marker on the wrong day. The Calendar disagreed with the Income
       // screen about the same paycheque.
       //
-      // Income schedules are the canonical answer, and occurrencesBetween is the
+      // income_schedules is now the ONLY recurring-income system (D3):
+      // settings.payday/pay_frequency/pay_weekday are legacy and nothing
+      // reads them any more -- a one-time migration converts them into a
+      // schedule the first time the app opens after this update, so there
+      // is no permanent fallback to maintain here. occurrencesBetween is the
       // same function the Income screen uses, so the two cannot drift apart.
-      // No new payday arithmetic is introduced here.
       const monthStartDate = spanStart;
       const monthEndDate = spanEnd;
-      if (schedules.length) {
-        for (const s of schedules) {
-          for (const iso of occurrencesBetween(s, monthStartDate, monthEndDate)) {
-            add(iso, {
-              key: 'payday-' + s.id + '-' + iso,
-              type: 'payday', kind: 'payday', state: 'expected',
-              title: s.label || 'Payday',
-              amount: s.amount,
-              colorHex: C.income,
-            });
-          }
+      for (const s of schedules) {
+        for (const iso of occurrencesBetween(s, monthStartDate, monthEndDate)) {
+          add(iso, {
+            key: 'payday-' + s.id + '-' + iso,
+            type: 'payday', kind: 'payday', state: 'expected',
+            title: s.label || 'Payday',
+            amount: s.amount,
+            colorHex: C.income,
+          });
         }
-      } else if (paydaySetting) {
-        // Nobody has set up a schedule yet, so fall back to the older single
-        // payday setting rather than showing them nothing.
-        const pd = parseInt(paydaySetting.value, 10) || 1;
-        add(`${year}-${pad(month + 1)}-${pad(dueDayInMonth(pd, year, month))}`,
-          { key: 'payday', type: 'payday', kind: 'payday', state: 'expected', title: 'Payday', colorHex: C.income });
       }
 
       // BILLS AND SUBSCRIPTIONS, and whether they were actually PAID.

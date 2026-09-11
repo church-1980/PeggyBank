@@ -341,6 +341,65 @@ export async function setupDatabase(): Promise<void> {
   } catch (e) {
     console.warn('[db] debt payment migration skipped:', e);
   }
+  // ── ONE-TIME MIGRATION: legacy Payday Planner settings -> income_schedules ─
+  // The Payday Planner ran a second, parallel forecasting system:
+  // settings.payday/pay_frequency/pay_weekday, entirely separate from
+  // income_schedules. Calendar had a compatibility fallback for it; the
+  // Dashboard's Coming Up never did, so a Payday-Planner-only user saw a
+  // payday marker on the Calendar and nothing at all on Home for the exact
+  // same plan. income_schedules is now the only system PaydayScreen writes
+  // to; this converts whatever legacy settings exist into one schedule, so
+  // that user's forecast is not silently lost.
+  //
+  // Only migrates if there is real evidence of a working legacy setup (a
+  // 'Paycheck' income row to take the amount and an anchor date from) --
+  // settings with no confirmed paycheque behind them describe an
+  // in-progress setup, not a plan worth resurrecting as a $0 forecast.
+  // Skipped entirely if an active 'Paycheck' schedule already exists, so
+  // this can never create a duplicate.
+  try {
+    const migrated = await database.getFirstAsync<{ value: string }>(
+      `SELECT value FROM settings WHERE key = 'payday_schedule_migrated_v1'`
+    );
+    if (!migrated) {
+      const paydaySetting = await database.getFirstAsync<{ value: string }>(
+        `SELECT value FROM settings WHERE key = 'payday'`
+      );
+      const existing = await database.getFirstAsync<{ id: number }>(
+        `SELECT id FROM income_schedules WHERE label = 'Paycheck' AND active = 1 LIMIT 1`
+      );
+      const lastPaycheck = await database.getFirstAsync<{ date: string; amount: number }>(
+        `SELECT date, amount FROM income WHERE label = 'Paycheck' ORDER BY date DESC LIMIT 1`
+      );
+      if (paydaySetting && !existing && lastPaycheck) {
+        const freqSetting = await database.getFirstAsync<{ value: string }>(
+          `SELECT value FROM settings WHERE key = 'pay_frequency'`
+        );
+        const wdSetting = await database.getFirstAsync<{ value: string }>(
+          `SELECT value FROM settings WHERE key = 'pay_weekday'`
+        );
+        const freq = (freqSetting?.value === 'weekly' || freqSetting?.value === 'biweekly')
+          ? freqSetting.value : 'monthly';
+        await database.runAsync(
+          `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, anchor_date, active)
+           VALUES ('Paycheck', ?, ?, ?, ?, ?, 1)`,
+          [
+            lastPaycheck.amount,
+            freq,
+            freq === 'monthly' ? (parseInt(paydaySetting.value, 10) || 1) : null,
+            freq === 'monthly' ? null : (wdSetting ? parseInt(wdSetting.value, 10) : 5),
+            freq === 'biweekly' ? lastPaycheck.date : null,
+          ]
+        );
+        console.log('[db] migrated the legacy Payday Planner settings to an income schedule');
+      }
+      await database.runAsync(
+        `INSERT OR REPLACE INTO settings (key, value) VALUES ('payday_schedule_migrated_v1', 'done')`
+      );
+    }
+  } catch (e) {
+    console.warn('[db] payday schedule migration skipped:', e);
+  }
 }
 
 // Every PeggyBank-owned table. Used by the destructive wipe.

@@ -12,6 +12,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import { loadFinanceSummary, type FinanceSummary } from '../lib/financeSummary';
+import { updateSchedule } from '../lib/incomeSchedules';
 
 /**
  * Bills owed and savings needed come from the SAME canonical engine Home
@@ -88,6 +89,8 @@ export default function PaydayScreen({ navigation }: any) {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [saved, setSaved] = useState(false);
+  /** The 'Paycheck' income_schedules row this screen owns, if one exists yet. */
+  const [scheduleId, setScheduleId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -97,25 +100,22 @@ export default function PaydayScreen({ navigation }: any) {
       // out. Home reads the same function.
       setSummary(await loadFinanceSummary(db));
 
-      const paydaySetting = await db.getFirstAsync<{ value: string }>(
-        `SELECT value FROM settings WHERE key = 'payday'`
-      );
-      if (paydaySetting) setSelectedDay(parseInt(paydaySetting.value, 10) || 1);
+      // income_schedules is the one recurring-income system (D3) -- not the
+      // settings keys this screen used to own. A schedule already exists if
+      // this plan was saved before, or if the legacy-settings migration
+      // created one from an earlier version of this screen.
+      const schedule = await db.getFirstAsync<{
+        id: number; amount: number; frequency: PayFrequency;
+        day_of_month: number | null; weekday: number | null;
+      }>(`SELECT id, amount, frequency, day_of_month, weekday FROM income_schedules WHERE label = 'Paycheck' AND active = 1 LIMIT 1`);
 
-      const freqSetting = await db.getFirstAsync<{ value: string }>(
-        `SELECT value FROM settings WHERE key = 'pay_frequency'`
-      );
-      if (freqSetting) setPayFrequency(freqSetting.value as PayFrequency);
-
-      const wdSetting = await db.getFirstAsync<{ value: string }>(
-        `SELECT value FROM settings WHERE key = 'pay_weekday'`
-      );
-      if (wdSetting) setSelectedWeekday(parseInt(wdSetting.value, 10));
-
-      const lastIncome = await db.getFirstAsync<{ amount: number }>(
-        `SELECT amount FROM income ORDER BY created_at DESC LIMIT 1`
-      );
-      if (lastIncome) setPaycheckAmount(String(lastIncome.amount));
+      if (schedule) {
+        setScheduleId(schedule.id);
+        setPaycheckAmount(String(schedule.amount || ''));
+        setPayFrequency(schedule.frequency);
+        if (schedule.frequency === 'monthly') setSelectedDay(schedule.day_of_month || 1);
+        else setSelectedWeekday(schedule.weekday ?? 5);
+      }
     } catch {}
   }, []);
 
@@ -136,6 +136,19 @@ export default function PaydayScreen({ navigation }: any) {
     setPlan({ bills: billsTotal, savings: savingsAmount, spending });
   };
 
+  /**
+   * Saves the FORECAST, not a payment. income_schedules is the one recurring-
+   * income system (D3): Payday no longer maintains its own settings.payday /
+   * pay_frequency / pay_weekday, and no longer inserts an income row itself.
+   *
+   * Auto-inserting today's income here (the old behaviour) was itself the
+   * kind of duplication this repair removes elsewhere: expected income is
+   * only ever supposed to become real income when the person confirms it
+   * (see incomeSchedules.ts) -- a bank connection PeggyBank does not have
+   * cannot be assumed just because a plan was saved. Confirming an actual
+   * payday now happens the same way everywhere: through the pending-income
+   * prompt this schedule feeds.
+   */
   const savePlan = async () => {
     const income = parseFloat(paycheckAmount);
     if (isNaN(income) || income <= 0) {
@@ -144,23 +157,30 @@ export default function PaydayScreen({ navigation }: any) {
     }
     try {
       const db = await getDatabase();
-      await db.runAsync(`INSERT OR REPLACE INTO settings (key, value) VALUES ('payday', ?)`, [String(selectedDay)]);
-      await db.runAsync(`INSERT OR REPLACE INTO settings (key, value) VALUES ('pay_frequency', ?)`, [payFrequency]);
-      await db.runAsync(`INSERT OR REPLACE INTO settings (key, value) VALUES ('pay_weekday', ?)`, [String(selectedWeekday)]);
-      // Update today's paycheck instead of stacking a new one — re-saving the
-      // plan used to add another 'Paycheck' row each time, double-counting income.
-      const today = getTodayString();
-      const existing = await db.getFirstAsync<{ id: number }>(
-        `SELECT id FROM income WHERE label = 'Paycheck' AND date = ? LIMIT 1`,
-        [today]
-      );
-      if (existing?.id) {
-        await db.runAsync(`UPDATE income SET amount = ? WHERE id = ?`, [income, existing.id]);
+      const changes = {
+        label: 'Paycheck',
+        amount: income,
+        frequency: payFrequency,
+        day_of_month: payFrequency === 'monthly' ? selectedDay : null,
+        weekday: payFrequency === 'monthly' ? null : selectedWeekday,
+      };
+      if (scheduleId) {
+        await updateSchedule(db, scheduleId, changes);
       } else {
-        await db.runAsync(`INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`, [income, 'Paycheck', today]);
+        // Biweekly needs a real date to count fortnights from; there is no
+        // specific paycheque being entered here, so today is the anchor --
+        // the same "starting now" reading Add Income uses when no more
+        // specific date applies.
+        const anchor = payFrequency === 'biweekly' ? getTodayString() : null;
+        const res = await db.runAsync(
+          `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, anchor_date, active)
+           VALUES (?, ?, ?, ?, ?, ?, 1)`,
+          [changes.label, changes.amount, changes.frequency, changes.day_of_month, changes.weekday, anchor]
+        );
+        setScheduleId(Number((res as { lastInsertRowId: number }).lastInsertRowId));
       }
       setSaved(true);
-      Alert.alert('Saved', 'Your paycheck has been recorded in Income.');
+      Alert.alert('Saved', "We'll check in with you each payday to confirm what actually arrives.");
     } catch (e) {
       console.error('[Payday] savePlan error:', e);
       Alert.alert('Could not save', 'Something went wrong saving the plan. Please try again.');
