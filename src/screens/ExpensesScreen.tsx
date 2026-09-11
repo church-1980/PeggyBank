@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import { getDatabase } from '../database/database';
-import { deleteExpense as deleteExpenseRecord } from '../lib/saveExpense';
+import { deleteExpense as deleteExpenseRecord, restoreExpense } from '../lib/saveExpense';
 import { CATEGORIES } from '../data/categories';
 import { formatCurrency, formatDate, getMonthRange } from '../utils/helpers';
 import { Expense, Category } from '../types';
@@ -67,10 +67,11 @@ export default function ExpensesScreen({ navigation }: any) {
     if (!item) return;
     try {
       const db = await getDatabase();
-      await db.runAsync(
-        `INSERT INTO expenses (amount, category, note, date, photo_uri, is_recurring) VALUES (?, ?, ?, ?, ?, ?)`,
-        [item.amount, item.category, item.note ?? null, item.date, item.photo_uri ?? null, item.is_recurring ?? 0]
-      );
+      // D7 — the dedicated restore path (not createExpense): this puts back
+      // the exact row that was captured via SELECT * before it was deleted,
+      // id included, rather than generating a new one with new
+      // merchant-memory side effects for what is not actually a new purchase.
+      await restoreExpense(db, item as unknown as Record<string, unknown>);
       loadExpenses();
     } catch {}
   };

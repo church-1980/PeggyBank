@@ -22,6 +22,8 @@ export interface NewExpense {
   /** Local YYYY-MM-DD. */
   date: string;
   photoUri?: string | null;
+  /** Defaults false. Smart Capture never sets this — a photographed expense is a one-off. */
+  isRecurring?: boolean;
 }
 
 /**
@@ -30,12 +32,18 @@ export interface NewExpense {
  * The id matters: an automatic save has to be undoable and openable, and both
  * need to name the exact row rather than guess at "the most recent one" — which
  * would delete the wrong thing for anyone adding two expenses quickly.
+ *
+ * D7 — THE canonical creator. Add Expense's own save button now calls this
+ * too, instead of an independent INSERT with the same six columns: two
+ * places creating an expense is two places for a column, a default or the
+ * merchant-memory hook to quietly drift apart, the exact risk this repair
+ * pass exists to close.
  */
 export async function createExpense(db: SQLiteDatabase, e: NewExpense): Promise<number> {
   const result = await db.runAsync(
     `INSERT INTO expenses (amount, category, note, date, photo_uri, is_recurring)
-     VALUES (?, ?, ?, ?, ?, 0)`,
-    [e.amount, e.category, (e.note ?? '').trim(), e.date, e.photoUri ?? null]
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [e.amount, e.category, (e.note ?? '').trim(), e.date, e.photoUri ?? null, e.isRecurring ? 1 : 0]
   );
 
   // Learn the vendor from what was actually saved, so the next photo of it
@@ -44,7 +52,7 @@ export async function createExpense(db: SQLiteDatabase, e: NewExpense): Promise<
   if (name) {
     await rememberMerchant({
       db,
-      name, docType: 'expense', recurring: false,
+      name, docType: 'expense', recurring: !!e.isRecurring,
       amount: e.amount, category: e.category as any,
     }).catch(() => {});
   }
@@ -109,4 +117,24 @@ export async function deleteExpense(db: SQLiteDatabase, id: number): Promise<voi
  */
 export async function undoExpense(db: SQLiteDatabase, id: number): Promise<void> {
   await deleteExpense(db, id);
+}
+
+/**
+ * D7 — undo AFTER a delete: put the exact row back, not a new one that
+ * merely looks the same.
+ *
+ * Deliberately NOT createExpense(): that function generates fresh
+ * merchant-memory side effects and is for a NEW purchase, not the same one
+ * coming back. Restoring puts back every column of the row the caller
+ * captured before deleting it (via SELECT *) — id included, so nothing else
+ * that could reference it is orphaned — dynamically, the same reasoning as
+ * the savings-goal undo fix: a hand-written column list is how a column
+ * gets silently dropped the next time the schema grows.
+ */
+export async function restoreExpense(db: SQLiteDatabase, row: Record<string, unknown>): Promise<void> {
+  const cols = Object.keys(row);
+  await db.runAsync(
+    `INSERT INTO expenses (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+    cols.map(c => row[c] ?? null) as never[]
+  );
 }

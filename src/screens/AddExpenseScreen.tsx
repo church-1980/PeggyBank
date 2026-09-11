@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recognizer } from '../lib/recognition';
-import { deleteExpense } from '../lib/saveExpense';
+import { deleteExpense, createExpense } from '../lib/saveExpense';
 import PeggyDeleteConfirmation from '../components/peggy/PeggyDeleteConfirmation';
 import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
@@ -122,21 +122,24 @@ export default function AddExpenseScreen({ navigation, route }: any) {
           `UPDATE expenses SET amount=?, category=?, note=?, date=?, photo_uri=?, is_recurring=? WHERE id=?`,
           [parsedAmount, category, note.trim(), date, photoUri ?? null, isRecurring ? 1 : 0, editingId]
         );
+        // Learn this vendor from what was actually confirmed, so the next
+        // photo of it fills itself in. Only when there is a name to key on.
+        if (note.trim()) {
+          await rememberMerchant({
+            name: note.trim(),
+            docType: 'expense',
+            category,
+            recurring: isRecurring,
+            amount: parsedAmount,
+          });
+        }
       } else {
-        await db.runAsync(
-          `INSERT INTO expenses (amount, category, note, date, photo_uri, is_recurring) VALUES (?, ?, ?, ?, ?, ?)`,
-          [parsedAmount, category, note.trim(), date, photoUri ?? null, isRecurring ? 1 : 0]
-        );
-      }
-      // Learn this vendor from what was actually confirmed, so the next photo
-      // of it fills itself in. Only when there is a name to key on.
-      if (note.trim()) {
-        await rememberMerchant({
-          name: note.trim(),
-          docType: 'expense',
-          category,
-          recurring: isRecurring,
-          amount: parsedAmount,
+        // D7 — the canonical creator (lib/saveExpense.ts), the same one
+        // Smart Capture uses. It remembers the merchant itself; a second
+        // call here would be the exact duplication this repair removes.
+        await createExpense(db, {
+          amount: parsedAmount, category, note: note.trim(), date,
+          photoUri: photoUri ?? null, isRecurring,
         });
       }
       if (returnTo) navigation.navigate('Home', { screen: returnTo });
