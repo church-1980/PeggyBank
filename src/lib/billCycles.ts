@@ -77,13 +77,13 @@ export async function isCyclePaid(
 /** Mark one occurrence paid or unpaid. Other occurrences are untouched. */
 export async function setCyclePaid(
   db: SQLiteDatabase, source: BillSource, billId: number,
-  cycleDate: string, paid: boolean, amount?: number
+  cycleDate: string, paid: boolean, amount?: number, name?: string | null
 ): Promise<void> {
   if (paid) {
     await db.runAsync(
-      `INSERT OR REPLACE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount)
-       VALUES (?, ?, ?, 1, ?, ?)`,
-      [billId, source, cycleDate, new Date().toISOString(), amount ?? null]
+      `INSERT OR REPLACE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount, bill_name)
+       VALUES (?, ?, ?, 1, ?, ?, ?)`,
+      [billId, source, cycleDate, new Date().toISOString(), amount ?? null, name ?? null]
     );
   } else {
     await db.runAsync(
@@ -227,13 +227,13 @@ export async function paymentsFor(
  */
 export async function recordPayment(
   db: SQLiteDatabase, source: BillSource, billId: number, cycleDate: string,
-  status: PaymentStatus, amount?: number | null
+  status: PaymentStatus, amount?: number | null, name?: string | null
 ): Promise<void> {
   const paid = status === 'failed' ? 0 : 1;
   await db.runAsync(
-    `INSERT OR REPLACE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [billId, source, cycleDate, paid, new Date().toISOString(), amount ?? null, status]
+    `INSERT OR REPLACE INTO bill_payments (bill_id, source, cycle_date, paid, paid_at, amount, status, bill_name)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [billId, source, cycleDate, paid, new Date().toISOString(), amount ?? null, status, name ?? null]
   );
 }
 
@@ -269,7 +269,7 @@ export async function settleAssumedPayments(
   let settled = 0;
 
   const run = async (source: BillSource, sql: string) => {
-    const rows = await db.getAllAsync<CycleBill & { amount: number; auto_confirm: number; payment_method: string }>(sql)
+    const rows = await db.getAllAsync<CycleBill & { amount: number; auto_confirm: number; payment_method: string; name: string }>(sql)
       .catch(() => [] as any[]);
     for (const b of rows) {
       if (b.payment_method !== 'auto' || !b.auto_confirm) continue;
@@ -277,13 +277,13 @@ export async function settleAssumedPayments(
       if (cycle > today) continue;                       // not due yet
       const existing = await paymentForCycle(db, source, b.id, cycle);
       if (existing) continue;                            // the user already answered
-      await recordPayment(db, source, b.id, cycle, 'assumed', b.amount);
+      await recordPayment(db, source, b.id, cycle, 'assumed', b.amount, b.name);
       settled++;
     }
   };
 
-  await run('bill', `SELECT id, amount, frequency, due_day, due_weekday, auto_confirm, payment_method FROM bills`);
-  await run('subscription', `SELECT id, amount, billing_day, auto_confirm, payment_method FROM subscriptions`);
+  await run('bill', `SELECT id, name, amount, frequency, due_day, due_weekday, auto_confirm, payment_method FROM bills`);
+  await run('subscription', `SELECT id, name, amount, billing_day, auto_confirm, payment_method FROM subscriptions`);
   return settled;
 }
 

@@ -61,7 +61,7 @@ const sampleBackup = () => ({
   calendar_reminders: [{ id: 1, date: '2026-08-20', time: '09:00', title: 'Rent', created_at: 'x' }],
   // A FAILED auto-payment: the one row whose meaning is destroyed if status
   // is lost on restore, because it would come back looking settled.
-  bill_payments: [{ id: 1, bill_id: 1, source: 'bill', cycle_date: '2026-08-05', paid: 0, paid_at: '2026-08-06T12:00:00.000Z', amount: null, status: 'failed' }],
+  bill_payments: [{ id: 1, bill_id: 1, source: 'bill', cycle_date: '2026-08-05', paid: 0, paid_at: '2026-08-06T12:00:00.000Z', amount: null, status: 'failed', bill_name: 'Bell' }],
   income_schedules: [{ id: 3, label: 'Pay', amount: 2200, frequency: 'weekly', day_of_month: null, weekday: 5, active: 1, created_at: 'x', anchor_date: '2026-08-14' }],
 });
 

@@ -287,7 +287,7 @@ export default function BillsScreen({ navigation, route }: any) {
     if (bill.id == null) return;
     try {
       const db = await getDatabase();
-      await setCyclePaid(db, 'bill', bill.id, currentCycleDate(bill as any), !billPaid(bill), bill.amount);
+      await setCyclePaid(db, 'bill', bill.id, currentCycleDate(bill as any), !billPaid(bill), bill.amount, bill.name);
       loadAll();
     } catch (e) {
       console.error('[Bills] togglePaid error:', e);
@@ -313,6 +313,7 @@ export default function BillsScreen({ navigation, route }: any) {
         // and is deliberately not touched: one surprising month must not
         // silently rewrite every month to come.
         answer === 'failed' ? null : (actual ?? verify.planned),
+        verify.name,
       );
       setVerify(null); setVerifyAmount('');
       loadAll();
@@ -343,7 +344,7 @@ export default function BillsScreen({ navigation, route }: any) {
     if (sub.id == null) return;
     try {
       const db = await getDatabase();
-      await setCyclePaid(db, 'subscription', sub.id, currentCycleDate({ id: sub.id, billing_day: sub.billing_day }), !subPaid(sub), sub.amount);
+      await setCyclePaid(db, 'subscription', sub.id, currentCycleDate({ id: sub.id, billing_day: sub.billing_day }), !subPaid(sub), sub.amount, sub.name);
       loadAll();
     } catch (e) {
       console.error('[Subscriptions] togglePaid error:', e);

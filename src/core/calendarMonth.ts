@@ -62,7 +62,9 @@ export interface MonthInput {
                    payment_method?: string | null }[];
   /** Every payment row, whatever month it belongs to. */
   payments: { source: string; bill_id: number; cycle_date: string; paid: number;
-              paid_at?: string | null; amount?: number | null; status?: string | null }[];
+              paid_at?: string | null; amount?: number | null; status?: string | null;
+              /** Name snapshotted when the payment was recorded — see the orphan pass below. */
+              bill_name?: string | null }[];
   /** Real money, already filtered to the month. */
   expenses: { id: number; amount: number; category?: string | null; note?: string | null; date: string }[];
   income: { id: number; amount: number; label?: string | null; date: string }[];
@@ -195,6 +197,31 @@ export function buildMonth(input: MonthInput): Map<string, CalendarEntry[]> {
   for (const s of input.subscriptions) {
     recurring('subscription', s.id, s.name, s.amount, s.billing_day,
       s.payment_method === 'manual' ? 'manual' : 'auto');
+  }
+
+  // PAYMENTS WHOSE PLAN IS GONE. Deleting a bill/subscription must not make
+  // real, already-moved money disappear from history — only its future
+  // scheduling stops. A payment here has no live row in input.bills /
+  // input.subscriptions to be drawn by the loops above, so it never reaches
+  // recurring() and would otherwise vanish from the Calendar entirely.
+  const live = new Set<string>([
+    ...input.bills.map(b => 'bill|' + b.id),
+    ...input.subscriptions.map(s => 'subscription|' + s.id),
+  ]);
+  const monthKey = year + '-' + String(month + 1).padStart(2, '0');
+  for (const p of input.payments) {
+    if (!p.paid || live.has(p.source + '|' + p.bill_id)) continue;
+    const when = paymentDay(p.paid_at, p.cycle_date);
+    if (when.slice(0, 7) !== monthKey) continue;         // belongs to another month
+    const kind = p.source === 'subscription' ? 'subscription' as const : 'bill' as const;
+    add(when, {
+      key: kind + '-' + p.bill_id + '-orphan-' + when,
+      kind, label: p.bill_name || 'Payment',
+      amount: p.amount ?? undefined,
+      state: 'actual', rank: RANK[kind],
+      // No `source`: the plan it pointed to is gone, so there is nothing left
+      // to navigate to. The payment itself remains, understandable by name.
+    });
   }
 
   // Paydays: projected from the schedules, so they exist in months no income

@@ -563,7 +563,7 @@ export default function CalendarScreen({ navigation }: any) {
         ),
         db.getFirstAsync<{ value: string }>(`SELECT value FROM settings WHERE key = 'payday'`),
         activeSchedules(db),
-        db.getAllAsync<any>(`SELECT source, bill_id, cycle_date, paid, paid_at, amount, status FROM bill_payments`)
+        db.getAllAsync<any>(`SELECT source, bill_id, cycle_date, paid, paid_at, amount, status, bill_name FROM bill_payments`)
           .catch(() => []),
       ]);
 

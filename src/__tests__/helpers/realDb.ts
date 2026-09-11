@@ -51,6 +51,7 @@ export const TEST_SCHEMA = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bill_id INTEGER NOT NULL, source TEXT NOT NULL, cycle_date TEXT NOT NULL,
     paid INTEGER DEFAULT 1, paid_at TEXT, amount REAL, status TEXT DEFAULT 'confirmed',
+    bill_name TEXT,
     UNIQUE(source, bill_id, cycle_date)
   );
   CREATE TABLE merchant_memory (

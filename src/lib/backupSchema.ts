@@ -93,8 +93,10 @@ export const BACKUP_TABLES: TableSpec[] = [
     table: 'bill_payments',
     // status is how we came to believe it: confirmed by the user, assumed on
     // their instruction, or reported failed. A restore that dropped it would
-    // turn a failed payment back into a settled one.
-    columns: ['id', 'bill_id', 'source', 'cycle_date', 'paid', 'paid_at', 'amount', 'status'],
+    // turn a failed payment back into a settled one. bill_name is a snapshot
+    // of the bill/subscription's name at payment time — losing it on restore
+    // would turn a deleted-plan's payment history back into an unnamed orphan.
+    columns: ['id', 'bill_id', 'source', 'cycle_date', 'paid', 'paid_at', 'amount', 'status', 'bill_name'],
     primaryKey: 'id', required: false,
   },
   {

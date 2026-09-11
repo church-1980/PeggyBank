@@ -198,6 +198,12 @@ export async function setupDatabase(): Promise<void> {
     // What a payment row MEANS. Existing rows were all ticked by hand, so
     // 'confirmed' is the truthful default for them.
     `ALTER TABLE bill_payments ADD COLUMN status TEXT DEFAULT 'confirmed'`,
+    // A snapshot of the bill/subscription's name AT THE TIME the payment was
+    // recorded. Deleting the bill/subscription plan later must not falsify or
+    // erase this historical money movement — the plan can stop being scheduled,
+    // but the payment stays understandable. Existing rows are backfilled below
+    // while their bill/subscription still exists to be joined.
+    `ALTER TABLE bill_payments ADD COLUMN bill_name TEXT`,
   ];
   for (const sql of migrations) {
     try { await database.execAsync(sql + ';'); } catch {}

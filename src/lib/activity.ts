@@ -112,7 +112,12 @@ const ACTIVITY_SQL = `
     p.cycle_date,
     COALESCE(p.amount, b.amount, s.amount, 0),
     'out',
-    COALESCE(b.name, s.name, 'Payment'),
+    -- The live plan's name wins if it still exists; otherwise fall back to
+    -- the name snapshotted when the payment was recorded, so deleting a bill
+    -- or subscription does not turn its real, already-moved money into an
+    -- anonymous "Payment" forever. Only a payment from before bill_name
+    -- existed, whose plan is ALSO gone, falls all the way to 'Payment'.
+    COALESCE(b.name, s.name, p.bill_name, 'Payment'),
     CASE WHEN p.source = 'subscription' THEN 'Subscription' ELSE 'Bill' END,
     NULL,
     NULL
