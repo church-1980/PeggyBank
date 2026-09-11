@@ -1,6 +1,6 @@
 import {
   currentCycleDate, nextCycleDate, setCyclePaid, isCyclePaid,
-  paidCyclesFor, unpaidTotalForCurrentCycles,
+  paidCyclesFor,
 } from '../lib/billCycles';
 
 /**
@@ -121,34 +121,11 @@ describe('paying one occurrence does not pay the next', () => {
   });
 });
 
-describe('Safe to Spend deducts only current unpaid occurrences', () => {
-  it('deducts the bill before payment and not after', async () => {
-    const db = makeDb({ bills: [monthlyBill] });
-    expect(await unpaidTotalForCurrentCycles(db, AUG)).toBe(95.42);
-    await setCyclePaid(db, 'bill', 1, currentCycleDate(monthlyBill, AUG), true);
-    expect(await unpaidTotalForCurrentCycles(db, AUG)).toBe(0);
-  });
-
-  it('THE REGRESSION: paying August does not reduce September', async () => {
-    const db = makeDb({ bills: [monthlyBill] });
-    await setCyclePaid(db, 'bill', 1, currentCycleDate(monthlyBill, AUG), true);
-    expect(await unpaidTotalForCurrentCycles(db, SEP)).toBe(95.42);
-  });
-
-  it('includes subscriptions', async () => {
-    const db = makeDb({ subscriptions: [{ id: 9, amount: 16.49, billing_day: 22 }] });
-    expect(await unpaidTotalForCurrentCycles(db, AUG)).toBe(16.49);
-    await setCyclePaid(db, 'subscription', 9, currentCycleDate({ id: 9, billing_day: 22 }, AUG), true);
-    expect(await unpaidTotalForCurrentCycles(db, AUG)).toBe(0);
-  });
-
-  it('keeps bills and subscriptions in separate namespaces', async () => {
-    const db = makeDb({
-      bills: [{ id: 1, amount: 10, frequency: 'monthly', due_day: 5 }],
-      subscriptions: [{ id: 1, amount: 20, billing_day: 5 }],
-    });
-    await setCyclePaid(db, 'bill', 1, currentCycleDate({ id: 1, due_day: 5 }, AUG), true);
-    // Same id, different source — the subscription must still be owed.
-    expect(await unpaidTotalForCurrentCycles(db, AUG)).toBe(20);
-  });
-});
+// "Safe to Spend deducts only current unpaid occurrences" — this used to be
+// tested against unpaidTotalForCurrentCycles(), a third implementation of
+// "how much is still owed" that nothing in the app called (Section 12: dead
+// financial code, removed). The same invariants — nothing paid, paid this
+// cycle, paying one month does not touch the next, subscriptions included,
+// bills/subscriptions kept in separate id namespaces — are pinned against
+// the one remaining implementation, core/finance's unpaidBillsTotal, in
+// unpaidBillsAgreement.test.ts.

@@ -109,56 +109,13 @@ export async function paidCyclesFor(
   return map;
 }
 
-/**
- * Total still owed for the CURRENT occurrence of every bill and subscription.
- * This is what Safe to Spend should deduct — not "every bill never marked paid".
- */
-export async function unpaidTotalForCurrentCycles(
-  db: SQLiteDatabase, ref: Date = new Date()
-): Promise<number> {
-  let total = 0;
-
-  const bills = await db.getAllAsync<CycleBill & { amount: number }>(
-    `SELECT id, amount, frequency, due_day, due_weekday FROM bills`
-  );
-  const paidBills = await paidCyclesFor(db, 'bill');
-  for (const b of bills) {
-    if (!paidBills.get(b.id)?.has(currentCycleDate(b, ref))) total += b.amount;
-  }
-
-  const subs = await db.getAllAsync<CycleBill & { amount: number }>(
-    `SELECT id, amount, billing_day FROM subscriptions`
-  );
-  const paidSubs = await paidCyclesFor(db, 'subscription');
-  for (const s of subs) {
-    if (!paidSubs.get(s.id)?.has(currentCycleDate(s, ref))) total += s.amount;
-  }
-
-  return total;
-}
-
-/**
- * WHICH bills are still owed for their current occurrence.
- *
- * The sibling of unpaidTotalForCurrentCycles, for screens that need to list the
- * bills rather than just add them up. Both walk the same cycle logic, so a
- * screen's "coming up" list can never contradict the total it sits next to.
- */
-export async function unpaidBillsForCurrentCycles(
-  db: SQLiteDatabase, ref: Date = new Date()
-): Promise<{ id: number; amount: number }[]> {
-  const out: { id: number; amount: number }[] = [];
-
-  const bills = await db.getAllAsync<CycleBill & { amount: number }>(
-    `SELECT id, amount, frequency, due_day, due_weekday FROM bills`
-  );
-  const paidBills = await paidCyclesFor(db, 'bill');
-  for (const b of bills) {
-    if (!paidBills.get(b.id)?.has(currentCycleDate(b, ref))) out.push({ id: b.id, amount: b.amount });
-  }
-
-  return out;
-}
+// unpaidTotalForCurrentCycles() and unpaidBillsForCurrentCycles() lived here
+// until Section 12 of the repair pass: a third implementation of "how much
+// is still owed", never called by any screen, alongside core/finance.ts's
+// unpaidBillsTotal (the one screens now read) and BillsScreen's own inline
+// recompute (removed in Section 13). Deleted rather than kept "just in
+// case" — see unpaidBillsAgreement.test.ts for the invariants that used to
+// be pinned against it, now pinned against the one remaining engine.
 
 /** Occurrences paid within a date range — for Monthly Breakdown. */
 export async function paidInRange(

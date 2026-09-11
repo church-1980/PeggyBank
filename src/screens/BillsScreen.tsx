@@ -25,6 +25,7 @@ import {
   currentCycleDate, setCyclePaid, paidCyclesFor,
   paymentsFor, recordPayment, methodOf, settleAssumedPayments,
 } from '../lib/billCycles';
+import { loadFinanceSummary } from '../lib/financeSummary';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
 import {
@@ -118,6 +119,12 @@ export default function BillsScreen({ navigation, route }: any) {
   const [billPayments, setBillPayments] = useState<Map<string, any>>(new Map());
   const [subPayments, setSubPayments] = useState<Map<string, any>>(new Map());
   const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  // D8-class fix (Section 13): the canonical engine's figure, not a second
+  // sum of the same bills/subscriptions. unpaidBillsAgreement.test.ts already
+  // pinned that this screen's own recompute agreed with core/finance.ts
+  // today; this removes the duplication itself rather than trusting it to
+  // keep agreeing by coincidence.
+  const [canonicalUnpaidTotal, setCanonicalUnpaidTotal] = useState(0);
 
   /** Is THIS bill's current occurrence paid? */
   const billPaid = (b: Bill) =>
@@ -166,6 +173,7 @@ export default function BillsScreen({ navigation, route }: any) {
       setPaidSubs(await paidCyclesFor(db, 'subscription'));
       setBillPayments(await paymentsFor(db, 'bill'));
       setSubPayments(await paymentsFor(db, 'subscription'));
+      setCanonicalUnpaidTotal((await loadFinanceSummary(db)).unpaidBillsTotal);
 
       // Keep due-date reminders in step with what's actually on this screen —
       // loadAll runs after every add/edit/delete/mark-paid.
@@ -371,9 +379,7 @@ export default function BillsScreen({ navigation, route }: any) {
   // ── Totals ────────────────────────────────────────────────────────────────
   const billsTotal  = bills.reduce((s, b) => s + b.amount, 0);
   const subsTotal   = subs.reduce((s, b) => s + b.amount, 0);
-  const billsPaid   = bills.filter(billPaid).reduce((s, b) => s + b.amount, 0);
-  const subsPaid    = subs.filter(subPaid).reduce((s, b) => s + b.amount, 0);
-  const unpaidTotal = (billsTotal - billsPaid) + (subsTotal - subsPaid);
+  const unpaidTotal = canonicalUnpaidTotal;
 
   const accentColor = modalType === 'subscription' ? C.subs : C.bills;
 

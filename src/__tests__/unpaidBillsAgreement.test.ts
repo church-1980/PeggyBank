@@ -1,51 +1,34 @@
 /**
- * THREE PLACES ANSWER "HOW MUCH IS STILL OWED?"
+ * "HOW MUCH IS STILL OWED?" — now answered in exactly ONE place.
  *
- * core/finance owns unpaidBillsTotal and says of itself: "No screen may
- * recompute a field itself." BillsScreen recomputes it anyway, as
- * (billsTotal - billsPaid) + (subsTotal - subsPaid), to print "Still due".
- * lib/billCycles has a third implementation, unpaidTotalForCurrentCycles,
- * which nothing currently calls.
+ * An architecture audit found THREE implementations agreeing by
+ * coincidence, not by construction: core/finance's unpaidBillsTotal (which
+ * says of itself "No screen may recompute a field itself"), BillsScreen's
+ * own recompute as (billsTotal - billsPaid) + (subsTotal - subsPaid), and
+ * lib/billCycles's unpaidTotalForCurrentCycles, which nothing called.
  *
- * An architecture audit found all three AGREE today. That is worth pinning
- * rather than trusting: they agree because they happen to share
- * currentCycleDate and the same paid=1 filter, not because anything makes
- * them. The day one of them changes, this fails instead of a person being
- * quietly told a different figure on two screens.
+ * Section 13/12 of the repair pass removed the other two: BillsScreen now
+ * reads loadFinanceSummary()'s unpaidBillsTotal directly instead of
+ * recomputing it, and the dead billCycles implementation was deleted
+ * (Section 12 — "do not keep obsolete financial algorithms around 'just in
+ * case'").
  *
- * The right fix is for the screen to read the engine's field. Until that is
- * asked for, this holds the line.
+ * These scenarios are RETAINED as the brief asked, now pinning the single
+ * remaining engine directly against the same edge cases the audit used:
+ * a bill and subscription sharing an id, an overpayment, a failed payment,
+ * the 28th-clamp on a due day past it, and a weekly bill.
  */
 
 import { makeRealDb } from './helpers/realDb';
-import { buildFinanceInput } from '../lib/financeSummary';
+import { buildFinanceInput, loadFinanceSummary } from '../lib/financeSummary';
 import { computeFinanceSummary } from '../core/finance';
-import { currentCycleDate, paidCyclesFor, unpaidTotalForCurrentCycles } from '../lib/billCycles';
 
 const REF = new Date(2026, 8, 4); // 4 Sep 2026
 
-/** BillsScreen's own formula, copied verbatim from the screen. */
-async function billsScreenUnpaid(db: any) {
-  const bills = await db.getAllAsync(`SELECT * FROM bills`);
-  const subs  = await db.getAllAsync(`SELECT * FROM subscriptions`);
-  const paidBills = await paidCyclesFor(db, 'bill');
-  const paidSubs  = await paidCyclesFor(db, 'subscription');
-  const billPaid = (b: any) => !!paidBills.get(b.id)?.has(currentCycleDate(b, REF));
-  const subPaid  = (s: any) => !!paidSubs.get(s.id)?.has(currentCycleDate({ id: s.id, billing_day: s.billing_day } as any, REF));
-  const billsTotal = bills.reduce((s: number, b: any) => s + b.amount, 0);
-  const subsTotal  = subs.reduce((s: number, b: any) => s + b.amount, 0);
-  const billsPaid  = bills.filter(billPaid).reduce((s: number, b: any) => s + b.amount, 0);
-  const subsPaid   = subs.filter(subPaid).reduce((s: number, b: any) => s + b.amount, 0);
-  return (billsTotal - billsPaid) + (subsTotal - subsPaid);
-}
-
-async function engineUnpaid(db: any) {
-  return computeFinanceSummary(await buildFinanceInput(db, REF)).unpaidBillsTotal;
-}
-
-const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
+const scenarios: { name: string; seed: (db: any) => Promise<void>; expected: number }[] = [
   {
     name: 'nothing paid',
+    expected: 117 + 16.49,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,frequency) VALUES (1,'Hydro',117,5,'monthly')`);
       await db.runAsync(`INSERT INTO subscriptions (id,name,amount,billing_day) VALUES (1,'Netflix',16.49,22)`);
@@ -53,6 +36,7 @@ const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
   },
   {
     name: 'bill paid this cycle',
+    expected: 16.49,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,frequency) VALUES (1,'Hydro',117,5,'monthly')`);
       await db.runAsync(`INSERT INTO subscriptions (id,name,amount,billing_day) VALUES (1,'Netflix',16.49,22)`);
@@ -61,6 +45,7 @@ const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
   },
   {
     name: 'bill and subscription share id 1, only the bill is paid',
+    expected: 16.49,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,frequency) VALUES (1,'Hydro',117,5,'monthly')`);
       await db.runAsync(`INSERT INTO subscriptions (id,name,amount,billing_day) VALUES (1,'Netflix',16.49,5)`);
@@ -69,6 +54,7 @@ const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
   },
   {
     name: 'paid MORE than planned',
+    expected: 0,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,frequency) VALUES (1,'Hydro',117,5,'monthly')`);
       await db.runAsync(`INSERT INTO bill_payments (bill_id,source,cycle_date,paid,amount) VALUES (1,'bill','2026-09-05',1,130)`);
@@ -76,6 +62,7 @@ const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
   },
   {
     name: 'a FAILED payment (paid = 0)',
+    expected: 117,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,frequency) VALUES (1,'Hydro',117,5,'monthly')`);
       await db.runAsync(`INSERT INTO bill_payments (bill_id,source,cycle_date,paid,amount,status) VALUES (1,'bill','2026-09-05',0,NULL,'failed')`);
@@ -83,6 +70,7 @@ const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
   },
   {
     name: 'due on the 31st (clamp territory)',
+    expected: 0,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,frequency) VALUES (1,'Rent',900,31,'monthly')`);
       await db.runAsync(`INSERT INTO bill_payments (bill_id,source,cycle_date,paid,amount) VALUES (1,'bill','2026-09-28',1,900)`);
@@ -90,25 +78,26 @@ const scenarios: { name: string; seed: (db: any) => Promise<void> }[] = [
   },
   {
     name: 'weekly bill',
+    expected: 30,
     seed: async (db) => {
       await db.runAsync(`INSERT INTO bills (id,name,amount,due_day,due_weekday,frequency) VALUES (1,'Cleaner',30,NULL,5,'weekly')`);
     },
   },
 ];
 
-describe('Every implementation of "still owed" gives the same answer', () => {
+describe('unpaidBillsTotal — the one remaining implementation', () => {
   for (const s of scenarios) {
     it(s.name, async () => {
-      const db = makeRealDb();
+      const db: any = makeRealDb();
       await s.seed(db);
 
-      const engine = await engineUnpaid(db);
-      const screen = await billsScreenUnpaid(db);
-      const orphan = await unpaidTotalForCurrentCycles(db as any, REF);
+      const engine = computeFinanceSummary(await buildFinanceInput(db, REF)).unpaidBillsTotal;
+      // The exact path BillsScreen calls (Section 13) — not a copy of its
+      // old formula, its REAL current data path.
+      const screen = (await loadFinanceSummary(db, REF)).unpaidBillsTotal;
 
-      // Compared as strings so a failure prints all three figures at once.
-      expect('BillsScreen=' + screen.toFixed(2)).toBe('BillsScreen=' + engine.toFixed(2));
-      expect('billCycles=' + orphan.toFixed(2)).toBe('billCycles=' + engine.toFixed(2));
+      expect(engine).toBeCloseTo(s.expected, 2);
+      expect(screen).toBe(engine);
     });
   }
 });
