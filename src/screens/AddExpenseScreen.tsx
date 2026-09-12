@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { recognizer } from '../lib/recognition';
-import { deleteExpense, createExpense } from '../lib/saveExpense';
+import { deleteExpense, createExpense, updateExpense } from '../lib/saveExpense';
 import PeggyDeleteConfirmation from '../components/peggy/PeggyDeleteConfirmation';
 import { getDatabase } from '../database/database';
 import { CATEGORIES } from '../data/categories';
@@ -118,10 +118,14 @@ export default function AddExpenseScreen({ navigation, route }: any) {
         [category]
       );
       if (editingId) {
-        await db.runAsync(
-          `UPDATE expenses SET amount=?, category=?, note=?, date=?, photo_uri=?, is_recurring=? WHERE id=?`,
-          [parsedAmount, category, note.trim(), date, photoUri ?? null, isRecurring ? 1 : 0, editingId]
-        );
+        // Section 6 — the canonical updater (lib/saveExpense.ts). Every
+        // field the form can actually change is passed explicitly; a field
+        // this call never mentions cannot be blanked, whatever else changes
+        // about how this form is built later.
+        await updateExpense(db, editingId, {
+          amount: parsedAmount, category, note: note.trim(), date,
+          photoUri: photoUri ?? null, isRecurring,
+        });
         // Learn this vendor from what was actually confirmed, so the next
         // photo of it fills itself in. Only when there is a name to key on.
         if (note.trim()) {

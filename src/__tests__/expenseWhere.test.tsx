@@ -132,7 +132,7 @@ describe('Correcting an expense keeps everything else', () => {
     await waitFor(() => expect(expenseWrite()).not.toBeNull());
     const w = expenseWrite()!;
     expect(w.sql).toContain('UPDATE expenses');
-    expect(w.sql).toContain('date=?');
+    expect(w.sql).toContain('date = ?'); // updateExpense() (Section 6 canonical updater)
     expect(w.args).not.toContain('2026-08-18');
   });
 

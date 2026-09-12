@@ -61,6 +61,41 @@ export async function createExpense(db: SQLiteDatabase, e: NewExpense): Promise<
 }
 
 /**
+ * Section 6 — correct an existing expense. Only the fields passed are
+ * changed; everything else on the row is left exactly as it was. Before
+ * this, Add Expense's edit path ran a fixed six-column UPDATE built from
+ * its own form state every time — safe as long as that state was correctly
+ * hydrated from the record being edited (it is), but with no structural
+ * guard against a future hydration bug silently blanking a field the form
+ * happened not to touch. photo_uri is the field this has bitten before
+ * (see the comment on AddExpenseScreen's state declarations): a partial
+ * update means a caller that never mentions photoUri cannot clear it,
+ * whatever else changes about how the form is built later.
+ */
+export async function updateExpense(
+  db: SQLiteDatabase, id: number,
+  changes: Partial<Pick<NewExpense, 'amount' | 'category' | 'note' | 'date' | 'photoUri' | 'isRecurring'>>
+): Promise<void> {
+  const columnFor: Record<string, string> = {
+    amount: 'amount', category: 'category', note: 'note', date: 'date',
+    photoUri: 'photo_uri', isRecurring: 'is_recurring',
+  };
+  const sets: string[] = [];
+  const args: unknown[] = [];
+  for (const key of Object.keys(columnFor)) {
+    if (!Object.prototype.hasOwnProperty.call(changes, key)) continue;
+    sets.push(columnFor[key] + ' = ?');
+    let value: unknown = (changes as Record<string, unknown>)[key];
+    if (key === 'note') value = (String(value ?? '')).trim();
+    if (key === 'isRecurring') value = value ? 1 : 0;
+    args.push(value ?? null);
+  }
+  if (!sets.length) return; // nothing asked for, nothing touched
+  args.push(id);
+  await db.runAsync(`UPDATE expenses SET ${sets.join(', ')} WHERE id = ?`, args as never[]);
+}
+
+/**
  * REMOVE AN EXPENSE. THE ONE PLACE THAT DOES IT.
  *
  * Deleting is the sharpest test of whether PeggyBank has one financial brain,
