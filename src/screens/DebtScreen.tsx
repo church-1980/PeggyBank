@@ -18,6 +18,7 @@ import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
 import PeggyDateField from '../components/peggy/PeggyDateField';
 import { localDateString } from '../core/datetime';
+import { debtPayoffMonths, debtTotalInterest } from '../core/finance';
 
 interface DebtPaymentRow { id: number; date: string; amount: number }
 
@@ -32,18 +33,24 @@ interface Debt {
   notes?: string;
 }
 
-function calcPayoff(balance: number, monthlyRate: number, payment: number): { months: number; totalInterest: number } {
-  if (payment <= 0 || balance <= 0) return { months: 0, totalInterest: 0 };
-  if (monthlyRate === 0) {
-    const months = Math.ceil(balance / payment);
-    return { months, totalInterest: 0 };
-  }
-  if (payment <= balance * monthlyRate) {
-    return { months: 999, totalInterest: 999999 };
-  }
-  const months = Math.ceil(-Math.log(1 - (monthlyRate * balance) / payment) / Math.log(1 + monthlyRate));
-  const totalInterest = (payment * months) - balance;
-  return { months, totalInterest: Math.max(0, totalInterest) };
+/**
+ * Section 2 repair — the payoff MATH lives only in core/finance.ts
+ * (debtPayoffMonths/debtTotalInterest). This does zero arithmetic of its
+ * own: it only translates the engine's honest `null` ("never pays off at
+ * this rate") into the two display sentinels (999 months, $999,999
+ * interest) formatMonths()/payoffDate() already used, so nothing else on
+ * this screen has to change. DebtScreen used to run its own approximation
+ * (`payment * months - balance` for interest) that was proven to disagree
+ * with the real amortization by as much as 43% on realistic inputs — that
+ * calculation no longer exists anywhere in the app.
+ */
+function payoffFor(balance: number, apr: number, payment: number): { months: number; totalInterest: number } {
+  const months = debtPayoffMonths(balance, apr, payment);
+  const totalInterest = debtTotalInterest(balance, apr, payment);
+  return {
+    months: months === null ? 999 : months,
+    totalInterest: totalInterest === null ? 999999 : totalInterest,
+  };
 }
 
 function formatMonths(months: number): string {
@@ -276,12 +283,11 @@ export default function DebtScreen({ navigation }: any) {
     const pct = item.total_amount > 0 ? Math.min(100, Math.round((item.amount_paid / item.total_amount) * 100)) : 0;
     const paid = remaining === 0;
 
-    const monthlyRate = (item.apr || 0) / 100 / 12;
     const effectivePayment = item.monthly_payment || item.minimum_payment;
-    const { months: payoffMonths, totalInterest } = calcPayoff(remaining, monthlyRate, effectivePayment);
+    const { months: payoffMonths, totalInterest } = payoffFor(remaining, item.apr || 0, effectivePayment);
 
     const boostedPayment = effectivePayment + 20;
-    const { months: boostedMonths, totalInterest: boostedInterest } = calcPayoff(remaining, monthlyRate, boostedPayment);
+    const { months: boostedMonths, totalInterest: boostedInterest } = payoffFor(remaining, item.apr || 0, boostedPayment);
     const savedMonths = payoffMonths < 999 ? Math.max(0, payoffMonths - boostedMonths) : 0;
     const savedInterest = totalInterest < 999999 ? Math.max(0, totalInterest - boostedInterest) : 0;
 
