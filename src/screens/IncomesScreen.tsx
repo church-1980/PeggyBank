@@ -188,10 +188,11 @@ export default function IncomesScreen({ navigation }: any) {
     if (!item) return;
     try {
       const db = await getDatabase();
-      await db.runAsync(
-        `INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`,
-        [item.amount, item.label ?? 'Income', item.date]
-      );
+      // Full-row restore (Section 4): item was captured via SELECT * before
+      // deletion, so schedule_id/cycle_date/is_recurring come back exactly
+      // as they were — a scheduled paycheck's undo no longer creates an
+      // orphaned actual with no link back to its schedule.
+      await restoreIncome(db, item as unknown as Record<string, unknown>);
       loadIncomes();
     } catch {}
   };
