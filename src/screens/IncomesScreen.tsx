@@ -20,6 +20,7 @@ import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyIconFrame from '../components/peggy/PeggyIconFrame';
 import UndoToast from '../components/UndoToast';
 import PeggyScreen from '../components/peggy/PeggyScreen';
+import PeggyConfirmationModal from '../components/peggy/PeggyConfirmationModal';
 
 
 export default function IncomesScreen({ navigation }: any) {
@@ -45,6 +46,7 @@ export default function IncomesScreen({ navigation }: any) {
   const [undoVisible, setUndoVisible] = useState(false);
   const undoData = useRef<Income | null>(null);
   const [actionIncome, setActionIncome] = useState<Income | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Income | null>(null);
 
   // Which month is on screen. This list used to query getMonthRange() -- always
   // the CURRENT month -- so income from any earlier month was never loaded at
@@ -366,7 +368,7 @@ export default function IncomesScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionDeleteBtn}
-            onPress={() => { const item = actionIncome; setActionIncome(null); item && deleteIncome(item); }}
+            onPress={() => { const item = actionIncome; setActionIncome(null); setConfirmDelete(item); }}
             activeOpacity={0.85}
           >
             <Ionicons name="trash-outline" size={18} color={C.spending} />
@@ -377,6 +379,16 @@ export default function IncomesScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      <PeggyConfirmationModal
+        visible={!!confirmDelete}
+        title="Delete this income entry?"
+        message="You'll get a chance to undo it right after."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => { const item = confirmDelete; setConfirmDelete(null); if (item) deleteIncome(item); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
 
       <Modal visible={!!confirming} transparent animationType="slide" onRequestClose={() => setConfirming(null)}>
         <TouchableOpacity style={styles.actionOverlay} activeOpacity={1} onPress={() => setConfirming(null)} />

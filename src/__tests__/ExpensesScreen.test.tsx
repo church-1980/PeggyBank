@@ -102,14 +102,44 @@ describe('ExpensesScreen', () => {
     expect(mockNav.navigate).toHaveBeenCalledWith('AddExpense', expect.objectContaining({ id: 1 }));
   });
 
-  it('calls DELETE on the database when Delete is tapped', async () => {
+  /**
+   * Section 7 — a list-view delete is destructive and must be confirmed.
+   * Tapping "Delete" in the action sheet now opens a confirmation dialog
+   * instead of deleting immediately; only confirming it performs the delete.
+   */
+  it('tapping Delete opens a confirmation instead of deleting immediately', async () => {
     const { getByText } = renderScreen();
     await waitFor(() => getByText('Metro'));
     fireEvent.press(getByText('Metro'));
     await waitFor(() => getByText('Delete'));
+    fireEvent.press(getByText('Delete'));
+    await waitFor(() => getByText('Delete this expense?'));
+    expect(deleteExpenseRecord).not.toHaveBeenCalled();
+  });
+
+  it('Cancel on the confirmation makes no mutation', async () => {
+    const { getByText, queryByText } = renderScreen();
+    await waitFor(() => getByText('Metro'));
+    fireEvent.press(getByText('Metro'));
+    await waitFor(() => getByText('Delete'));
+    fireEvent.press(getByText('Delete'));
+    await waitFor(() => getByText('Delete this expense?'));
+    fireEvent.press(getByText('Cancel'));
+    await waitFor(() => expect(queryByText('Delete this expense?')).toBeNull());
+    expect(deleteExpenseRecord).not.toHaveBeenCalled();
+  });
+
+  it('confirming Delete makes exactly one mutation', async () => {
+    const { getByText, getAllByText } = renderScreen();
+    await waitFor(() => getByText('Metro'));
+    fireEvent.press(getByText('Metro'));
+    await waitFor(() => getByText('Delete'));
+    fireEvent.press(getByText('Delete'));
+    await waitFor(() => getByText('Delete this expense?'));
     await act(async () => {
-      fireEvent.press(getByText('Delete'));
+      fireEvent.press(getAllByText('Delete')[getAllByText('Delete').length - 1]);
     });
+    expect(deleteExpenseRecord).toHaveBeenCalledTimes(1);
     expect(deleteExpenseRecord).toHaveBeenCalledWith(expect.anything(), 1);
     // And the screen does NOT write the SQL itself any more.
     const ownSql = mockDb.runAsync.mock.calls
@@ -117,13 +147,15 @@ describe('ExpensesScreen', () => {
     expect(ownSql).toEqual([]);
   });
 
-  it('shows undo toast after deleting an expense', async () => {
-    const { getByText } = renderScreen();
+  it('shows undo toast after confirming the delete', async () => {
+    const { getByText, getAllByText } = renderScreen();
     await waitFor(() => getByText('Metro'));
     fireEvent.press(getByText('Metro'));
     await waitFor(() => getByText('Delete'));
+    fireEvent.press(getByText('Delete'));
+    await waitFor(() => getByText('Delete this expense?'));
     await act(async () => {
-      fireEvent.press(getByText('Delete'));
+      fireEvent.press(getAllByText('Delete')[getAllByText('Delete').length - 1]);
     });
     await waitFor(() => {
       expect(getByText(/expense deleted/i)).toBeTruthy();

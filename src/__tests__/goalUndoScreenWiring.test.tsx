@@ -10,7 +10,7 @@
  * undo flow, and inspects the actual SQL the screen issues.
  */
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import GoalsScreen from '../screens/GoalsScreen';
 
@@ -52,7 +52,11 @@ describe('GoalsScreen wires delete + undo to the full-row restore', () => {
     await waitFor(() => expect(getByText('Emergency Fund')).toBeTruthy());
     fireEvent.press(getByText('Emergency Fund'));           // opens the action sheet
     await waitFor(() => expect(getByText('Delete Goal')).toBeTruthy());
-    fireEvent.press(getByText('Delete Goal'));               // deletes; shows the undo toast
+    fireEvent.press(getByText('Delete Goal'));               // opens the delete confirmation (Section 7)
+    await waitFor(() => expect(getByText('Delete this goal?')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(getByText('Delete'));                  // confirms; deletes; shows the undo toast
+    });
 
     await waitFor(() => expect(getByText('Undo')).toBeTruthy());
     fireEvent.press(getByText('Undo'));

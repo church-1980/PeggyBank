@@ -16,6 +16,7 @@ import { useColors } from '../context/ThemeContext';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import UndoToast from '../components/UndoToast';
 import IconBadge from '../components/IconBadge';
+import PeggyConfirmationModal from '../components/peggy/PeggyConfirmationModal';
 
 export default function ExpensesScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -26,6 +27,7 @@ export default function ExpensesScreen({ navigation }: any) {
   const [total, setTotal] = useState(0);
   const [undoVisible, setUndoVisible] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Expense | null>(null);
   const undoData = useRef<Expense | null>(null);
 
   const loadExpenses = useCallback(async () => {
@@ -203,7 +205,7 @@ export default function ExpensesScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.sheetDeleteBtn}
               activeOpacity={0.85}
-              onPress={() => deleteExpense(selectedExpense)}
+              onPress={() => { setSelectedExpense(null); setConfirmDelete(selectedExpense); }}
             >
               <Ionicons name="trash-outline" size={20} color={C.spending} />
               <Text style={styles.sheetDeleteBtnText}>Delete</Text>
@@ -218,6 +220,16 @@ export default function ExpensesScreen({ navigation }: any) {
           </View>
         )}
       </Modal>
+
+      <PeggyConfirmationModal
+        visible={!!confirmDelete}
+        title="Delete this expense?"
+        message="You'll get a chance to undo it right after."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => { const item = confirmDelete; setConfirmDelete(null); if (item) deleteExpense(item); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </PeggyScreen>
   );
 }

@@ -19,6 +19,7 @@ import { goalIconKey, ICON_REGISTRY } from '../data/iconRegistry';
 import { useCustomLogos } from '../context/CustomLogoContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
+import PeggyConfirmationModal from '../components/peggy/PeggyConfirmationModal';
 
 function ProgressBar({ pct, color, borderColor }: { pct: number; color: string; borderColor: string }) {
   const anim = useRef(new Animated.Value(0)).current;
@@ -53,6 +54,7 @@ export default function GoalsScreen({ navigation, route }: any) {
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [actionGoal, setActionGoal] = useState<SavingsGoal | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<SavingsGoal | null>(null);
   const [addingMode, setAddingMode] = useState<'new' | 'deposit'>('new');
   const [selectedGoal, setSelectedGoal] = useState<SavingsGoal | null>(null);
   const [name, setName] = useState('');
@@ -472,7 +474,7 @@ export default function GoalsScreen({ navigation, route }: any) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtnDestructive}
-            onPress={() => actionGoal?.id && deleteGoal(actionGoal.id)}
+            onPress={() => { const goal = actionGoal; setActionGoal(null); setConfirmDelete(goal); }}
             activeOpacity={0.8}
           >
             <Ionicons name="trash-outline" size={20} color={C.spending} />
@@ -483,6 +485,16 @@ export default function GoalsScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      <PeggyConfirmationModal
+        visible={!!confirmDelete}
+        title="Delete this goal?"
+        message="You'll get a chance to undo it right after."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={() => { const goal = confirmDelete; setConfirmDelete(null); if (goal?.id) deleteGoal(goal.id); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </PeggyScreen>
   );
 }
