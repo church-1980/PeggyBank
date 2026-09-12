@@ -26,6 +26,7 @@ import {
   paymentsFor, recordPayment, methodOf, settleAssumedPayments,
 } from '../lib/billCycles';
 import { loadFinanceSummary } from '../lib/financeSummary';
+import { isOwnedReceipt, deleteReceiptImage } from '../lib/receiptStorage';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyCard from '../components/peggy/PeggyCard';
 import {
@@ -338,7 +339,33 @@ export default function BillsScreen({ navigation, route }: any) {
       onConfirm: async () => {
         try {
           const db = await getDatabase();
+          // Section 9 — the bill PLAN is what's being removed, not any
+          // payment already recorded against it: bill_payments keeps its own
+          // bill_name snapshot, so history reads correctly with or without
+          // this row. The plan's photo, though, has nothing left to
+          // reference it once the row is gone, so — the same rule
+          // deleteExpense() already applies — it is cleaned up here, but
+          // only after checking no other bill or expense still shares it.
+          const row = await db.getFirstAsync<{ photo_uri: string | null }>(
+            `SELECT photo_uri FROM bills WHERE id=?`, [id]
+          );
           await db.runAsync(`DELETE FROM bills WHERE id=?`, [id]);
+
+          const uri = row?.photo_uri ?? null;
+          if (isOwnedReceipt(uri)) {
+            try {
+              const stillUsed = await db.getFirstAsync<{ n: number }>(
+                `SELECT
+                   (SELECT COUNT(*) FROM bills    WHERE photo_uri = ?) +
+                   (SELECT COUNT(*) FROM expenses WHERE photo_uri = ?) AS n`,
+                [uri, uri]
+              );
+              if ((stillUsed?.n ?? 0) === 0) await deleteReceiptImage(uri);
+            } catch {
+              // An orphaned image costs storage, not correctness. The bill
+              // is already gone; failing here over cleanup would be worse.
+            }
+          }
           loadAll();
         } catch (e) {
           console.error('[Bills] delete error:', e);
