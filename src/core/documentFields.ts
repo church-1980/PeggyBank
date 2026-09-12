@@ -120,11 +120,30 @@ function looksLikeIdentifier(row: string): boolean {
   return false;
 }
 
+/**
+ * FOLD THE OCR CONFUSIONS THAT ACTUALLY HAPPEN ON PRINTED RECEIPTS.
+ *
+ * "T0TAL" and "TOTA1" are the same OCR engine misreading O as 0 and L as 1
+ * inside a word it otherwise read correctly — a font artifact, not a
+ * different word. Only ever applied to label MATCHING, and only within a
+ * token that already contains a letter, so a bare amount like "61.95" is
+ * never at risk: nothing here can turn a real number into a fake label,
+ * only recognise a label OCR has quietly vandalised. "SUBT0TAL" still
+ * folds to something containing "total", so it is still caught by
+ * NOT_THE_TOTAL first — corruption does not make a subtotal look safer.
+ */
+function deOcrLabel(row: string): string {
+  return row.replace(/[A-Za-z0-9]+/g, (word) =>
+    /[A-Za-z]/.test(word) ? word.replace(/0/g, 'o').replace(/1/g, 'l') : word
+  );
+}
+
 /** Is this a money label sitting on a row with no money on it? */
 function isLabelOnlyRow(row: string): boolean {
   if (MONEY.test(row)) { MONEY.lastIndex = 0; return false; }
   MONEY.lastIndex = 0;
-  return FINAL_LABEL.test(row) || TOTAL_LABEL.test(row) || NOT_THE_TOTAL.test(row);
+  const label = deOcrLabel(row);
+  return FINAL_LABEL.test(label) || TOTAL_LABEL.test(label) || NOT_THE_TOTAL.test(label);
 }
 
 /**
@@ -199,9 +218,10 @@ export function chooseAmount(input: string[]): AmountChoice {
     if (looksLikeIdentifier(row)) return;
 
     const matches = row.match(MONEY);
-    const negative = NOT_THE_TOTAL.test(row);
-    const isFinal = !negative && FINAL_LABEL.test(row);
-    const isTotal = !negative && !isFinal && TOTAL_LABEL.test(row);
+    const label = deOcrLabel(row);
+    const negative = NOT_THE_TOTAL.test(label);
+    const isFinal = !negative && FINAL_LABEL.test(label);
+    const isTotal = !negative && !isFinal && TOTAL_LABEL.test(label);
 
     if (matches) {
       for (const raw of matches) {
