@@ -12,7 +12,7 @@ import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { useColors } from '../context/ThemeContext';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import { loadFinanceSummary, type FinanceSummary } from '../lib/financeSummary';
-import { updateSchedule } from '../lib/incomeSchedules';
+import { updateSchedule, createSchedule } from '../lib/incomeSchedules';
 
 /**
  * Bills owed and savings needed come from the SAME canonical engine Home
@@ -172,12 +172,14 @@ export default function PaydayScreen({ navigation }: any) {
         // the same "starting now" reading Add Income uses when no more
         // specific date applies.
         const anchor = payFrequency === 'biweekly' ? getTodayString() : null;
-        const res = await db.runAsync(
-          `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, anchor_date, active)
-           VALUES (?, ?, ?, ?, ?, ?, 1)`,
-          [changes.label, changes.amount, changes.frequency, changes.day_of_month, changes.weekday, anchor]
-        );
-        setScheduleId(Number((res as { lastInsertRowId: number }).lastInsertRowId));
+        // Section 5 — the same canonical writer Add Income uses, so a
+        // schedule created here and one created there are structurally
+        // identical, not merely coincidentally so.
+        const id = await createSchedule(db, {
+          label: changes.label, amount: changes.amount, frequency: changes.frequency,
+          day_of_month: changes.day_of_month, weekday: changes.weekday, anchor_date: anchor,
+        });
+        setScheduleId(id);
       }
       setSaved(true);
       Alert.alert('Saved', "We'll check in with you each payday to confirm what actually arrives.");
