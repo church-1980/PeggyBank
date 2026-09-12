@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   ScrollView, Alert, KeyboardAvoidingView, Platform,
@@ -91,6 +91,16 @@ export default function PaydayScreen({ navigation }: any) {
   const [saved, setSaved] = useState(false);
   /** The 'Paycheck' income_schedules row this screen owns, if one exists yet. */
   const [scheduleId, setScheduleId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  /**
+   * Section 10 — THE SAVE LATCH, same reasoning as Quick Capture's: a ref
+   * holding the in-flight PROMISE, not a boolean. A boolean only flips after
+   * an await, so a second tap that lands before the first save's first
+   * await resolves reads the same stale scheduleId (still null) and creates
+   * a second schedule. Holding the promise latches synchronously; the
+   * second tap waits on the same save instead of starting its own.
+   */
+  const saving = useRef<Promise<void> | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -150,43 +160,51 @@ export default function PaydayScreen({ navigation }: any) {
    * prompt this schedule feeds.
    */
   const savePlan = async () => {
+    if (saving.current) { await saving.current; return; }
     const income = parseFloat(paycheckAmount);
     if (isNaN(income) || income <= 0) {
       Alert.alert('Oops', 'Please enter your paycheck amount first.');
       return;
     }
-    try {
-      const db = await getDatabase();
-      const changes = {
-        label: 'Paycheck',
-        amount: income,
-        frequency: payFrequency,
-        day_of_month: payFrequency === 'monthly' ? selectedDay : null,
-        weekday: payFrequency === 'monthly' ? null : selectedWeekday,
-      };
-      if (scheduleId) {
-        await updateSchedule(db, scheduleId, changes);
-      } else {
-        // Biweekly needs a real date to count fortnights from; there is no
-        // specific paycheque being entered here, so today is the anchor --
-        // the same "starting now" reading Add Income uses when no more
-        // specific date applies.
-        const anchor = payFrequency === 'biweekly' ? getTodayString() : null;
-        // Section 5 — the same canonical writer Add Income uses, so a
-        // schedule created here and one created there are structurally
-        // identical, not merely coincidentally so.
-        const id = await createSchedule(db, {
-          label: changes.label, amount: changes.amount, frequency: changes.frequency,
-          day_of_month: changes.day_of_month, weekday: changes.weekday, anchor_date: anchor,
-        });
-        setScheduleId(id);
+    setSubmitting(true);
+    saving.current = (async () => {
+      try {
+        const db = await getDatabase();
+        const changes = {
+          label: 'Paycheck',
+          amount: income,
+          frequency: payFrequency,
+          day_of_month: payFrequency === 'monthly' ? selectedDay : null,
+          weekday: payFrequency === 'monthly' ? null : selectedWeekday,
+        };
+        if (scheduleId) {
+          await updateSchedule(db, scheduleId, changes);
+        } else {
+          // Biweekly needs a real date to count fortnights from; there is no
+          // specific paycheque being entered here, so today is the anchor --
+          // the same "starting now" reading Add Income uses when no more
+          // specific date applies.
+          const anchor = payFrequency === 'biweekly' ? getTodayString() : null;
+          // Section 5 — the same canonical writer Add Income uses, so a
+          // schedule created here and one created there are structurally
+          // identical, not merely coincidentally so.
+          const id = await createSchedule(db, {
+            label: changes.label, amount: changes.amount, frequency: changes.frequency,
+            day_of_month: changes.day_of_month, weekday: changes.weekday, anchor_date: anchor,
+          });
+          setScheduleId(id);
+        }
+        setSaved(true);
+        Alert.alert('Saved', "We'll check in with you each payday to confirm what actually arrives.");
+      } catch (e) {
+        console.error('[Payday] savePlan error:', e);
+        Alert.alert('Could not save', 'Something went wrong saving the plan. Please try again.');
+      } finally {
+        saving.current = null;
+        setSubmitting(false);
       }
-      setSaved(true);
-      Alert.alert('Saved', "We'll check in with you each payday to confirm what actually arrives.");
-    } catch (e) {
-      console.error('[Payday] savePlan error:', e);
-      Alert.alert('Could not save', 'Something went wrong saving the plan. Please try again.');
-    }
+    })();
+    await saving.current;
   };
 
   const pct = (value: number) => {
@@ -305,11 +323,12 @@ export default function PaydayScreen({ navigation }: any) {
             </View>
 
             <TouchableOpacity
-              style={[styles.saveBtn, saved && { backgroundColor: C.income }]}
+              style={[styles.saveBtn, saved && { backgroundColor: C.income }, submitting && { opacity: 0.6 }]}
               onPress={savePlan}
+              disabled={submitting}
             >
               {saved && <Ionicons name="checkmark" size={20} color={C.textOnPrimary} />}
-              <Text style={styles.saveBtnText}>{saved ? 'Saved' : 'Save This Plan'}</Text>
+              <Text style={styles.saveBtnText}>{saved ? 'Saved' : submitting ? 'Saving…' : 'Save This Plan'}</Text>
             </TouchableOpacity>
           </View>
         )}
