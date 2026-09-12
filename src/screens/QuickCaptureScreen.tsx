@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '../context/ThemeContext';
 import { Spacing, Radius, Typography, ColorPalette } from '../theme';
 import { formatCurrency, formatDate } from '../utils/helpers';
-import { saveAcceptedImage, deleteTempImage } from '../lib/receiptStorage';
+import { saveAcceptedImage, deleteTempImage, deleteReceiptImage } from '../lib/receiptStorage';
 import { recognizer, RecognitionResult, DocType } from '../lib/recognition';
 import { recallMerchant, MerchantMemory } from '../lib/merchantMemory';
 import { Category } from '../types';
@@ -179,13 +179,32 @@ export default function QuickCaptureScreen({ navigation }: any) {
     if (!r.canceled && r.assets[0]?.uri) { setTempUri(r.assets[0].uri); setStage('preview'); }
   };
 
+  /**
+   * Section 8 — TEMPORARY CAPTURE FILE vs AUTHORITATIVE RECEIPT FILE.
+   *
+   * tempUri is a raw camera/gallery cache file: never referenced by the
+   * database, safe to delete unconditionally. ownedUri is the copy made in
+   * PeggyBank's own receipts folder the moment "Use Photo" is tapped — it
+   * only becomes an AUTHORITATIVE receipt once a transaction is actually
+   * saved with it as photo_uri. Before that save happens, retaking or
+   * cancelling abandons it, and nothing else can ever come to reference it,
+   * so it must be deleted here or it sits on the phone forever.
+   */
   const retake = async () => {
     await deleteTempImage(tempUri);
+    await deleteReceiptImage(ownedUri);
     setTempUri(null); setOwnedUri(null); setResult(null);
     // A different receipt must not inherit the last one's vendor, corrections
     // or dismissed question.
     setKnown(null); setEdits({}); setEditing(null); setQuestionDismissed(false);
     setStage('camera');
+  };
+
+  /** Leaving without saving: clean up whichever capture file is in play. */
+  const abandonCapture = async () => {
+    await deleteTempImage(tempUri);
+    await deleteReceiptImage(ownedUri);
+    close();
   };
 
   // Use Photo → persist → read on-device → review
@@ -332,7 +351,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
         <Image source={{ uri: tempUri }} style={StyleSheet.absoluteFill} resizeMode="contain" />
         <View style={[styles.previewBar, { paddingBottom: insets.bottom + 20, paddingTop: 16 }]}>
           <TouchableOpacity style={styles.previewBtn} onPress={retake}><Ionicons name="refresh" size={20} color="#fff" /><Text style={styles.previewBtnText}>Retake</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.previewBtn} onPress={close}><Ionicons name="close" size={20} color="#fff" /><Text style={styles.previewBtnText}>Cancel</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.previewBtn} onPress={abandonCapture}><Ionicons name="close" size={20} color="#fff" /><Text style={styles.previewBtnText}>Cancel</Text></TouchableOpacity>
           <TouchableOpacity style={[styles.previewBtn, styles.useBtn, { backgroundColor: C.primary }]} onPress={usePhoto}><Ionicons name="checkmark" size={20} color="#fff" /><Text style={styles.previewBtnText}>Use Photo</Text></TouchableOpacity>
         </View>
       </View>
@@ -673,7 +692,7 @@ export default function QuickCaptureScreen({ navigation }: any) {
         <View style={styles.reviewActions}>
           <TouchableOpacity onPress={retake}><Text style={styles.reviewAction}>Retake</Text></TouchableOpacity>
           <TouchableOpacity onPress={() => chosenType !== 'unknown' && goToForm(chosenType, false)}><Text style={[styles.reviewAction, { color: chosenType === 'unknown' ? C.textHint : C.primary }]}>Enter manually</Text></TouchableOpacity>
-          <TouchableOpacity onPress={close}><Text style={styles.reviewAction}>Cancel</Text></TouchableOpacity>
+          <TouchableOpacity onPress={abandonCapture}><Text style={styles.reviewAction}>Cancel</Text></TouchableOpacity>
         </View>
       </View>
     </ScrollView>
