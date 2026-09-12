@@ -78,8 +78,14 @@ function makeDb(schedules: IncomeSchedule[], confirmedRows: any[] = []) {
     getFirstAsync: jest.fn(async (_sql: string, args: any[]) => ({
       n: income.filter(r => r.schedule_id === args[0] && r.cycle_date === args[1]).length,
     })),
-    runAsync: jest.fn(async (_sql: string, args: any[]) => {
-      income.push({ amount: args[0], label: args[1], date: args[2], schedule_id: args[3], cycle_date: args[4] });
+    runAsync: jest.fn(async (sql: string, args: any[]) => {
+      // Parse the column list from the real INSERT rather than assuming a
+      // fixed argument order, so this mock does not silently misparse when
+      // createIncome() changes which columns it writes and in what order.
+      const cols = sql.slice(sql.indexOf('(') + 1, sql.indexOf(')')).split(',').map(s => s.trim());
+      const row: any = {};
+      cols.forEach((c, i) => { row[c] = args[i]; });
+      income.push(row);
       return { changes: 1 };
     }),
   } as any;
@@ -282,7 +288,13 @@ describe('Correcting one pay versus changing future pay', () => {
           const cols = sql.slice(sql.indexOf('SET ') + 4, sql.indexOf(' WHERE')).split(',').map(s => s.trim().split(' ')[0]);
           cols.forEach((c, i) => { (row as any)[c] = args[i]; });
         } else {
-          income.push({ amount: args[0], label: args[1], date: args[2], schedule_id: args[3], cycle_date: args[4] });
+          // Parse the column list from the real INSERT (createIncome() may
+          // change which columns it writes and in what order) rather than
+          // assuming a fixed argument position.
+          const cols = sql.slice(sql.indexOf('(') + 1, sql.indexOf(')')).split(',').map(s => s.trim());
+          const row: any = {};
+          cols.forEach((c, i) => { row[c] = args[i]; });
+          income.push(row);
         }
         return { changes: 1 };
       }),

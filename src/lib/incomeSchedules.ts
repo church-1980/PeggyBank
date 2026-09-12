@@ -28,6 +28,7 @@
 
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { localDateString, parseLocalDate, dueDayInMonth, nextMonthlyOccurrence } from '../core/datetime';
+import { createIncome } from './saveIncome';
 
 export type IncomeFrequency = 'monthly' | 'weekly' | 'biweekly';
 
@@ -196,10 +197,40 @@ export async function confirmIncome(
     throw new Error('An amount is needed before this payday can be recorded.');
   }
   if (await isConfirmed(db, schedule.id, cycleDate)) return;   // never file it twice
-  await db.runAsync(
-    `INSERT INTO income (amount, label, date, schedule_id, cycle_date) VALUES (?, ?, ?, ?, ?)`,
-    [actualAmount, schedule.label, cycleDate, schedule.id, cycleDate]
+  // The one writer of actual income (saveIncome.ts) — confirming a schedule
+  // occurrence is creating an actual income row with schedule linkage, not
+  // a separate kind of write.
+  await createIncome(db, {
+    amount: actualAmount, label: schedule.label, date: cycleDate,
+    scheduleId: schedule.id, cycleDate,
+  });
+}
+
+export interface NewSchedule {
+  label: string;
+  amount: number;
+  frequency: IncomeFrequency;
+  day_of_month?: number | null;
+  weekday?: number | null;
+  anchor_date?: string | null;
+}
+
+/**
+ * Create a new recurring-income schedule and return its id.
+ *
+ * Add Income and the Payday Planner both create schedules and collect
+ * different information to do it (Add Income has a real date to derive a
+ * biweekly anchor from; Payday anchors to today when it has none) — but
+ * both now produce the SAME authoritative object through this one INSERT,
+ * instead of two independent ones agreeing only by coincidence.
+ */
+export async function createSchedule(db: SQLiteDatabase, s: NewSchedule): Promise<number> {
+  const result = await db.runAsync(
+    `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, anchor_date, active)
+     VALUES (?, ?, ?, ?, ?, ?, 1)`,
+    [s.label, s.amount, s.frequency, s.day_of_month ?? null, s.weekday ?? null, s.anchor_date ?? null]
   );
+  return Number(result.lastInsertRowId);
 }
 
 /** Stop forecasting a schedule without destroying the income already confirmed from it. */

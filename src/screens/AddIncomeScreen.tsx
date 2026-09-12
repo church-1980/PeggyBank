@@ -14,6 +14,8 @@ import { IconKey } from '../data/iconRegistry';
 import PeggyScreen from '../components/peggy/PeggyScreen';
 import PeggyDateField from '../components/peggy/PeggyDateField';
 import { parseLocalDate } from '../core/datetime';
+import { createIncome, updateIncome } from '../lib/saveIncome';
+import { createSchedule } from '../lib/incomeSchedules';
 
 // Income sources — each carries its own matte concept icon.
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -91,38 +93,26 @@ export default function AddIncomeScreen({ navigation, route }: any) {
       const db = await getDatabase();
       if (editingId) {
         // date is included deliberately: correcting the day is the whole point.
-        await db.runAsync(
-          `UPDATE income SET amount=?, label=?, date=? WHERE id=?`,
-          [saveAmount, saveLabel, date, editingId]
-        );
+        // schedule_id/cycle_date/is_recurring are occurrence identity, not
+        // something this edit can touch — updateIncome() enforces that.
+        await updateIncome(db, editingId, { amount: saveAmount, label: saveLabel, date });
       } else {
         const when = parseLocalDate(date);
         if (repeat === 'once') {
-          await db.runAsync(
-            `INSERT INTO income (amount, label, date) VALUES (?, ?, ?)`,
-            [saveAmount, saveLabel, date]
-          );
+          await createIncome(db, { amount: saveAmount, label: saveLabel, date });
         } else {
           // A repeating income records TODAY's payment and sets up the forecast
           // for the ones after it. The schedule stores what to EXPECT; it never
           // creates income on its own -- each future payday has to be confirmed.
-          const res = await db.runAsync(
-            `INSERT INTO income_schedules (label, amount, frequency, day_of_month, weekday, anchor_date, active)
-             VALUES (?, ?, ?, ?, ?, ?, 1)`,
-            [
-              saveLabel, saveAmount, repeat,
-              repeat === 'monthly' ? when.getDate() : null,
-              repeat === 'monthly' ? null : when.getDay(),
-              // Biweekly counts fortnights from this real payday; a weekday
-              // alone cannot say whether it is this Friday or the next one.
-              repeat === 'biweekly' ? date : null,
-            ]
-          );
-          const scheduleId = (res as any)?.lastInsertRowId ?? null;
-          await db.runAsync(
-            `INSERT INTO income (amount, label, date, schedule_id, cycle_date) VALUES (?, ?, ?, ?, ?)`,
-            [saveAmount, saveLabel, date, scheduleId, date]
-          );
+          const scheduleId = await createSchedule(db, {
+            label: saveLabel, amount: saveAmount, frequency: repeat,
+            day_of_month: repeat === 'monthly' ? when.getDate() : null,
+            weekday: repeat === 'monthly' ? null : when.getDay(),
+            // Biweekly counts fortnights from this real payday; a weekday
+            // alone cannot say whether it is this Friday or the next one.
+            anchor_date: repeat === 'biweekly' ? date : null,
+          });
+          await createIncome(db, { amount: saveAmount, label: saveLabel, date, scheduleId, cycleDate: date });
         }
       }
       console.log('[AddIncome] saved $' + saveAmount + ' label=' + saveLabel);

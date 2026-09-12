@@ -5,6 +5,7 @@ import {
   pendingIncome, confirmIncome, activeSchedules, updateSchedule, deactivateSchedule,
   describeSchedule, nextOccurrence, type ExpectedIncome, type IncomeSchedule,
 } from '../lib/incomeSchedules';
+import { deleteIncome as deleteIncomeRecord, restoreIncome } from '../lib/saveIncome';
 import { parseLocalDate, localDateString, localMonthRange } from '../core/datetime';
 import PeggyCard from '../components/peggy/PeggyCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -172,7 +173,7 @@ export default function IncomesScreen({ navigation }: any) {
     if (!item.id) return;
     try {
       const db = await getDatabase();
-      await db.runAsync(`DELETE FROM income WHERE id = ?`, [item.id]);
+      await deleteIncomeRecord(db, item.id);
       undoData.current = item;
       setUndoVisible(true);
       loadIncomes();
