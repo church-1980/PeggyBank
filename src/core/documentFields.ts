@@ -100,14 +100,36 @@ const TRUE_TOTAL_LABEL = new RegExp(
     // still the one number that answers "what is the total?" for that
     // document -- never in the same row as "minimum payment".
     'statement\\s*balance', 'current\\s*balance', 'total\\s*balance', 'total\\s*account\\s*balance',
+    // India — Discom electricity bills (BSES/Tata Power/BESCOM/MSEDCL) and
+    // GST retail invoices consistently print one of these as the true,
+    // arrears-inclusive bottom line, distinct from "Current Bill Amount" /
+    // "Net Current Demand" (a component — see PARTIAL_DUE_QUALIFIER).
+    'total\\s*amount\\s*payable', 'net\\s*amount\\s*payable', 'net\\s*amount',
     // French
     'montant\\s*d[uû]', 'solde\\s*[aà]\\s*payer', 'total\\s*[aà]\\s*payer',
     'montant\\s*exigible', 'montant\\s*total', 'net\\s*[aà]\\s*payer', 'solde\\s*d[uû]',
     // Spanish / Portuguese
     'importe\\s*total', 'total\\s*a\\s*pagar', 'valor\\s*total',
     'saldo\\s*a\\s*pagar', 'importe\\s*a\\s*pagar',
-    // Chinese
-    '应付金额', '应缴金额', '合计金额', '总计',
+    // German
+    'gesamtbetrag', 'zu\\s*zahlen(?:der\\s*betrag)?',
+    // Italian
+    'totale\\s*da\\s*pagare',
+    // Dutch
+    'te\\s*betalen',
+    // Russian (Cyrillic)
+    'итого\\s*к\\s*оплате', 'к\\s*оплате',
+    // Korean
+    '결제금액', '총액',
+    // Chinese — 合計 uses the kanji/traditional form of 計 (Japanese and
+    // Traditional Chinese); 合计 (simplified, 计) is TOTAL_LABEL's weak tier
+    // below. 价税合计 is a formal fapiao's price+tax total; 應付金額/應繳金額
+    // are the traditional-character forms of 应付金额/应缴金额.
+    '应付金额', '应缴金额', '合计金额', '总计', '价税合计', '應付金額', '應繳金額',
+    // Hindi (Devanagari) — India electricity/retail bills
+    'देय\\s*राशि', 'कुल\\s*देय\\s*राशि', 'कुल\\s*राशि',
+    // Arabic
+    'المبلغ\\s*الإجمالي\\s*المستحق', 'المبلغ\\s*الإجمالي', 'الإجمالي\\s*المستحق',
   ].join('|'),
   'i',
 );
@@ -134,13 +156,38 @@ const PARTIAL_DUE_QUALIFIER = new RegExp(
     // no qualifier at all, and this line scored a near-tie with the true
     // total purely by chance of row order.
     'due\\s*by', 'au\\s*plus\\s*tard',
+    // India — "Current Bill Amount" / "Net Current Demand" / "Total
+    // Current Bill" (Discom electricity bills): this cycle's charges
+    // only, excludes carried-forward arrears — real money, correctly
+    // labelled, just not "Total Amount Payable" (see NOT_THE_TOTAL for
+    // the arrears figure itself, which IS excluded like a previous balance).
+    'current\\s*demand', 'net\\s*current',
   ].join('|'),
   'i',
 );
 
-/** A plain "total" — good evidence, but weaker than an explicit amount due. */
+/**
+ * A plain "total" — good evidence, but weaker than an explicit amount due.
+ *
+ * No \b around a non-Latin-script word (итого, إجمالي, 합계, 总计, 合計):
+ * JS's \b is defined against ASCII \w ([A-Za-z0-9_]), so a Cyrillic, Arabic
+ * or CJK character never counts as a "word" character to it — \bитого\b
+ * would need an ASCII letter on one side of the boundary to ever fire, and
+ * next to a space or another Cyrillic letter it silently matches nothing,
+ * ever. documentFields.ts's own French vocabulary hit this same limit
+ * around accented edges; the fix there and here is the same: drop \b on
+ * the side(s) that aren't plain ASCII.
+ */
 const TOTAL_LABEL = new RegExp(
-  ['\\btotal\\b', '\\bmontant\\b', '\\bsolde\\b', '\\bimporte\\b', '\\btotale?\\b', '合计'].join('|'),
+  [
+    '\\btotal\\b', '\\bmontant\\b', '\\bsolde\\b', '\\bimporte\\b', '\\btotale?\\b', '\\bsumme\\b',
+    'итого', '합계', '总计',
+    // 合计 (simplified 计) and 合計 (traditional/Japanese 計) are visually
+    // distinct characters — both are the single bare word for "total" in
+    // their respective scripts, so both belong in this weak generic tier
+    // rather than only one of the two ever being recognised.
+    '合计', '合計', 'إجمالي',
+  ].join('|'),
   'i',
 );
 
@@ -159,6 +206,9 @@ const NOT_THE_TOTAL = new RegExp(
     '\\b(change|monnaie|cambio)\\b',
     '\\b(cash|comptant|tendered|tender|especes|esp[eè]ces|efectivo)\\b',
     'previous\\s*balance', 'solde\\s*pr[eé]c[eé]dent', 'ancien\\s*solde', 'balance\\s*forward',
+    // Same concept as "balance forward" under a different name — Jamaican
+    // utility bills (JPS, NWC) consistently call it this.
+    'balance\\s*brought\\s*forward', '\\barrears\\b',
     'payment\\s*received', 'paiement\\s*re[cç]u', 'pago\\s*recibido', '\\bpayments?\\b',
     '\\b(credit|cr[eé]dit|adjustment|rajustement|refund|remboursement)\\b',
     '\\b(discount|rabais|descuento|savings)\\b',
@@ -173,6 +223,39 @@ const NOT_THE_TOTAL = new RegExp(
     // engine should actually choose, so it must be excluded, not merely
     // outranked (Section 9/12/13 — statement/card decoys).
     'minimum\\s*payment', 'paiement\\s*minimum',
+    // India — GST tax components (electricity Discom bills and GST retail
+    // invoices legally split GST into CGST+SGST or IGST rather than one
+    // merged line) and the pre-tax subtotal on a GST invoice.
+    '\\b(cgst|sgst|igst)\\b', 'taxable\\s*value', 'round\\s*off',
+    // Jamaica / general Caribbean-English GCT.
+    '\\bgct\\b',
+    // German — Kassenbon: "Zwischensumme" contains "summe" and must be
+    // excluded before that bare word's own weak-tier match ever applies;
+    // MwSt./USt. are VAT; Gegeben/Rückgeld are cash tendered/change.
+    'zwischensumme', '\\b(mwst|ust)\\b', '\\bgegeben\\b', '\\br[uü]ckgeld\\b',
+    // Italian — subtotal, VAT (iva already covered above), cash/change.
+    'subtotale', '\\bimponibile\\b', '\\bcontanti\\b', '\\bresto\\b',
+    // Dutch — subtotal, VAT, cash/change.
+    'subtotaal', '\\bbtw\\b', '\\bcontant\\b', '\\bwisselgeld\\b',
+    // Russian (Cyrillic) — subtotal, VAT, cash tendered/change. No \b: see
+    // the comment on TOTAL_LABEL for why ASCII \b cannot bound these.
+    'подытог', 'ндс', 'наличными', 'сдача',
+    // Korean — pre-tax subtotal (two distinct real terms), VAT.
+    '공급가액', '소계', '부가세',
+    // Japanese — subtotal, consumption tax, cash tendered/change.
+    '小計', '消費税', 'お預り', 'お釣り',
+    // Chinese — arrears/prior balance (simplified + traditional), deposit
+    // (mainland 押金 vs Hong Kong 按金 — CLP/HK Electric use 按金, not the
+    // mainland/generic 押金), change given, discount, a late-payment
+    // penalty (flagged rather than trusted — sometimes folded into the
+    // total, sometimes its own line), the subtotal, and a fapiao's
+    // tax-only column (as opposed to 价税合计, the true total).
+    '欠费', '結轉欠費', '上期余额', '押金', '按金', '找零', '找贖',
+    '折扣', '优惠', '违约金', '小计', '税额',
+    // Arabic — subtotal (three real variants seen), VAT, amount already
+    // paid, change/remainder.
+    'المجموع\\s*الفرعي', 'الإجمالي\\s*الفرعي', 'المجموع\\s*الجزئي',
+    'ضريبة\\s*القيمة\\s*المضافة', 'المبلغ\\s*المدفوع', 'الباقي',
   ].join('|'),
   'i',
 );
@@ -254,7 +337,7 @@ function classifyLabel(row: string): AmountRole {
   // twin of "Montant de la présente facture", which already qualifies via
   // TOTAL_LABEL's bare "montant". Without this, the English phrase had no
   // positive match at all and silently fell to 'unlabelled'.
-  const moneyContext = qualified && /\bamount\b|\bdue\b|\bd[uû]\b|\bbalance\b|\bfacture\b|\bbill\b|\bcharges?\b/i.test(label);
+  const moneyContext = qualified && /\bamount\b|\bdue\b|\bd[uû]\b|\bbalance\b|\bfacture\b|\bbill\b|\bcharges?\b|\bdemand\b/i.test(label);
 
   if (strongPhrase && !qualified) return 'trueTotal';
   if (qualified && (strongPhrase || weakWord || moneyContext)) return 'partialDue';
@@ -508,6 +591,19 @@ const VOWELS = new RegExp('[aeiouyàâäéèêëïîôöùûüæœ]', 'i');
  * QR payload once outranked a visible company logo: the old rule asked only
  * whether a line was near the top and had a few letters in it, and
  * "ql=11tzk9dmupMga MJHN2kd93ndkw" satisfies both.
+ *
+ * NON-LATIN SCRIPTS. This used to count only [A-Za-zÀ-ÿ] as a "letter",
+ * which is a real gap, not merely a stylistic one: a company name printed
+ * ONLY in Chinese, Hindi, Arabic, Japanese, Korean or Thai had zero
+ * letters by that definition and was silently invisible — never wrong,
+ * but never right either, on every bill in those scripts. \p{L} (any
+ * Unicode letter, any script) fixes the blind spot. The vowel/consonant
+ * checks below it stay Latin-only on purpose: "no vowel in five letters
+ * is not a word" is a real signal in an alphabet that spells vowels as
+ * separate letters, and a false signal in one that does not (CJK
+ * ideographs, Thai). They only run when the string is Latin-letter-
+ * dominant; a non-Latin-dominant string still gets the script-agnostic
+ * checks (length, symbols, digit ratio, digit/letter braiding).
  */
 export function namePlausibility(raw: string): number {
   const s = (raw || '').trim();
@@ -517,35 +613,48 @@ export function namePlausibility(raw: string): number {
   if (new RegExp('https?://|www\\.|\\.com\\b|\\.ca\\b|@', 'i').test(s)) return 0;
   if (s.includes('=') || s.includes('|') || s.includes('\\')) return 0;
 
-  const letters = (s.match(new RegExp('[A-Za-zÀ-ÿ]', 'g')) || []).length;
+  const anyLetters = (s.match(/\p{L}/gu) || []).length;
+  const latinLetters = (s.match(new RegExp('[A-Za-zÀ-ÿ]', 'g')) || []).length;
   const digits = (s.match(new RegExp('[0-9]', 'g')) || []).length;
-  const symbols = (s.match(new RegExp('[^A-Za-zÀ-ÿ0-9\\s&\'’.,()-]', 'g')) || []).length;
+  // \p{M}: combining marks — a Devanagari vowel sign or virama (्) is not
+  // \p{L} (Letter) but is not junk either; without this, any Devanagari,
+  // Thai or Tamil word using one scored as if it contained a stray symbol
+  // and was rejected outright.
+  const symbols = (s.match(/[^\p{L}\p{M}0-9\s&'’.,()-]/gu) || []).length;
   // A&W and BP are real names. Two letters is the floor; the junk in the
   // reported case is rejected by the symbol, digit and braiding rules instead.
-  if (letters < 2) return 0;
+  if (anyLetters < 2) return 0;
   if (symbols > 0) return 0;
-  if (digits > letters * 0.5) return 0;
+  if (digits > anyLetters * 0.5) return 0;
 
   let score = 1;
-
-  // A word with no vowel at all is not a word. Company initialisms are short,
-  // so only judge tokens long enough to need one.
   const words = s.split(new RegExp('[\\s.,()-]+')).filter(Boolean);
-  for (const w of words) {
-    if (w.length >= 5 && !VOWELS.test(w)) return 0;
+  const latinDominant = latinLetters >= anyLetters * 0.8;
+
+  if (latinDominant) {
+    // A word with no vowel at all is not a word. Company initialisms are
+    // short, so only judge tokens long enough to need one.
+    for (const w of words) {
+      if (w.length >= 5 && !VOWELS.test(w)) return 0;
+    }
+    const braided = words.filter(w =>
+      w.length >= 6 && new RegExp('[A-Za-z]').test(w) && new RegExp('[0-9]').test(w),
+    ).length;
+    if (braided) return 0;
+    if (digits > 0) score -= 0.3;
+    const vowelRatio = (s.match(new RegExp('[aeiouAEIOU]', 'g')) || []).length / Math.max(1, latinLetters);
+    if (vowelRatio < 0.2) score -= 0.5;
+  } else {
+    // Same identifier tell in any script: letters and digits braided
+    // together reads as a code, not a name — "东京123abc456" is not how a
+    // company signs its own bill.
+    const braided = words.filter(w =>
+      w.length >= 6 && /\p{L}/u.test(w) && /[0-9]/.test(w),
+    ).length;
+    if (braided) return 0;
+    if (digits > 0) score -= 0.3;
   }
 
-  // Letters and digits braided together is what an identifier looks like.
-  const braided = words.filter(w =>
-    w.length >= 6 &&
-    new RegExp('[A-Za-z]').test(w) &&
-    new RegExp('[0-9]').test(w),
-  ).length;
-  if (braided) return 0;
-
-  if (digits > 0) score -= 0.3;
-  const vowelRatio = (s.match(new RegExp('[aeiouAEIOU]', 'g')) || []).length / Math.max(1, letters);
-  if (vowelRatio < 0.2) score -= 0.5;
   return Math.max(0, Math.min(1, score));
 }
 
