@@ -126,6 +126,14 @@ const PARTIAL_DUE_QUALIFIER = new RegExp(
     '\\bnow\\b', '\\btoday\\b', 'overdue', 'past\\s*due',
     'this\\s*bill', 'current\\s*bill', 'de\\s*la\\s*pr[ée]sente\\s*facture', 'pr[ée]sente\\s*facture',
     'new\\s*charges', 'current\\s*charges', 'this\\s*statement',
+    // "Amount due BY [a date]" / "dû au plus tard le [date]" — a real
+    // Hydro-Québec payment stub's own phrasing for the SAME $251.28
+    // component the main bill already calls "amount of this bill", found
+    // by testing against the real photographed bill rather than an
+    // invented fixture: without this, "amount due" matched top-tier with
+    // no qualifier at all, and this line scored a near-tie with the true
+    // total purely by chance of row order.
+    'due\\s*by', 'au\\s*plus\\s*tard',
   ].join('|'),
   'i',
 );
@@ -187,10 +195,20 @@ const BARE_AMOUNT = new RegExp('^[\\s$]*-?\\d[\\d,\\s]*[.,]\\d{2}\\s*\\$?\\s*$')
  *
  * "Account 4021-1188-9930" and "Tel 450-555-0142" both contain things that a
  * money pattern is happy to read as 55.01 or 88.99.
+ *
+ * REAL-BILL FINDING (SMART-CAPTURE-HYDRO-01 follow-up): a payment stub puts
+ * a due DATE and the real amount on the same OCR-flattened line —
+ * "Amount due by Sep. 24, 2026   251,28 $". The date's own digits plus the
+ * column whitespace before the amount are, on their own, indistinguishable
+ * from a 10+-digit account number, so the whole row — amount included — was
+ * being discarded as "just an identifier". The actual recognisable MONEY on
+ * the row is stripped out before judging the rest, so a real amount is never
+ * thrown away for merely sitting near a date or reference number.
  */
 function looksLikeIdentifier(row: string): boolean {
-  if (new RegExp('\\b\\d[\\d\\s-]{9,}\\b').test(row)) return true;      // long digit run
-  if (new RegExp('\\b\\d{3}[-.\\s]\\d{3}[-.\\s]\\d{4}\\b').test(row)) return true; // phone
+  const withoutMoney = row.replace(MONEY, ' ');
+  if (new RegExp('\\b\\d[\\d\\s-]{9,}\\b').test(withoutMoney)) return true;      // long digit run
+  if (new RegExp('\\b\\d{3}[-.\\s]\\d{3}[-.\\s]\\d{4}\\b').test(withoutMoney)) return true; // phone
   return false;
 }
 

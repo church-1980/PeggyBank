@@ -69,6 +69,60 @@ describe('The real Hydro-Québec bill — every OCR shape resolves to $514.99', 
     expect(r.amount).toBe(514.99);
     expect(r.confidence.amount).toBe('high');
   });
+
+  it('G. the actual photographed bill, transcribed line-for-line — not an invented approximation', () => {
+    const r = parseDocument(Hydro.HYDRO_G_REAL_PHOTOGRAPHED_BILL);
+    expect(r.amount).toBe(514.99);
+    expect(r.confidence.amount).toBe('high');
+    expect(r.docType).toBe('bill');
+    expect(r.merchant).toBe('Hydro-Québec');
+    expect(r.date).toBe('2026-09-03');
+    expect(r.dueDate).toBe('2026-09-24');
+
+    // Not a coin-flip: the true total must clearly outscore the stub's
+    // own "due by" line for the SAME $251.28 figure, not merely win by
+    // whichever row happened to print first.
+    const cands = debugAmountCandidates(Hydro.HYDRO_G_REAL_PHOTOGRAPHED_BILL.split('\n'));
+    const winner = cands[0];
+    const runnerUp = cands.find(c => c !== winner)!;
+    expect(winner.value).toBe(514.99);
+    expect(winner.score - runnerUp.score).toBeGreaterThan(30);
+  });
+});
+
+describe('Two more root causes, found only by testing the real photographed bill', () => {
+  it('a due DATE sharing a line with the real amount no longer reads as one long identifier', () => {
+    // "...Sep. 24, 2026   251,28 $" used to be swallowed whole: the date's
+    // digits plus the column whitespace before the amount looked exactly
+    // like a 10+-digit account number to looksLikeIdentifier(), so the
+    // entire row — amount included — was discarded before it ever reached
+    // scoring. debugAmountCandidates() returning nothing for a row this
+    // simple was the actual symptom (a bare "no money found").
+    const row = 'Amount due by Sep. 24, 2026   251,28 $';
+    const r = chooseAmount([row]);
+    expect(r.value).toBe(251.28);
+    expect(r.confidence).not.toBe('none');
+  });
+
+  it('"amount due BY [a date]" is a partial/component amount, not the total', () => {
+    // The real payment stub names the $251.28 figure "Montant dû au plus
+    // tard le 24 sept. 2026 / Amount due by Sep. 24, 2026" — not "amount
+    // of this bill". "Amount due" alone is top-tier; without a qualifier
+    // for "due by [date]" specifically, this line scored a near-tie with
+    // the true total, decided only by which row happened to print first.
+    const r = chooseAmount([
+      'Montant total dû / Total amount due                            514,99 $',
+      'Montant dû au plus tard le 24 sept. 2026 / Amount due by Sep. 24, 2026   251,28 $',
+    ]);
+    expect(r.value).toBe(514.99);
+    // And the same when the stub's own line happens to print FIRST —
+    // proving this is not merely inheriting the row-order tie-break.
+    const reordered = chooseAmount([
+      'Montant dû au plus tard le 24 sept. 2026 / Amount due by Sep. 24, 2026   251,28 $',
+      'Montant total dû / Total amount due                            514,99 $',
+    ]);
+    expect(reordered.value).toBe(514.99);
+  });
 });
 
 describe('The two named root causes, falsified directly', () => {
