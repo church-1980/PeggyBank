@@ -46,27 +46,86 @@ export function toNumber(s: string): number {
 }
 
 /**
- * The words that mean THIS IS THE FIGURE YOU OWE.
+ * SMART-CAPTURE-HYDRO-01 — A LABEL IS NOT JUST "MATCH" OR "NO MATCH".
+ *
+ * A real Hydro-Québec bill carries three legitimately-labelled amounts:
+ *
+ *   Montant dû immédiatement / Amount due immediately ........ $263.71
+ *   Montant de la présente facture / Amount of this bill ...... $251.28
+ *   Montant total dû / Total amount due ........................ $514.99
+ *
+ * All three used to match the same flat "final label" class, so the choice
+ * fell back to page position — and a warning line or a detachable payment
+ * stub prints BELOW the summary box, so the qualified, partial figure won,
+ * confidently, every time. The bug was never "missing French words": the
+ * French (and English) words for "due now" and "due immediately" were
+ * already present, just not ranked BELOW the words for "the total".
+ *
+ * THE FIX IS A HIERARCHY, NOT A BIGGER LIST.
+ *
+ *   TRUE_TOTAL_LABEL   the grand/total/balance figure itself: "total
+ *                       amount due", "montant total dû", "solde dû",
+ *                       "grand total", "amount paid" -- outranks everything.
+ *   PARTIAL_DUE_QUALIFIER
+ *                       a word that turns an otherwise-strong label into a
+ *                       COMPONENT of the total, never the total itself:
+ *                       "immediately" / "immédiatement", "this bill" /
+ *                       "présente facture", "current charges", "new
+ *                       charges", "overdue", "past due". A row matching a
+ *                       due-phrase AND one of these qualifiers is real
+ *                       money, correctly labelled -- just not the field
+ *                       PeggyBank is trying to fill.
+ *   TOTAL_LABEL         a bare "total" / "montant" / "solde" with no
+ *                       stronger phrase around it -- weak, generic evidence,
+ *                       used only when nothing stronger is on the page.
+ *
+ * This generalises past Hydro-Québec: a phone bill's "previous balance +
+ * current charges + total due", a credit card's "minimum payment +
+ * statement balance + total balance", and an insurance bill's "installment
+ * amount + overdue balance + total due" all have the same shape -- one
+ * TRUE total surrounded by legitimately-labelled, legitimately-scored, but
+ * subordinate figures.
  *
  * Deliberately not an English-only list: the app ships French, Spanish,
- * Portuguese and Chinese, and a Quebec hydro bill says "montant dû" where an
- * Australian one says "total amount due".
+ * Portuguese and Chinese.
  */
-const FINAL_LABEL = new RegExp(
+const TRUE_TOTAL_LABEL = new RegExp(
   [
     'grand\\s*total', 'total\\s*amount\\s*due', 'current\\s*amount\\s*due',
     'amount\\s*due', 'amount\\s*owing', 'amount\\s*payable', 'balance\\s*due',
     'payment\\s*due', 'total\\s*due', 'total\\s*payable', 'net\\s*total',
-    'total\\s*bill', 'amount\\s*of\\s*this\\s*bill', 'new\\s*amount\\s*due',
-    'new\\s*charges', 'please\\s*pay', 'you\\s*owe', 'total\\s*owing',
+    'total\\s*bill', 'new\\s*amount\\s*due', 'please\\s*pay', 'you\\s*owe',
+    'total\\s*owing', 'amount\\s*paid', 'paid\\s*amount',
+    // A card/statement figure: distinct from a bill's "amount due", but
+    // still the one number that answers "what is the total?" for that
+    // document -- never in the same row as "minimum payment".
+    'statement\\s*balance', 'current\\s*balance', 'total\\s*balance', 'total\\s*account\\s*balance',
     // French
     'montant\\s*d[uû]', 'solde\\s*[aà]\\s*payer', 'total\\s*[aà]\\s*payer',
-    'montant\\s*exigible', 'montant\\s*total', 'net\\s*[aà]\\s*payer',
+    'montant\\s*exigible', 'montant\\s*total', 'net\\s*[aà]\\s*payer', 'solde\\s*d[uû]',
     // Spanish / Portuguese
     'importe\\s*total', 'total\\s*a\\s*pagar', 'valor\\s*total',
     'saldo\\s*a\\s*pagar', 'importe\\s*a\\s*pagar',
     // Chinese
     '应付金额', '应缴金额', '合计金额', '总计',
+  ].join('|'),
+  'i',
+);
+
+/**
+ * A word that means "this labelled figure is a PIECE of what is owed, not
+ * the whole of it" -- present alongside a due-phrase, it demotes an
+ * otherwise top-tier label to PARTIAL_DUE. Present alongside only a bare
+ * "total"/"montant" (no due-phrase at all), it is what turns that bare word
+ * into a recognisable partial-amount phrase on its own, e.g. "amount of
+ * this bill" / "montant de la présente facture" / "new charges".
+ */
+const PARTIAL_DUE_QUALIFIER = new RegExp(
+  [
+    'immediat(?:e|ely)?', 'imm[ée]diatement',
+    '\\bnow\\b', '\\btoday\\b', 'overdue', 'past\\s*due',
+    'this\\s*bill', 'current\\s*bill', 'de\\s*la\\s*pr[ée]sente\\s*facture', 'pr[ée]sente\\s*facture',
+    'new\\s*charges', 'current\\s*charges', 'this\\s*statement',
   ].join('|'),
   'i',
 );
@@ -101,12 +160,27 @@ const NOT_THE_TOTAL = new RegExp(
     'account\\s*(number|no|#)', 'customer\\s*(number|no|#)', 'invoice\\s*(number|no|#)',
     '\\b(tel|phone|fax|t[eé]l[eé]phone)\\b',
     '\\bper\\s*(litre|liter|l|gal|kwh|kg)\\b', '\\b(litres?|liters?|kwh)\\b',
+    // A card's minimum payment is a real, legitimately-labelled amount --
+    // and never the total. Exists on the same statement as the figure this
+    // engine should actually choose, so it must be excluded, not merely
+    // outranked (Section 9/12/13 — statement/card decoys).
+    'minimum\\s*payment', 'paiement\\s*minimum',
   ].join('|'),
   'i',
 );
 
-/** A row that is nothing but a money value — the right half of a split column. */
-const BARE_AMOUNT = new RegExp('^[\\s$]*-?\\d[\\d,\\s]*[.,]\\d{2}\\s*$');
+/**
+ * A row that is nothing but a money value — the right half of a split column.
+ *
+ * The $ can lead ("$514.99") or trail ("514,99 $") — Québec French puts the
+ * symbol after the number, the convention this Hydro-Québec bill's own
+ * amount column uses. Only the leading form was recognised, so a
+ * split-column French bill degraded every amount to an unlabelled,
+ * position-only guess: the label run could never be confirmed to have
+ * exactly as many amounts as labels, because BARE_AMOUNT said none of them
+ * were amounts at all.
+ */
+const BARE_AMOUNT = new RegExp('^[\\s$]*-?\\d[\\d,\\s]*[.,]\\d{2}\\s*\\$?\\s*$');
 
 /**
  * Digits that belong to an identifier rather than to money.
@@ -138,12 +212,43 @@ function deOcrLabel(row: string): string {
   );
 }
 
+export type AmountRole = 'negative' | 'trueTotal' | 'partialDue' | 'weakTotal' | 'unlabelled';
+
+/**
+ * Classify what a row's LABEL claims about any money on it — independent of
+ * whether money is actually present, so both isLabelOnlyRow (no money yet)
+ * and chooseAmount (money in hand) read the exact same hierarchy. See the
+ * SMART-CAPTURE-HYDRO-01 comment above TRUE_TOTAL_LABEL for what each role
+ * means and why the qualifier check exists.
+ */
+function classifyLabel(row: string): AmountRole {
+  const label = deOcrLabel(row);
+  if (NOT_THE_TOTAL.test(label)) return 'negative';
+
+  const strongPhrase = TRUE_TOTAL_LABEL.test(label);
+  const qualified = PARTIAL_DUE_QUALIFIER.test(label);
+  const weakWord = TOTAL_LABEL.test(label);
+  // A qualifier alone ("this bill" / "immediately") only means something
+  // MONEY-shaped beside it. "amount"/"due"/"bill"/"facture"/"charges" have
+  // no home in TOTAL_LABEL's bare-word tier (adding them there would make
+  // any row merely mentioning "amount" count as weak total evidence) but
+  // are exactly what "Amount of this bill" is built from — the English
+  // twin of "Montant de la présente facture", which already qualifies via
+  // TOTAL_LABEL's bare "montant". Without this, the English phrase had no
+  // positive match at all and silently fell to 'unlabelled'.
+  const moneyContext = qualified && /\bamount\b|\bdue\b|\bd[uû]\b|\bbalance\b|\bfacture\b|\bbill\b|\bcharges?\b/i.test(label);
+
+  if (strongPhrase && !qualified) return 'trueTotal';
+  if (qualified && (strongPhrase || weakWord || moneyContext)) return 'partialDue';
+  if (weakWord) return 'weakTotal';
+  return 'unlabelled';
+}
+
 /** Is this a money label sitting on a row with no money on it? */
 function isLabelOnlyRow(row: string): boolean {
   if (MONEY.test(row)) { MONEY.lastIndex = 0; return false; }
   MONEY.lastIndex = 0;
-  const label = deOcrLabel(row);
-  return FINAL_LABEL.test(label) || TOTAL_LABEL.test(label) || NOT_THE_TOTAL.test(label);
+  return classifyLabel(row) !== 'unlabelled';
 }
 
 /**
@@ -163,9 +268,37 @@ function isLabelOnlyRow(row: string): boolean {
  * to the FIRST amount, which is precisely how a printed Total came back as the
  * subtotal on a real phone. A run of N labels followed by exactly N bare
  * amounts is zipped position by position, or left alone.
+ *
+ * EXACTLY N, NOT "AT LEAST N". A run of 3 labels followed by 4 bare amounts
+ * (a stray meter reading or a stub total ahead of the real column) used to
+ * take the first 3 amounts and call it done — marrying "Montant total dû" to
+ * a decoy and leaving the real total as a bare, unlabelled row. If the
+ * amount run does not end exactly where the label run's count says it
+ * should, the correspondence is not established: decline to zip rather
+ * than guess which N of the amounts belong to these labels.
+ *
+ * A DECLINED RUN MUST NOT LEAK INTO THE PER-LABEL LOOKAHEAD EITHER.
+ * chooseAmount() also has its own fallback for a lone label immediately
+ * followed by a bare amount 1-2 rows down — needed for the ordinary "Amount
+ * due \n $582.25" case, where there was never a run to zip. But if a whole
+ * run of labels just failed to pair here, letting each of ITS labels reach
+ * for "whichever bare amount happens to be within 2 rows" is the exact same
+ * mistake in a smaller box: on the Hydro bill this is precisely how "Montant
+ * total dû" reached past its own column into a stray earlier number. Every
+ * label in a run that could not be cleanly zipped is returned in
+ * `ambiguous`, so chooseAmount can decline the per-label guess for them too.
  */
-export function pairSplitColumns(rows: string[]): string[] {
+export interface SplitColumnResult {
+  rows: string[];
+  /** Indices into `rows` whose label was part of a run this function could
+   * not confidently pair with amounts — a per-label guess for these would
+   * be exactly the "one stray number decides everything" mistake above. */
+  ambiguous: Set<number>;
+}
+
+export function pairSplitColumns(rows: string[]): SplitColumnResult {
   const out: string[] = [];
+  const ambiguous = new Set<number>();
   let i = 0;
   while (i < rows.length) {
     let j = i;
@@ -180,16 +313,26 @@ export function pairSplitColumns(rows: string[]): string[] {
         BARE_AMOUNT.test(rows[j + matched].trim())
       ) matched++;
 
-      if (matched === runLength) {
+      const nextIsAlsoAnAmount =
+        j + matched < rows.length && BARE_AMOUNT.test(rows[j + matched].trim());
+
+      if (matched === runLength && !nextIsAlsoAnAmount) {
         for (let k = 0; k < runLength; k++) out.push(rows[i + k].trim() + '   ' + rows[j + k].trim());
         i = j + runLength;
         continue;
       }
+
+      // The whole run failed to pair — push every label in it unchanged,
+      // but mark all of them, not just leave the last one looking like an
+      // ordinary lone label with amounts nearby.
+      for (let k = 0; k < runLength; k++) { ambiguous.add(out.length); out.push(rows[i + k]); }
+      i = j;
+      continue;
     }
     out.push(rows[i]);
     i++;
   }
-  return out;
+  return { rows: out, ambiguous };
 }
 
 export interface AmountChoice {
@@ -199,18 +342,18 @@ export interface AmountChoice {
   why: string;
 }
 
-interface Cand { value: number; score: number; why: string }
+interface Cand { value: number; score: number; why: string; role: AmountRole }
 
 /**
- * Choose the figure the person owes or paid.
+ * Every money candidate on the page, with the evidence behind each one.
  *
- * Never "the largest number" and never "the last number": a bill that reads
- * previous balance 1500 / payment -1000 / new amount due 500 must answer 500,
- * and a dinner receipt whose last line is the cash tendered must not answer
- * with the cash.
+ * Not used by the app itself — chooseAmount() below only needs the winner.
+ * This exists so a real-phone failure can be diagnosed from its OCR text
+ * alone: which candidates existed, what role each one's label earned, and
+ * why one outscored the rest. See ocrCandidateDiagnostics.test.ts.
  */
-export function chooseAmount(input: string[]): AmountChoice {
-  const rows = pairSplitColumns(input);
+function amountCandidates(input: string[]): Cand[] {
+  const { rows, ambiguous } = pairSplitColumns(input);
   const cands: Cand[] = [];
   const n = Math.max(1, rows.length);
 
@@ -218,10 +361,7 @@ export function chooseAmount(input: string[]): AmountChoice {
     if (looksLikeIdentifier(row)) return;
 
     const matches = row.match(MONEY);
-    const label = deOcrLabel(row);
-    const negative = NOT_THE_TOTAL.test(label);
-    const isFinal = !negative && FINAL_LABEL.test(label);
-    const isTotal = !negative && !isFinal && TOTAL_LABEL.test(label);
+    const role = classifyLabel(row);
 
     if (matches) {
       for (const raw of matches) {
@@ -230,11 +370,14 @@ export function chooseAmount(input: string[]): AmountChoice {
         if (!Number.isFinite(value) || value <= 0) continue;
         let score = 0;
         let why = 'unlabelled';
-        if (isFinal) { score += 120; why = 'final label on the same row'; }
-        else if (isTotal) { score += 70; why = 'total on the same row'; }
-        if (negative) { score -= 160; why = 'row says this is not the total'; }
+        switch (role) {
+          case 'trueTotal': score += 150; why = 'total label on the same row'; break;
+          case 'partialDue': score += 90; why = 'a real but partial/component amount on the same row'; break;
+          case 'weakTotal': score += 70; why = 'generic total word on the same row'; break;
+          case 'negative': score -= 160; why = 'row says this is not the total'; break;
+        }
         score += (i / n) * 6;                    // a mild nod to later rows
-        cands.push({ value, score, why });
+        cands.push({ value, score, why, role });
       }
       return;
     }
@@ -245,22 +388,47 @@ export function chooseAmount(input: string[]): AmountChoice {
     // subtotal on a real phone: OCR put every label in one block and every
     // amount in another, so nothing was ever "labelled" and the choice fell
     // back to position. Look ahead a couple of rows for a bare amount and
-    // pair them, scoring the pair slightly below a same-row hit.
-    if (!isFinal && !isTotal) return;
+    // pair them, scoring the pair slightly below a same-row hit, at the
+    // same tier gap the same-row scores above use.
+    //
+    // Never for a label pairSplitColumns already tried and failed to zip:
+    // guessing "whichever bare amount is within 2 rows" for it is the same
+    // mistake in miniature (see the comment on `ambiguous` above).
+    if (ambiguous.has(i)) return;
+    if (role !== 'trueTotal' && role !== 'partialDue' && role !== 'weakTotal') return;
     for (let j = i + 1; j <= Math.min(i + 2, rows.length - 1); j++) {
       const ahead = rows[j];
       if (!BARE_AMOUNT.test(ahead.trim())) continue;
       const value = toNumber(ahead);
       if (!Number.isFinite(value) || value <= 0) break;
+      const base = role === 'trueTotal' ? 135 : role === 'partialDue' ? 75 : 55;
       cands.push({
         value,
-        score: (isFinal ? 105 : 55) + (i / n) * 6,
-        why: isFinal ? 'final label, amount on the next row' : 'total label, amount on the next row',
+        score: base + (i / n) * 6,
+        why: role === 'trueTotal'
+          ? 'total label, amount on the next row'
+          : role === 'partialDue'
+            ? 'a real but partial/component label, amount on the next row'
+            : 'generic total word, amount on the next row',
+        role,
       });
       break;
     }
   });
 
+  return cands;
+}
+
+/**
+ * Choose the figure the person owes or paid.
+ *
+ * Never "the largest number" and never "the last number": a bill that reads
+ * previous balance 1500 / payment -1000 / new amount due 500 must answer 500,
+ * and a dinner receipt whose last line is the cash tendered must not answer
+ * with the cash.
+ */
+export function chooseAmount(input: string[]): AmountChoice {
+  const cands = amountCandidates(input);
   if (!cands.length) return { confidence: 'none', why: 'no money found' };
 
   // Highest score wins. Among equals prefer the LAST one seen, because a
@@ -276,6 +444,37 @@ export function chooseAmount(input: string[]): AmountChoice {
   // a starting point, clearly marked as unread rather than presented as read.
   const largest = cands.reduce((m, c) => (c.value > m.value ? c : m), cands[0]);
   return { value: largest.value, confidence: 'low', why: 'every candidate was excluded' };
+}
+
+export interface AmountCandidateDebug {
+  value: number;
+  /** TOTAL_AMOUNT_DUE-style name, for a debug log or a failing-fixture readout. */
+  role: 'TOTAL_AMOUNT_DUE' | 'PARTIAL_OR_COMPONENT_AMOUNT' | 'WEAK_GENERIC_TOTAL' | 'EXCLUDED' | 'UNLABELLED';
+  score: number;
+  why: string;
+}
+
+const ROLE_NAME: Record<AmountRole, AmountCandidateDebug['role']> = {
+  trueTotal: 'TOTAL_AMOUNT_DUE',
+  partialDue: 'PARTIAL_OR_COMPONENT_AMOUNT',
+  weakTotal: 'WEAK_GENERIC_TOTAL',
+  negative: 'EXCLUDED',
+  unlabelled: 'UNLABELLED',
+};
+
+/**
+ * DEV/TEST DIAGNOSTIC ONLY — never called from production UI or console.
+ *
+ * Every candidate chooseAmount() considered, ranked highest first, with the
+ * role and score behind each one. Exists so a real-phone failure like
+ * SMART-CAPTURE-HYDRO-01 can be debugged from its raw OCR text alone: which
+ * amounts were seen, what each one's label was read as, and why the winner
+ * won — without exposing any of this to a real user.
+ */
+export function debugAmountCandidates(input: string[]): AmountCandidateDebug[] {
+  return amountCandidates(input)
+    .map(c => ({ value: c.value, role: ROLE_NAME[c.role], score: Math.round(c.score * 100) / 100, why: c.why }))
+    .sort((a, b) => b.score - a.score);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

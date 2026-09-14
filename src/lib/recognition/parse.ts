@@ -17,7 +17,12 @@ const BILL_PAYEES: { name: string; re: RegExp; category: Category; recurring: bo
   { name: 'Rogers',     re: /\brogers\b/i,                       category: 'home',  recurring: true },
   { name: 'Telus',      re: /\btelus\b/i,                        category: 'home',  recurring: true },
   { name: 'Videotron',  re: /\bvid[eé]otron\b/i,                 category: 'home',  recurring: true },
-  { name: 'Hydro',      re: /\bhydro(?:[- ]?qu[eé]bec|[- ]?one)?\b/i, category: 'home', recurring: true },
+  // Two distinct real companies, not one conflated placeholder: checked
+  // before the bare-"Hydro" fallback below so each is named correctly
+  // rather than both being flattened into a single generic label.
+  { name: 'Hydro-Québec', re: /\bhydro[- ]?qu[eé]bec\b/i,         category: 'home',  recurring: true },
+  { name: 'Hydro One',    re: /\bhydro[- ]?one\b/i,               category: 'home',  recurring: true },
+  { name: 'Hydro',      re: /\bhydro\b/i,                         category: 'home',  recurring: true },
   { name: 'Enbridge',   re: /\benbridge\b/i,                     category: 'home',  recurring: true },
   { name: 'Fido',       re: /\bfido\b/i,                         category: 'home',  recurring: true },
   { name: 'Koodo',      re: /\bkoodo\b/i,                        category: 'home',  recurring: true },
