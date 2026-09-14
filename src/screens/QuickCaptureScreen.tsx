@@ -330,11 +330,24 @@ export default function QuickCaptureScreen({ navigation }: any) {
     return (
       <View style={[styles.fill, { backgroundColor: '#000' }]}>
         <CameraView ref={camRef} style={StyleSheet.absoluteFill} facing={facing} flash={flash} />
+        {/* A static alignment guide, not a readiness signal: expo-camera
+            exposes no focus-lock or sharpness signal to turn this green
+            honestly, and a light that changes color without actually
+            detecting anything would tell the person their photo is good
+            when nobody has checked. It still helps — most under-read
+            receipts are cropped or angled, and a frame to fill fixes that
+            before the shutter is ever pressed. */}
+        <View pointerEvents="none" style={styles.frameGuide}>
+          <View style={[styles.frameCorner, styles.frameCornerTL]} />
+          <View style={[styles.frameCorner, styles.frameCornerTR]} />
+          <View style={[styles.frameCorner, styles.frameCornerBL]} />
+          <View style={[styles.frameCorner, styles.frameCornerBR]} />
+        </View>
         <View style={[styles.topRow, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={styles.roundBtn} onPress={close} accessibilityLabel="Cancel"><Ionicons name="close" size={24} color="#fff" /></TouchableOpacity>
           <TouchableOpacity style={styles.roundBtn} onPress={() => setFlash(flash === 'off' ? 'on' : 'off')} accessibilityLabel="Toggle flash"><Ionicons name={flash === 'off' ? 'flash-off' : 'flash'} size={22} color="#fff" /></TouchableOpacity>
         </View>
-        <Text style={[styles.hint, { top: insets.top + 64 }]}>Photograph a receipt or bill</Text>
+        <Text style={[styles.hint, { top: insets.top + 64 }]}>Fill the frame with the whole document</Text>
         <View style={[styles.bottomRow, { paddingBottom: insets.bottom + 24 }]}>
           <TouchableOpacity style={styles.sideBtn} onPress={pickFromGallery} accessibilityLabel="Import from gallery"><Ionicons name="images-outline" size={26} color="#fff" /><Text style={styles.sideLabel}>Gallery</Text></TouchableOpacity>
           <TouchableOpacity style={styles.shutter} onPress={takePhoto} accessibilityLabel="Take photo"><View style={styles.shutterInner} /></TouchableOpacity>
@@ -803,6 +816,21 @@ function makeStyles(C: ColorPalette) {
     topRow: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16 },
     roundBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
     hint: { position: 'absolute', alignSelf: 'center', color: '#fff', fontWeight: '600', backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+
+    // A document-shaped guide, not a viewfinder crop — the photo still
+    // captures the full frame. Only corner brackets, not a solid border, so
+    // the guide reads as "aim here" without hiding what the camera sees.
+    frameGuide: {
+      position: 'absolute', top: '18%', bottom: '22%', left: '8%', right: '8%',
+    },
+    frameCorner: {
+      position: 'absolute', width: 28, height: 28,
+      borderColor: 'rgba(255,255,255,0.85)',
+    },
+    frameCornerTL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 8 },
+    frameCornerTR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3, borderTopRightRadius: 8 },
+    frameCornerBL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3, borderBottomLeftRadius: 8 },
+    frameCornerBR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 8 },
 
     bottomRow: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 36 },
     sideBtn: { width: 56, alignItems: 'center' },
