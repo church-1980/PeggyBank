@@ -273,14 +273,6 @@ export async function updateSchedule(
   await db.runAsync(`UPDATE income_schedules SET ${sets.join(', ')} WHERE id = ?`, args);
 }
 
-/** One schedule, or null. */
-export async function getSchedule(db: SQLiteDatabase, id: number): Promise<IncomeSchedule | null> {
-  return db.getFirstAsync<IncomeSchedule>(
-    `SELECT id, label, amount, frequency, day_of_month, weekday, active, created_at, anchor_date
-       FROM income_schedules WHERE id = ?`, [id]
-  ).catch(() => null);
-}
-
 /**
  * How a schedule reads in plain language: "Every second Friday", "On the 15th".
  * Used wherever the user is shown what they set up, so the wording cannot drift

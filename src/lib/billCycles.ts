@@ -116,19 +116,10 @@ export async function paidCyclesFor(
 // recompute (removed in Section 13). Deleted rather than kept "just in
 // case" — see unpaidBillsAgreement.test.ts for the invariants that used to
 // be pinned against it, now pinned against the one remaining engine.
-
-/** Occurrences paid within a date range — for Monthly Breakdown. */
-export async function paidInRange(
-  db: SQLiteDatabase, start: string, end: string
-): Promise<{ count: number; total: number }> {
-  const row = await db.getFirstAsync<{ n: number; t: number }>(
-    `SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS t
-       FROM bill_payments
-      WHERE paid = 1 AND cycle_date >= ? AND cycle_date <= ?`,
-    [start, end]
-  );
-  return { count: row?.n ?? 0, total: row?.t ?? 0 };
-}
+//
+// paidInRange() lived here too, doc-commented "for Monthly Breakdown" —
+// that screen actually reads activity.ts's billPaymentsInRange() instead.
+// Never called by anything, so removed the same way (cleanup pass).
 
 /**
  * ── PAYMENT METHOD & VERIFICATION ─────────────────────────────────────────

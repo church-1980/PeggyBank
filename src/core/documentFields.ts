@@ -36,7 +36,7 @@ const MONEY = new RegExp(
 );
 
 /** "1 234,56" / "$1,234.56" / "-112.10" -> number */
-export function toNumber(s: string): number {
+function toNumber(s: string): number {
   let v = s.replace(new RegExp('[^0-9.,-]', 'g'), '').trim();
   const lastDot = v.lastIndexOf('.');
   const lastComma = v.lastIndexOf(',');
